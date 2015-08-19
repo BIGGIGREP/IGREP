@@ -239,6 +239,12 @@ def flatten_dictionary(d,val={},p='',start=True):
 		This function recursively flattens dictionaries.
 		All values in the dictionary that are found to be nested subdictionaries will be converted to keys containing '.'
 		This is very useful for moving all keys in a dictionary to the top level rather than having to access each subkey
+		=====================   =====================
+	        **Input**               **Description**
+	        ---------------------   ---------------------
+	        d			A nested dictionary of key:values
+	        =====================   =====================
+		
 		See example below:
 		
 		Imagine a dictionary is passed as such: 
@@ -259,7 +265,7 @@ def flatten_dictionary(d,val={},p='',start=True):
 		
 		
 		.. important::
-	        	To perform the opposite of this function: Convert a flattened dictionary into a nested dictionary please refer to the DotAccessible function
+	        	Please refer to the function,DotAccessible, to perform the opposite of this function: Convert a flattened dictionary into a nested dictionary
 		
     	"""
 	if start:
@@ -300,6 +306,12 @@ def RemoveObjId(document):
 #function description - this will extract a specific field from a file and write it to the output file as a  single column (without a header)
 #if count_field = None, then we assume there are no counts associated with the field of interest.  if count_field =is not None then we assume that column refers to the number of counts a sequence has occurred
 def Write_Single_Field(filename=None,outfile_location=None,field=None,count_field = None, file_format=None,contains_header=True):
+    """
+   	This will extract a specific field from a file and write it to the output file as a single column (without a header.)
+   	if *count_field* = None, then we assume there are no counts associated with the field of interest.
+   	If *count_field* =! None, then we assume that column refers to the number of counts a sequence has occurred
+    """
+    
 	total_data = 0
 	total_field = 0
 
@@ -348,6 +360,13 @@ def Write_Single_Field(filename=None,outfile_location=None,field=None,count_fiel
 #assumption 2: tab delimited file
 #assumption 3: column 1 = sequence of interest, column 2 = counts for that sequence 
 def count_sorted_seqs(input_file_name, output_file_name):
+	"""
+        	Counts the occurances of a sequence in a file. Takes a few assumptions into account.
+        	:Assumptions: * Sequences are sorted alphabetically
+                      * tab delimited file
+                      * column 1 = sequence of interest
+                      * column 2 = counts for that sequence
+    	"""
 	f_in = open(input_file_name,'r')
 	f_out = open(output_file_name,'w')
 	
@@ -384,6 +403,16 @@ def count_sorted_seqs(input_file_name, output_file_name):
 #file_format -> JSON/TAB/CSV/ETC...
 #contains_header -> whether or not the file contains a header row 
 def count_unique_values(filelocation=None,output_filelocation=None,field=None,count_field=None,file_format=None,contains_header=True,delete_intermediate_file=True,mem_safe = False):
+	"""
+	        ===============   ================
+	        **Input**         **Description**
+	        ---------------   ----------------
+	        filelocation      location of file
+	        field             name of the column/field in the file that you want to read
+	        file_format       JSON/TAB/CSV/etc.
+	        contains_header   whether or not the file contains a header row
+	        ===============   ================
+	"""
 	if output_filelocation == None:
 		output_filename = removeFileExtension(filelocation)
 		output_filename = output_filename+'.unique_vals.txt'
@@ -454,7 +483,15 @@ def print_error(e=None):
 
 #print an error message if system/program fails 
 def print_error_string(e=None):	
-	
+	"""
+        	Prints an error message if system/program fails.
+        	Uses traceback to report the last line and module where error occurred
+        	exception code::
+            	if not(e):
+                	e = "Exception error not passed"
+            	else:
+                	print there was an error: str(e)
+    	"""
 	exc_type, exc_obj, exc_tb = sys.exc_info()
 	fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]    				
 	
@@ -480,6 +517,17 @@ def print_error_string(e=None):
 # this is a cleanup function to remove any unused fields
 # this will iterate the sequence document and remove any subdocuments or fields that have "None" values
 def removeEmptyVals(myDict):
+	"""
+		this is a cleanup function to remove any unused fields
+		this will iterate the sequence document/dictionary and remove any subdocuments or fields that have "None" or empty string or empty array/dict values 
+		
+		===============   ================
+	        **Input**         **Description**
+	        ---------------   ----------------
+	        myDict		  A python dictionary of keys/values
+	        ===============   ================
+		
+	"""	
 	if myDict:
 		copyDict = myDict.copy();
 	
@@ -504,6 +552,19 @@ def removeEmptyVals(myDict):
 # this will iterate the sequence document and remove any subdocuments or fields that have "None" values or empty strings or empty lists 
 #any fields that are 'empty' are retuend as a second variable
 def divideEmptyAndNonEmptyVals(myDict):
+	"""
+		This is a cleanup function that removes any unused fields.
+		This will iterate the sequence document and remove any subdocuments or fields that have "None" values, empty strings or empty lists.
+		Fields that are empty are returned as a second variable.
+	        ===============   ================
+	        **Input**         **Description**
+	        ---------------   ----------------
+	        myDict		  An already flattened dictionary
+	        ===============   ================
+	        
+	        .. note::
+			This method assumes that the dictionary is in dot notation. i.e. not a nested dictionary
+	"""
 	empty_fields={}
 	non_empty = {}
 	for field,value in myDict.iteritems():
@@ -517,6 +578,17 @@ def divideEmptyAndNonEmptyVals(myDict):
 # this is a cleanup function to remove any unused fields
 # this will iterate the sequence document and remove any subdocuments or fields that have "None" values
 def removeNoneVals(myDict):
+	"""
+		this is a cleanup function to remove any unused fields
+		this will iterate the sequence document/dictionary and remove any subdocuments or fields that have "None" only
+		
+		===============   ================
+	        **Input**         **Description**
+	        ---------------   ----------------
+	        myDict		  A python dictionary of keys/values
+	        ===============   ================
+		
+	"""
 	if myDict:
 		copyDict = myDict.copy();
 	
@@ -540,6 +612,9 @@ def removeNoneVals(myDict):
 	
 #spint out a counter of the current status of a process (i.e. percent done)
 def LoopStatus(counter,totalSeq,perIndicate,startPer,div='',addedInfo=None):
+	"""
+        	counter of the current status of a process. (i.e. percent done)
+    	"""
 	percentDone = int(counter/float(totalSeq)*100)	
 	if percentDone%perIndicate==0 and percentDone>startPer:			
 		stringvar ='{0}% percent done. Time: {1}'.format(str(percentDone),str(datetime.now()))
@@ -552,6 +627,13 @@ def LoopStatus(counter,totalSeq,perIndicate,startPer,div='',addedInfo=None):
 #spint out a counter of the current status of a process (i.e. percent done)
 #THIS FUNCTION USES GENERATOR INSTEAD 
 def LoopStatusGen(totalSeq,perIndicate,addedInfo=None):
+	"""
+        	counter of the current status of a process.
+        	.. note::
+            		this function uses generator instead
+        	.. seealso::
+           		:py:func:`.LoopStatus`
+    	"""
 	counter=0	
 	startPer = 0	
 	while True:
@@ -567,6 +649,9 @@ def LoopStatusGen(totalSeq,perIndicate,addedInfo=None):
 		counter+=1	
 
 def removeFileExtension(stringFileName):
+	"""
+		Removes File Extension
+    	"""
 	filename = stringFileName.split('.')
 	lastExtension = filename[-1]
 	
@@ -587,6 +672,7 @@ def removeFileExtension(stringFileName):
 		
 
 def fieldsForAnnotatingAb():
+
 	abFields = {
 		"FULL_SEQ":None, #dna sequence 
 		"SEQ_HEADER":None, #header for dna sequence

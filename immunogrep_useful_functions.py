@@ -42,10 +42,14 @@ dna_codes = {
 
 
 def get_stdout(bash_command):
+	"""
+		Python wrapper for running python subprocess.call function
+		Returns the output from command
+    	"""
 	time=str(datetime.now()).replace(' ','').replace(':','').replace('/','').replace('\\','').replace('-','')
 	temp_file_name = 'scratch/stdout'+time+'.txt'			
 	#os.system(bash_command +" > {0}".format(temp_file_name))
-	subprocess.call(bash_command +" > {0}".format(temp_file_name),shell=True)
+	subprocess.call(bash_command +" > {0}".format(temp_file_name))
 	with open(temp_file_name) as e:
 		output = e.read().strip()		
 	os.remove(temp_file_name)
@@ -53,6 +57,11 @@ def get_stdout(bash_command):
 	return output
 
 def file_line_count(filepath):	
+	"""
+		 Takes a file path as input. Returns the number of lines in the file using wc -l
+        	.. warning::
+            		If path is not found, raises an error
+    	"""
 	if os.path.isfile(filepath):		
 		return int(get_stdout("wc -l '{0}'".format(filepath)).split()[0])# int(subprocess.check_output(['wc', '-l', filepath]).split()[0]) => subprocess.check_output creates zombie processes, so want to avoid that? 
 	else:
@@ -60,6 +69,9 @@ def file_line_count(filepath):
 
 
 def Reverse_Complement(x):
+	"""
+		Takes in sequence x and returns its complement (?)
+    	"""	
 	rc_list = [dna_codes[c] if c in dna_codes else 'N' if ord(c) <91 else 'n' for c in reversed(x)]
 	return ''.join(rc_list)
 
@@ -71,7 +83,22 @@ def Reverse_Complement(x):
 #number_lines_per_seq => number of lines that correspond to a single sequence (fastq files = 4, fastqfiles = 2)
 #contains_header_row => IMPORTANT, WE CANNOT JUST USE THE SPLIT COMMAND, INSTEAD WE HAVE TO USE AWK COMMAND THIS IS BECAUSE WE NEED TO CARRY OVER LINES TO EACH SPLIT FILE 
 def split_files_by_seq(filepath,num_files_to_make,number_lines_per_seq,contains_header_row):
-	#IMPORTANT => FIRST MAKE SURE FILES DO NOT START WITH ANY DOCUMENTATION FIELDS
+	"""
+		This function is used for splitting a single file into multiple little files. This will be useful for multithreading purposes.
+        	.. note::
+            	First make sure files do not start with any documentation fields
+	        =====================   =====================
+	        **Input**               **Description**
+	        ---------------------   ---------------------
+	        filepath                input file
+	        num_files_to_make       number of split files to create
+	        number_lines_per_seq    number of lines that correspond to a single sequence (fastq files = 4, fasta files =2)
+	        contains_header_row	True/False for whether the file contains a header row (i.e. TSV or CSV files have header rows)
+	        =====================   =====================
+	        .. important::
+	             We cannot just use the split command, instead we have to use awk command. This is because we need to copy header lines and IGREP documentation lines to each split file.
+    	"""
+	
 	num_doc_fields = 0 
 	#open file and make sure it does not start with documentation 
 	header_lines = ''
@@ -155,6 +182,16 @@ def split_files_by_seq(filepath,num_files_to_make,number_lines_per_seq,contains_
 	
 #runs an awk script for merging results from multiple files 
 def merge_multiple_files(file_list, num_header_lines=1,outfile=None):
+	"""
+        	Runs an awk script for merging results from multiple files
+        	=====================   =====================
+	        **Input**               **Description**
+	        ---------------------   ---------------------
+	        file_list               A list of strings corresponding to the path of all files to merge
+	        num_header_lines	The number of lines (x) in each file that correspond to a header row. When, FNR!=NR the first x lines are ignored. In other words only the first x lines from the first file are copied to the new file.
+	        outfile			The location of the output file (optional). When empty it defaults to the first input file +'.merged'
+	        =====================   =====================
+    	"""
 	if not outfile: #no outfile, then make default path 
 		outfile = file_list[0]+'.merged'		
 	
@@ -196,8 +233,35 @@ def merge_multiple_files(file_list, num_header_lines=1,outfile=None):
 #		flattened_dict.update(key_value)
 #	return flattened_dict
 
-test=type(ObjectId())
-def flatten_dictionary(d,val={},p='',start=True):		
+
+def flatten_dictionary(d,val={},p='',start=True):
+	"""
+		This function recursively flattens dictionaries.
+		All values in the dictionary that are found to be nested subdictionaries will be converted to keys containing '.'
+		This is very useful for moving all keys in a dictionary to the top level rather than having to access each subkey
+		See example below:
+		
+		Imagine a dictionary is passed as such: 
+			d  = {
+				'a':{'hello':5,
+				   'world':10}
+				'ok':10
+			}
+			
+		Running flatten_dictionary on this function will produce the following:
+		d = {
+			'a.hello':5,
+			'a.world':10,
+			'ok':10
+		}
+		
+		So rather than accesssing d['a']['hello']. we access d['a.hello']
+		
+		
+		.. important::
+	        	To perform the opposite of this function: Convert a flattened dictionary into a nested dictionary please refer to the DotAccessible function
+		
+    	"""
 	if start:
 		val = {}
 	for k,v in d.iteritems():			
@@ -211,17 +275,27 @@ def flatten_dictionary(d,val={},p='',start=True):
 
 
 def RemoveObjId(document):
-	for f,v in document.iteritems():
-		if isinstance(v,dict):
-			RemoveObjId(v)
-		#its an object id		
-		elif isinstance(v,oid_type):
-			document[f]=str(v)
-		elif isinstance(v,list) and isinstance(v[0],dict):
-			for sub_vals in v:
-				if isinstance(sub_vals,dict):
-					RemoveObjId(sub_vals)
-					
+	"""
+        	This function will recursively search all the values of a document/dictionary. Any value in the dictionary whose type is equal to a MongoDB ObjectId will be converted to a string.
+    		=====================   =====================
+	        **Input**               **Description**
+	        ---------------------   ---------------------
+	        document		A nested or flattened dictionary; or similarly a document returned by MongoDB
+	        =====================   =====================	
+    	"""
+	test=type(ObjectId())
+	def remove_oid(document):
+		for f,v in document.iteritems():
+			if isinstance(v,dict):
+				remove_oid(v)
+			#its an object id		
+			elif isinstance(v,oid_type):
+				document[f]=str(v)
+			elif isinstance(v,list) and isinstance(v[0],dict):
+				for sub_vals in v:
+					if isinstance(sub_vals,dict):
+						remove_oid(sub_vals)
+	remove_oid(document)					
 		
 #function description - this will extract a specific field from a file and write it to the output file as a  single column (without a header)
 #if count_field = None, then we assume there are no counts associated with the field of interest.  if count_field =is not None then we assume that column refers to the number of counts a sequence has occurred

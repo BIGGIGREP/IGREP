@@ -428,53 +428,51 @@
 <span class="c">#function description - this will extract a specific field from a file and write it to the output file as a  single column (without a header)</span>
 <span class="c">#if count_field = None, then we assume there are no counts associated with the field of interest.  if count_field =is not None then we assume that column refers to the number of counts a sequence has occurred</span></div>
 <div class="viewcode-block" id="Write_Single_Field"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.Write_Single_Field">[docs]</a><span class="k">def</span> <span class="nf">Write_Single_Field</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">outfile_location</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">field</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">count_field</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">contains_header</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">   		This will extract a specific field from a file and write it to the output file as a single column (without a header.)</span>
-<span class="sd">   		if *count_field* = None, then we assume there are no counts associated with the field of interest.</span>
-<span class="sd">   		If *count_field* =! None, then we assume that column refers to the number of counts a sequence has occurred</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">			This will extract a specific field from a file and write it to the output file as a single column (without a header.)</span>
+<span class="sd">			If *count_field* = None, then we assume there are no counts associated with the field of interest.</span>
+<span class="sd">			If *count_field* =! None, then we assume that column refers to the number of counts a sequence has occurred</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 
-	<span class="c"># total_data = 0</span>
-	<span class="c"># total_field = 0</span>
+	<span class="n">total_data</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="n">total_field</span> <span class="o">=</span> <span class="mi">0</span>
 
-	<span class="c"># if outfile_location==None:</span>
-	<span class="c"># 	outfile_location = filename+&#39;_singlefield.txt&#39;</span>
+	<span class="k">if</span> <span class="n">outfile_location</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+		<span class="n">outfile_location</span> <span class="o">=</span> <span class="n">filename</span><span class="o">+</span><span class="s">&#39;_singlefield.txt&#39;</span>
 
-	<span class="c"># if (filename):</span>
-	<span class="c"># 	isfile = os.path.isfile(filename)</span>
-	<span class="c"># if (filename==None) or (isfile==False):</span>
-	<span class="c"># 	raise Exception(&quot;The pathname of the file is invalid&quot;)</span>
-	<span class="c"># if (field==None):</span>
-	<span class="c"># 	IF_file = readwrite.immunogrepFile(filelocation=filename,filetype=&#39;TAB&#39;,contains_header=False,mode=&#39;r&#39;)</span>
-	<span class="c"># 	print(&quot;Warning no field name was provided.  This file will be treated as a tab file and the first column will be selected&quot;)</span>
-	<span class="c"># 	field=&#39;Column 1&#39;</span>
-	<span class="c"># else:</span>
-	<span class="c"># 	IF_file = readwrite.immunogrepFile(filelocation=filename,filetype=file_format,contains_header=contains_header,mode=&#39;r&#39;)</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+		<span class="n">isfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">filename</span><span class="o">==</span><span class="bp">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">isfile</span><span class="o">==</span><span class="bp">False</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;The pathname of the file is invalid&quot;</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">field</span><span class="o">==</span><span class="bp">None</span><span class="p">):</span>
+		<span class="n">IF_file</span> <span class="o">=</span> <span class="n">readwrite</span><span class="o">.</span><span class="n">immunogrepFile</span><span class="p">(</span><span class="n">filelocation</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span><span class="n">filetype</span><span class="o">=</span><span class="s">&#39;TAB&#39;</span><span class="p">,</span><span class="n">contains_header</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+		<span class="k">print</span><span class="p">(</span><span class="s">&quot;Warning no field name was provided.  This file will be treated as a tab file and the first column will be selected&quot;</span><span class="p">)</span>
+		<span class="n">field</span> <span class="o">=</span> <span class="s">&#39;Column 1&#39;</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">IF_file</span> <span class="o">=</span> <span class="n">readwrite</span><span class="o">.</span><span class="n">immunogrepFile</span><span class="p">(</span><span class="n">filelocation</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span><span class="n">filetype</span><span class="o">=</span><span class="n">file_format</span><span class="p">,</span><span class="n">contains_header</span><span class="o">=</span><span class="n">contains_header</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
 
-	<span class="c"># 	if (file_format==None):</span>
-	<span class="c"># 		guessedFiletype = IF_file.getFiletype()</span>
-	<span class="c"># 		print(&quot;Warning, no file type for this file was provided.  The file was predicted to be a &quot;+guessedFiletype+&quot; file.&quot;)</span>
-	<span class="c"># try:</span>
-	<span class="c"># 	outfile = open(outfile_location,&#39;w&#39;)</span>
-	<span class="c"># 	while not(IF_file.IFclass.eof):</span>
-	<span class="c"># 		data = IF_file.IFclass.read() #read in each line as a dictionary</span>
-	<span class="c"># 		if data:</span>
-	<span class="c"># 			total_data+=1</span>
-	<span class="c"># 			if field in data and data[field]:</span>
-	<span class="c"># 				value = data[field]</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">file_format</span><span class="o">==</span><span class="bp">None</span><span class="p">):</span>
+			<span class="n">guessedFiletype</span> <span class="o">=</span> <span class="n">IF_file</span><span class="o">.</span><span class="n">getFiletype</span><span class="p">()</span>
+			<span class="k">print</span><span class="p">(</span><span class="s">&quot;Warning, no file type for this file was provided.  The file was predicted to be a &quot;</span><span class="o">+</span><span class="n">guessedFiletype</span><span class="o">+</span><span class="s">&quot; file.&quot;</span><span class="p">)</span>
+	<span class="k">try</span><span class="p">:</span>
+		<span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile_location</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+		<span class="k">while</span> <span class="ow">not</span><span class="p">(</span><span class="n">IF_file</span><span class="o">.</span><span class="n">IFclass</span><span class="o">.</span><span class="n">eof</span><span class="p">):</span>
+			<span class="n">data</span> <span class="o">=</span> <span class="n">IF_file</span><span class="o">.</span><span class="n">IFclass</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="c">#read in each line as a dictionary</span>
+			<span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+				<span class="n">total_data</span><span class="o">+=</span><span class="mi">1</span>
+				<span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">data</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="n">field</span><span class="p">]:</span>
+					<span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+					<span class="k">if</span> <span class="n">count_field</span><span class="o">!=</span><span class="bp">None</span> <span class="ow">and</span> <span class="n">count_field</span> <span class="ow">in</span> <span class="n">data</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="n">count_field</span><span class="p">]:</span>
+						<span class="n">count</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">count_field</span><span class="p">]</span> <span class="c">#this defines the number of times we will write it to a file</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="n">count</span> <span class="o">=</span> <span class="s">&#39;1&#39;</span>
+					<span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">value</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">+</span><span class="n">count</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span><span class="c">#write sequence to new file</span>
+					<span class="n">total_field</span><span class="o">+=</span><span class="mi">1</span>
+	<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+		<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">outfile_location</span><span class="p">)</span><span class="c">#(&quot;rm &#39;{0}&#39;&quot;.format(outfile_location))</span>
+		<span class="n">print_error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
-	<span class="c"># 				if count_field!=None and count_field in data and data[count_field]:</span>
-	<span class="c"># 					count = data[count_field] #this defines the number of times we will write it to a file</span>
-	<span class="c"># 				else:</span>
-	<span class="c"># 					count = &#39;1&#39;</span>
-
-	<span class="c"># 				outfile.write(value+&#39;\t&#39;+count+&#39;\n&#39;)#write sequence to new file</span>
-	<span class="c"># 				total_field+=1</span>
-	<span class="c"># except Exception as e:</span>
-	<span class="c"># 	os.remove(outfile_location)#(&quot;rm &#39;{0}&#39;&quot;.format(outfile_location))</span>
-	<span class="c"># 	print_error(e)</span>
-
-	<span class="c"># return [total_data,total_field]</span>
+	<span class="k">return</span> <span class="p">[</span><span class="n">total_data</span><span class="p">,</span><span class="n">total_field</span><span class="p">]</span>
 
 
 <span class="c">#Simple python command for counting the occurrences of a sequence ina file.</span>

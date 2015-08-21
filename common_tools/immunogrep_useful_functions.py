@@ -312,53 +312,51 @@ def RemoveObjId(document):
 #function description - this will extract a specific field from a file and write it to the output file as a  single column (without a header)
 #if count_field = None, then we assume there are no counts associated with the field of interest.  if count_field =is not None then we assume that column refers to the number of counts a sequence has occurred
 def Write_Single_Field(filename=None,outfile_location=None,field=None,count_field = None, file_format=None,contains_header=True):
-    '''
-   		This will extract a specific field from a file and write it to the output file as a single column (without a header.)
-   		if *count_field* = None, then we assume there are no counts associated with the field of interest.
-   		If *count_field* =! None, then we assume that column refers to the number of counts a sequence has occurred
-    '''
+	"""
+			This will extract a specific field from a file and write it to the output file as a single column (without a header.)
+			If *count_field* = None, then we assume there are no counts associated with the field of interest.
+			If *count_field* =! None, then we assume that column refers to the number of counts a sequence has occurred
+	"""
 
-	# total_data = 0
-	# total_field = 0
+	total_data = 0
+	total_field = 0
 
-	# if outfile_location==None:
-	# 	outfile_location = filename+'_singlefield.txt'
+	if outfile_location == None:
+		outfile_location = filename+'_singlefield.txt'
 
-	# if (filename):
-	# 	isfile = os.path.isfile(filename)
-	# if (filename==None) or (isfile==False):
-	# 	raise Exception("The pathname of the file is invalid")
-	# if (field==None):
-	# 	IF_file = readwrite.immunogrepFile(filelocation=filename,filetype='TAB',contains_header=False,mode='r')
-	# 	print("Warning no field name was provided.  This file will be treated as a tab file and the first column will be selected")
-	# 	field='Column 1'
-	# else:
-	# 	IF_file = readwrite.immunogrepFile(filelocation=filename,filetype=file_format,contains_header=contains_header,mode='r')
+	if (filename):
+		isfile = os.path.isfile(filename)
+	if (filename==None) or (isfile==False):
+		raise Exception("The pathname of the file is invalid")
+	if (field==None):
+		IF_file = readwrite.immunogrepFile(filelocation=filename,filetype='TAB',contains_header=False,mode='r')
+		print("Warning no field name was provided.  This file will be treated as a tab file and the first column will be selected")
+		field = 'Column 1'
+	else:
+		IF_file = readwrite.immunogrepFile(filelocation=filename,filetype=file_format,contains_header=contains_header,mode='r')
 
-	# 	if (file_format==None):
-	# 		guessedFiletype = IF_file.getFiletype()
-	# 		print("Warning, no file type for this file was provided.  The file was predicted to be a "+guessedFiletype+" file.")
-	# try:
-	# 	outfile = open(outfile_location,'w')
-	# 	while not(IF_file.IFclass.eof):
-	# 		data = IF_file.IFclass.read() #read in each line as a dictionary
-	# 		if data:
-	# 			total_data+=1
-	# 			if field in data and data[field]:
-	# 				value = data[field]
+		if (file_format==None):
+			guessedFiletype = IF_file.getFiletype()
+			print("Warning, no file type for this file was provided.  The file was predicted to be a "+guessedFiletype+" file.")
+	try:
+		outfile = open(outfile_location,'w')
+		while not(IF_file.IFclass.eof):
+			data = IF_file.IFclass.read() #read in each line as a dictionary
+			if data:
+				total_data+=1
+				if field in data and data[field]:
+					value = data[field]
+					if count_field!=None and count_field in data and data[count_field]:
+						count = data[count_field] #this defines the number of times we will write it to a file
+					else:
+						count = '1'
+					outfile.write(value+'\t'+count+'\n')#write sequence to new file
+					total_field+=1
+	except Exception as e:
+		os.remove(outfile_location)#("rm '{0}'".format(outfile_location))
+		print_error(e)
 
-	# 				if count_field!=None and count_field in data and data[count_field]:
-	# 					count = data[count_field] #this defines the number of times we will write it to a file
-	# 				else:
-	# 					count = '1'
-
-	# 				outfile.write(value+'\t'+count+'\n')#write sequence to new file
-	# 				total_field+=1
-	# except Exception as e:
-	# 	os.remove(outfile_location)#("rm '{0}'".format(outfile_location))
-	# 	print_error(e)
-
-	# return [total_data,total_field]
+	return [total_data,total_field]
 
 
 #Simple python command for counting the occurrences of a sequence ina file.

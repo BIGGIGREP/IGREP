@@ -7,7 +7,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Immunogrep Read File &mdash; IGREP 1.0.0 documentation</title>
+  <title>Immunogrepfile &mdash; IGREP 1.0.0 documentation</title>
   
 
   
@@ -72,7 +72,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Functions.html#insidefunc">Functions</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Immunogrep Read File</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Immunogrepfile</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#variables">Variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-immunogrep_read_file">Header Extraction Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#immunogrep-classes">Immunogrep Classes</a></li>
@@ -102,7 +102,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li>Immunogrep Read File</li>
+    <li>Immunogrepfile</li>
       <li class="wy-breadcrumbs-aside">
         
           <a href="_sources/IGfile.txt" rel="nofollow"> View page source</a>
@@ -113,8 +113,8 @@
 </div>
           <div role="main" class="document">
             
-  <div class="section" id="immunogrep-read-file">
-<span id="immunogrepfile"></span><h1>Immunogrep Read File<a class="headerlink" href="#immunogrep-read-file" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="immunogrepfile">
+<span id="id1"></span><h1>Immunogrepfile<a class="headerlink" href="#immunogrepfile" title="Permalink to this headline">¶</a></h1>
 <p>Contents:</p>
 <ul>
 <li><p class="first"><a class="reference internal" href="#filevariables"><span>Variables</span></a></p>
@@ -151,7 +151,39 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">current_filetypes:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"></td>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><table border="1" class="first last docutils">
+<colgroup>
+<col width="16%" />
+<col width="84%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>Filetype</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>FASTA</td>
+<td>fna, fasta</td>
+</tr>
+<tr class="row-odd"><td>TAB</td>
+<td>txt, tab</td>
+</tr>
+<tr class="row-even"><td>CSV</td>
+<td>csv</td>
+</tr>
+<tr class="row-odd"><td>FASTQ</td>
+<td>fastq</td>
+</tr>
+<tr class="row-even"><td>JSON</td>
+<td>json, annotation, analysis, query, iffile, IFFile</td>
+</tr>
+<tr class="row-odd"><td>DELIM</td>
+<td>delim</td>
+</tr>
+<tr class="row-even"><td>IMGT</td>
+<td>imgt</td>
+</tr>
+</tbody>
+</table>
+</td>
 </tr>
 </tbody>
 </table>
@@ -184,7 +216,12 @@
 <div class="section" id="immunogrep-classes">
 <span id="fileclasses"></span><h2>Immunogrep Classes<a class="headerlink" href="#immunogrep-classes" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>consists of several classes to import various file types</div></blockquote>
+<div><p>Consists of several classes to import various file types. Many of the classes have similar functions.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference internal" href="#immunogrep_read_file.immunogrepFile" title="immunogrep_read_file.immunogrepFile"><code class="xref py py-class docutils literal"><span class="pre">immunogrepFile</span></code></a> is the primary class that is run.</p>
+</div>
+</div></blockquote>
 <dl class="class">
 <dt id="immunogrep_read_file.immunogrepFile">
 <em class="property">class </em><code class="descclassname">immunogrep_read_file.</code><code class="descname">immunogrepFile</code><span class="sig-paren">(</span><em>filelocation</em>, <em>filetype=None</em>, <em>decoratorinfo=None</em>, <em>delimiter=None</em>, <em>contains_header=True</em>, <em>mode='r'</em>, <em>field_names=[]</em>, <em>chunk_size=1</em>, <em>important_headers_only=True</em>, <em>include_parameters_file=False</em>, <em>required_files=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile" title="Permalink to this definition">¶</a></dt>

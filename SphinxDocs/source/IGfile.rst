@@ -1,8 +1,8 @@
 
 .. _immunogrepfile:
 
-Immunogrep Read File
-====================
+Immunogrepfile
+==============
 
 Contents:
 
@@ -26,6 +26,18 @@ Variables
 '''''''''
 :current_filetypes:
 
+    =========   =================
+    Filetype
+    ---------   -----------------
+    FASTA       fna, fasta
+    TAB         txt, tab
+    CSV         csv
+    FASTQ       fastq
+    JSON        json, annotation, analysis, query, iffile, IFFile
+    DELIM       delim
+    IMGT        imgt
+    =========   =================
+
 :ref:`^To Top <immunogrepfile>`
 
 .. _fileheaders:
@@ -43,7 +55,10 @@ Header Extraction Functions
 
 Immunogrep Classes
 ''''''''''''''''''
-    consists of several classes to import various file types
+    Consists of several classes to import various file types. Many of the classes have similar functions.
+
+    .. note::
+        :py:class:`.immunogrepFile` is the primary class that is run.
 
 .. autoclass:: immunogrepFile
     :members:

@@ -1,8 +1,8 @@
 
 .. _immunogrepfile:
 
-Immunogrepfile
-==============
+Immunogrep Read File
+====================
 
 Contents:
 
@@ -33,7 +33,7 @@ Variables
 Header Extraction Functions
 '''''''''''''''''''''''''''
 
-.. automodule:: immunogrepfilep_immunogrepfile
+.. automodule:: immunogrep_read_file
     :members: GetAdditionalInfo, find_imgt_file_type_index, GroupIMGTFiles, ReadIgBlastQueryBlock
     :undoc-members:
 

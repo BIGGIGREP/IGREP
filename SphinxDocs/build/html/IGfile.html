@@ -1,0 +1,656 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Immunogrep Read File &mdash; IGREP 1.0.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700&subset=latin,cyrillic' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IGREP 1.0.0 documentation" href="index.html"/>
+        <link rel="prev" title="Useful Functions" href="Functions.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> IGREP</a>
+        
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Variables.html">Global Variables</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Variables.html#list-of-variables">List of variables</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Functions.html">Useful Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Functions.html#contents">Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Functions.html#insidefunc">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Immunogrep Read File</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#variables">Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-immunogrep_read_file">Header Extraction Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#immunogrep-classes">Immunogrep Classes</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">IGREP</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Immunogrep Read File</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/IGfile.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="immunogrep-read-file">
+<span id="immunogrepfile"></span><h1>Immunogrep Read File<a class="headerlink" href="#immunogrep-read-file" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<ul>
+<li><p class="first"><a class="reference internal" href="#filevariables"><span>Variables</span></a></p>
+</li>
+<li><dl class="first docutils">
+<dt><a class="reference internal" href="#fileheaders"><span>Header Extraction Functions</span></a></dt>
+<dd><ul class="first last simple">
+<li><a class="reference internal" href="#immunogrep_read_file.GetAdditionalInfo" title="immunogrep_read_file.GetAdditionalInfo"><code class="xref py py-func docutils literal"><span class="pre">GetAdditionalInfo()</span></code></a></li>
+<li><a class="reference internal" href="#immunogrep_read_file.find_imgt_file_type_index" title="immunogrep_read_file.find_imgt_file_type_index"><code class="xref py py-func docutils literal"><span class="pre">find_imgt_file_type_index()</span></code></a></li>
+<li><a class="reference internal" href="#immunogrep_read_file.GroupIMGTFiles" title="immunogrep_read_file.GroupIMGTFiles"><code class="xref py py-func docutils literal"><span class="pre">GroupIMGTFiles()</span></code></a></li>
+<li><a class="reference internal" href="#immunogrep_read_file.ReadIgBlastQueryBlock" title="immunogrep_read_file.ReadIgBlastQueryBlock"><code class="xref py py-func docutils literal"><span class="pre">ReadIgBlastQueryBlock()</span></code></a></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><a class="reference internal" href="#fileclasses"><span>Classes</span></a></dt>
+<dd><ul class="first last simple">
+<li><a class="reference internal" href="#immunogrep_read_file.immunogrepFile" title="immunogrep_read_file.immunogrepFile"><code class="xref py py-class docutils literal"><span class="pre">immunogrepFile</span></code></a></li>
+<li><a class="reference internal" href="#immunogrep_read_file.immunogrepFASTA" title="immunogrep_read_file.immunogrepFASTA"><code class="xref py py-class docutils literal"><span class="pre">immunogrepFASTA</span></code></a></li>
+<li><a class="reference internal" href="#immunogrep_read_file.immunogrepFASTQ" title="immunogrep_read_file.immunogrepFASTQ"><code class="xref py py-class docutils literal"><span class="pre">immunogrepFASTQ</span></code></a></li>
+<li><a class="reference internal" href="#immunogrep_read_file.immunogrepDELIM" title="immunogrep_read_file.immunogrepDELIM"><code class="xref py py-class docutils literal"><span class="pre">immunogrepDELIM</span></code></a></li>
+<li><a class="reference internal" href="#immunogrep_read_file.immunogrepIMGT" title="immunogrep_read_file.immunogrepIMGT"><code class="xref py py-class docutils literal"><span class="pre">immunogrepIMGT</span></code></a></li>
+<li><a class="reference internal" href="#immunogrep_read_file.immunogrepJSON" title="immunogrep_read_file.immunogrepJSON"><code class="xref py py-class docutils literal"><span class="pre">immunogrepJSON</span></code></a></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<div class="section" id="variables">
+<span id="filevariables"></span><h2>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">current_filetypes:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p><a class="reference internal" href="#immunogrepfile"><span>^To Top</span></a></p>
+</div>
+<div class="section" id="module-immunogrep_read_file">
+<span id="header-extraction-functions"></span><span id="fileheaders"></span><h2>Header Extraction Functions<a class="headerlink" href="#module-immunogrep_read_file" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="immunogrep_read_file.GetAdditionalInfo">
+<code class="descclassname">immunogrep_read_file.</code><code class="descname">GetAdditionalInfo</code><span class="sig-paren">(</span><em>header_line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#GetAdditionalInfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.GetAdditionalInfo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_read_file.find_imgt_file_type_index">
+<code class="descclassname">immunogrep_read_file.</code><code class="descname">find_imgt_file_type_index</code><span class="sig-paren">(</span><em>filename</em>, <em>important_headers_only=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#find_imgt_file_type_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.find_imgt_file_type_index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_read_file.GroupIMGTFiles">
+<code class="descclassname">immunogrep_read_file.</code><code class="descname">GroupIMGTFiles</code><span class="sig-paren">(</span><em>imgt_files</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#GroupIMGTFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.GroupIMGTFiles" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_read_file.ReadIgBlastQueryBlock">
+<code class="descclassname">immunogrep_read_file.</code><code class="descname">ReadIgBlastQueryBlock</code><span class="sig-paren">(</span><em>f1</em>, <em>igblast_eof=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#ReadIgBlastQueryBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.ReadIgBlastQueryBlock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p><a class="reference internal" href="#immunogrepfile"><span>^To Top</span></a></p>
+</div>
+<div class="section" id="immunogrep-classes">
+<span id="fileclasses"></span><h2>Immunogrep Classes<a class="headerlink" href="#immunogrep-classes" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div>consists of several classes to import various file types</div></blockquote>
+<dl class="class">
+<dt id="immunogrep_read_file.immunogrepFile">
+<em class="property">class </em><code class="descclassname">immunogrep_read_file.</code><code class="descname">immunogrepFile</code><span class="sig-paren">(</span><em>filelocation</em>, <em>filetype=None</em>, <em>decoratorinfo=None</em>, <em>delimiter=None</em>, <em>contains_header=True</em>, <em>mode='r'</em>, <em>field_names=[]</em>, <em>chunk_size=1</em>, <em>important_headers_only=True</em>, <em>include_parameters_file=False</em>, <em>required_files=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.convert2CSV">
+<code class="descname">convert2CSV</code><span class="sig-paren">(</span><em>descriptionlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.convert2CSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.convert2CSV" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.convert2Delim">
+<code class="descname">convert2Delim</code><span class="sig-paren">(</span><em>descriptionlist</em>, <em>delimiter</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.convert2Delim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.convert2Delim" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.convert2FASTA">
+<code class="descname">convert2FASTA</code><span class="sig-paren">(</span><em>headervar</em>, <em>sequencevar</em>, <em>keepinfo=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.convert2FASTA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.convert2FASTA" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.convert2FASTQ">
+<code class="descname">convert2FASTQ</code><span class="sig-paren">(</span><em>headervar</em>, <em>sequencevar</em>, <em>qualvar</em>, <em>keepinfo=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.convert2FASTQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.convert2FASTQ" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.convert2TAB">
+<code class="descname">convert2TAB</code><span class="sig-paren">(</span><em>descriptionlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.convert2TAB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.convert2TAB" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.create">
+<code class="descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.getDecoratorinfo">
+<code class="descname">getDecoratorinfo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.getDecoratorinfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.getDecoratorinfo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.getDescription">
+<code class="descname">getDescription</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.getDescription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.getDescription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.getFilelocation">
+<code class="descname">getFilelocation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.getFilelocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.getFilelocation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.getFiletype">
+<code class="descname">getFiletype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.getFiletype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.getFiletype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.getTranslation">
+<code class="descname">getTranslation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.getTranslation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.getTranslation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.guessFiletype">
+<code class="descname">guessFiletype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.guessFiletype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.guessFiletype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.isCSV">
+<code class="descname">isCSV</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.isCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.isCSV" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.isDelim">
+<code class="descname">isDelim</code><span class="sig-paren">(</span><em>delimiter</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.isDelim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.isDelim" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.isFASTA">
+<code class="descname">isFASTA</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.isFASTA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.isFASTA" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.isFASTQ">
+<code class="descname">isFASTQ</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.isFASTQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.isFASTQ" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.isJSON">
+<code class="descname">isJSON</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.isJSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.isJSON" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.isTAB">
+<code class="descname">isTAB</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.isTAB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.isTAB" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.isimmunogrepFile">
+<code class="descname">isimmunogrepFile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.isimmunogrepFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.isimmunogrepFile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFile.read">
+<code class="descname">read</code><span class="sig-paren">(</span><em>dummy_var=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFile.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFile.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="immunogrep_read_file.immunogrepFASTA">
+<em class="property">class </em><code class="descclassname">immunogrep_read_file.</code><code class="descname">immunogrepFASTA</code><span class="sig-paren">(</span><em>filelocation</em>, <em>filetype</em>, <em>decoratorinfo={'DESCRIPTION': ['header'</em>, <em>'sequence']}</em>, <em>contains_header=False</em>, <em>mode='r'</em>, <em>field_names=[]</em>, <em>chunk_size=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.Extract_Header">
+<code class="descname">Extract_Header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.Extract_Header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.Extract_Header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.convert2IF">
+<code class="descname">convert2IF</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.convert2IF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.convert2IF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.create">
+<code class="descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.getDecoratorinfo">
+<code class="descname">getDecoratorinfo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.getDecoratorinfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.getDecoratorinfo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.getDescription">
+<code class="descname">getDescription</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.getDescription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.getDescription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.getFilelocation">
+<code class="descname">getFilelocation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.getFilelocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.getFilelocation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.getFiletype">
+<code class="descname">getFiletype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.getFiletype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.getFiletype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.getTranslation">
+<code class="descname">getTranslation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.getTranslation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.getTranslation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTA.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>content</em>, <em>additionalinfo=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTA.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTA.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="immunogrep_read_file.immunogrepFASTQ">
+<em class="property">class </em><code class="descclassname">immunogrep_read_file.</code><code class="descname">immunogrepFASTQ</code><span class="sig-paren">(</span><em>filelocation</em>, <em>filetype</em>, <em>decoratorinfo={'DESCRIPTION': ['header'</em>, <em>'sequence'</em>, <em>'phred']}</em>, <em>contains_header=False</em>, <em>mode='r'</em>, <em>field_names=[]</em>, <em>chunk_size=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.Extract_Header">
+<code class="descname">Extract_Header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.Extract_Header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.Extract_Header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.convert2IF">
+<code class="descname">convert2IF</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.convert2IF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.convert2IF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.create">
+<code class="descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.getDecoratorinfo">
+<code class="descname">getDecoratorinfo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.getDecoratorinfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.getDecoratorinfo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.getDescription">
+<code class="descname">getDescription</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.getDescription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.getDescription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.getFilelocation">
+<code class="descname">getFilelocation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.getFilelocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.getFilelocation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.getFiletype">
+<code class="descname">getFiletype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.getFiletype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.getFiletype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.getTranslation">
+<code class="descname">getTranslation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.getTranslation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.getTranslation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepFASTQ.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>content</em>, <em>additionalinfo=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepFASTQ.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepFASTQ.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="immunogrep_read_file.immunogrepDELIM">
+<em class="property">class </em><code class="descclassname">immunogrep_read_file.</code><code class="descname">immunogrepDELIM</code><span class="sig-paren">(</span><em>filelocation</em>, <em>filetype</em>, <em>decoratorinfo</em>, <em>delimiter</em>, <em>contains_header=True</em>, <em>mode='r'</em>, <em>field_names=[]</em>, <em>chunk_size=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.Extract_Header">
+<code class="descname">Extract_Header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.Extract_Header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.Extract_Header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.convert2IF">
+<code class="descname">convert2IF</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.convert2IF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.convert2IF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.create">
+<code class="descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.getDecoratorinfo">
+<code class="descname">getDecoratorinfo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.getDecoratorinfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.getDecoratorinfo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.getDescription">
+<code class="descname">getDescription</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.getDescription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.getDescription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.getFilelocation">
+<code class="descname">getFilelocation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.getFilelocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.getFilelocation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.getFiletype">
+<code class="descname">getFiletype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.getFiletype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.getFiletype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.getTranslation">
+<code class="descname">getTranslation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.getTranslation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.getTranslation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepDELIM.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>content</em>, <em>additionalinfo=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepDELIM.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepDELIM.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="immunogrep_read_file.immunogrepJSON">
+<em class="property">class </em><code class="descclassname">immunogrep_read_file.</code><code class="descname">immunogrepJSON</code><span class="sig-paren">(</span><em>filelocation</em>, <em>filetype</em>, <em>decoratorinfo</em>, <em>contains_header=False</em>, <em>mode='r'</em>, <em>field_names=[]</em>, <em>chunk_size=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="immunogrep_read_file.immunogrepJSON.Extract_Header">
+<code class="descname">Extract_Header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON.Extract_Header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON.Extract_Header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepJSON.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepJSON.create">
+<code class="descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepJSON.getDecoratorinfo">
+<code class="descname">getDecoratorinfo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON.getDecoratorinfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON.getDecoratorinfo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepJSON.getDescription">
+<code class="descname">getDescription</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON.getDescription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON.getDescription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepJSON.getFilelocation">
+<code class="descname">getFilelocation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON.getFilelocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON.getFilelocation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepJSON.getFiletype">
+<code class="descname">getFiletype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON.getFiletype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON.getFiletype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepJSON.getTranslation">
+<code class="descname">getTranslation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON.getTranslation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON.getTranslation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepJSON.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepJSON.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>content</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepJSON.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepJSON.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="immunogrep_read_file.immunogrepIMGT">
+<em class="property">class </em><code class="descclassname">immunogrep_read_file.</code><code class="descname">immunogrepIMGT</code><span class="sig-paren">(</span><em>imgtfiles</em>, <em>important_headers_only=True</em>, <em>field_names=[]</em>, <em>required_files=0</em>, <em>include_parameters_file=False</em>, <em>chunk_size=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.CheckForDBID">
+<code class="descname">CheckForDBID</code><span class="sig-paren">(</span><em>sequence_header</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.CheckForDBID"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.CheckForDBID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.Extract_Header">
+<code class="descname">Extract_Header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.Extract_Header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.Extract_Header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.IMGT_Reader_Gen">
+<code class="descname">IMGT_Reader_Gen</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.IMGT_Reader_Gen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.IMGT_Reader_Gen" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.getDecoratorinfo">
+<code class="descname">getDecoratorinfo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.getDecoratorinfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.getDecoratorinfo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.getDescription">
+<code class="descname">getDescription</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.getDescription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.getDescription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.getFilelocation">
+<code class="descname">getFilelocation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.getFilelocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.getFilelocation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.getFiletype">
+<code class="descname">getFiletype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.getFiletype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.getFiletype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.getTranslation">
+<code class="descname">getTranslation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.getTranslation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.getTranslation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.treat_these_fields_specially">
+<code class="descname">treat_these_fields_specially</code><span class="sig-paren">(</span><em>key</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.treat_these_fields_specially"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.treat_these_fields_specially" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_read_file.immunogrepIMGT.treat_these_fields_specially2">
+<code class="descname">treat_these_fields_specially2</code><span class="sig-paren">(</span><em>key</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_read_file.html#immunogrepIMGT.treat_these_fields_specially2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_read_file.immunogrepIMGT.treat_these_fields_specially2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<p><a class="reference internal" href="#immunogrepfile"><span>^To Top</span></a></p>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="Functions.html" class="btn btn-neutral" title="Useful Functions"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Costas.
+    </p>
+  </div>
+
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+  
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

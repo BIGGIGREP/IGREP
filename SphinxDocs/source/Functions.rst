@@ -34,7 +34,7 @@ Contents
 Functions
 '''''''''
 
-.. automodule:: immunogrep_useful_immunogrep_functions
+.. automodule:: immunogrep_useful_functions
     :members:
     :undoc-members:
 

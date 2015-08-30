@@ -1,0 +1,274 @@
+###ERROR AT: 2015-08-29 17:12:55.741000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150829171254733000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 107, in handle_POST
+    user_dict = db_reader.users.find_one({'user':ap_user},{'_id':0})
+NameError: name 'db_reader' is not defined
+########################################
+
+
+###ERROR AT: 2015-08-29 17:37:58.030000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150829173757010000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 103, in handle_POST
+    [db_reader,_ig_]= igdbconnect.connectToIgDatabase('reader',password_dict['reader'])
+NameError: name 'igdbconnect' is not defined
+########################################
+
+
+###ERROR AT: 2015-08-29 17:44:36.790000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150829174434611000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 128, in handle_POST
+    new_query_object._return_results(wfile) #ok all commands have been run, lets return the results via proxy
+  File "../common_tools/immunogrep_db_query_api.py", line 1351, in _return_results
+    wfile.write(Simple_Process_Output(self.query_results)+'\n')
+AttributeError: 'str' object has no attribute 'write'
+########################################
+
+
+###ERROR AT: 2015-08-29 17:47:25.960000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150829174724535000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 128, in handle_POST
+    new_query_object._return_results(wfile) #ok all commands have been run, lets return the results via proxy
+  File "../common_tools/immunogrep_db_query_api.py", line 1351, in _return_results
+    wfile.write(Simple_Process_Output(self.query_results)+'\n')
+  File "../common_tools/immunogrep_db_query_api.py", line 1143, in Simple_Process_Output
+    RemoveObjId(document)
+  File "../common_tools/immunogrep_useful_functions.py", line 343, in RemoveObjId
+    test=type(ObjectId())
+NameError: global name 'ObjectId' is not defined
+########################################
+
+
+###ERROR AT: 2015-08-29 17:52:53.005000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150829175251500000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 128, in handle_POST
+    new_query_object._return_results(wfile) #ok all commands have been run, lets return the results via proxy
+  File "../common_tools/immunogrep_db_query_api.py", line 1351, in _return_results
+    wfile.write(Simple_Process_Output(self.query_results)+'\n')
+  File "../common_tools/immunogrep_db_query_api.py", line 1143, in Simple_Process_Output
+    RemoveObjId(document)
+  File "../common_tools/immunogrep_useful_functions.py", line 343, in RemoveObjId
+    test=type(ObjectId())
+NameError: global name 'ObjectId' is not defined
+########################################
+
+
+###ERROR AT: 2015-08-29 17:55:12.636000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150829175511218000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 128, in handle_POST
+    new_query_object._return_results(wfile) #ok all commands have been run, lets return the results via proxy
+  File "../common_tools/immunogrep_db_query_api.py", line 1351, in _return_results
+    wfile.write(Simple_Process_Output(self.query_results)+'\n')
+  File "../common_tools/immunogrep_db_query_api.py", line 1143, in Simple_Process_Output
+    RemoveObjId(document)
+  File "../common_tools/immunogrep_useful_functions.py", line 356, in RemoveObjId
+    remove_oid(document)
+  File "../common_tools/immunogrep_useful_functions.py", line 350, in remove_oid
+    elif isinstance(v,oid_type):
+NameError: global name 'oid_type' is not defined
+########################################
+
+
+###ERROR AT: 2015-08-29 22:09:17.068000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150829220855963000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 52, in handle_POST
+    [db_reader,_ig_]= igdbconnect.connectToIgDatabase('reader',password_dict['reader'])
+  File "../common_tools/immunogrep_igdbtools.py", line 60, in connectToIgDatabase
+    [db,connection] = ig_DB_PATH()
+  File "../common_tools/immunogrep_igdbtools.py", line 31, in ig_DB_PATH
+    connection = pymongo.MongoClient(host=whichserver,port=port)
+  File "C:\Users\constantine\Anaconda\lib\site-packages\pymongo\mongo_client.py", line 377, in __init__
+    raise ConnectionFailure(str(e))
+ConnectionFailure: timed out
+########################################
+
+
+###ERROR AT: 2015-08-29 23:35:29.964000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150829233508862000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 52, in handle_POST
+    [db_reader,_ig_]= igdbconnect.connectToIgDatabase('reader',password_dict['reader'])
+  File "../common_tools/immunogrep_igdbtools.py", line 60, in connectToIgDatabase
+    [db,connection] = ig_DB_PATH()
+  File "../common_tools/immunogrep_igdbtools.py", line 31, in ig_DB_PATH
+    connection = pymongo.MongoClient(host=whichserver,port=port)
+  File "C:\Users\constantine\Anaconda\lib\site-packages\pymongo\mongo_client.py", line 377, in __init__
+    raise ConnectionFailure(str(e))
+ConnectionFailure: timed out
+########################################
+
+
+###ERROR AT: 2015-08-29 23:36:21.953000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150829233600940000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 52, in handle_POST
+    [db_reader,_ig_]= igdbconnect.connectToIgDatabase('reader',password_dict['reader'])
+  File "../common_tools/immunogrep_igdbtools.py", line 60, in connectToIgDatabase
+    [db,connection] = ig_DB_PATH()
+  File "../common_tools/immunogrep_igdbtools.py", line 31, in ig_DB_PATH
+    connection = pymongo.MongoClient(host=whichserver,port=port)
+  File "C:\Users\constantine\Anaconda\lib\site-packages\pymongo\mongo_client.py", line 377, in __init__
+    raise ConnectionFailure(str(e))
+ConnectionFailure: timed out
+########################################
+
+

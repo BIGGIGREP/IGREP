@@ -18,9 +18,9 @@ except:
 from collections import defaultdict
 
 
-#import immunogrep_useful_immunogrep_functions as useful#import removeNoneVals
-#from immunogrep_useful_immunogrep_functions import fieldsForAnnotatingAb
-#from immunogrep_useful_immunogrep_functions import removeFileExtension
+#import immunogrep_useful_functions as useful#import removeNoneVals
+#from immunogrep_useful_functions import fieldsForAnnotatingAb
+#from immunogrep_useful_functions import removeFileExtension
 
 # +++++++++++++++++++++++++++++
 # +Importing Global variables +

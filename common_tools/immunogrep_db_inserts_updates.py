@@ -10,7 +10,7 @@ from immunogrep_global_variables import seqRawData
 from immunogrep_global_variables import idIdentifier
 from immunogrep_global_variables import expIdentifier
 import immunogrep_database_schema as schema
-import immunogrep_useful_immunogrep_functions as useful 
+import immunogrep_useful_functions as useful 
 import copy
 
 from cchrysostomou_igdbtools_proxy import connectToIgDatabase as connect_to_ig_database

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+	<style>
+		.login{
+			margin: 80px auto;
+			background-color: #FFF;
+			width: 600px;
+			border-radius: 6px;
+			box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.35);
+			font: 13px "Signika",sans-serif;
+			padding: 1px 10px 10px;
+			color: #777;
+		}
+
+		.login h2 {
+			font-family: "Titillium Web";
+			font-size: 18pt;
+			font-weight: lighter;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #00CBCF;
+			text-align: center;
+		}
+
+		.login .button {
+			font-weight: normal;
+			color: #FFF;
+			padding: 10px 15px;
+			background: rgba(64, 197, 152, 0.85) none repeat scroll 0% 0%;
+			text-shadow: none;
+			border: medium none;
+			box-shadow: none;
+			font-size: 16px;
+			cursor: pointer;
+			font-family: Signika;
+			border-radius: 5px;
+		}
+
+		.login input {
+			display: block;
+			width: 300px;
+			height: 30px;
+			padding: 5px;
+			margin: 0px auto 10px;
+			border-radius: 5px;
+		}
+
+	</style>
+</head>
+<body>
+	<div class="login">
+		<h2>Login</h2>		
+
+		<div style="padding-bottom:18px;"></div>
+		
+		<form accept-charset="UTF-8" action="/sessions?" method="post">
+			<div style="margin:0;padding:0;display:inline"><input name="utf8" value="✓" type="hidden"><input name="authenticity_token" value="LMRAutGuGj/D2QQxfQnnnmYHy9HdUUGhsJbkizjkDCU=" type="hidden"></div>
+			<div class="errors">
+			</div>
+			<input id="session_name" name="session[name]" placeholder="Username" size="30" value="" type="text">
+			<input id="session_password" name="session[password]" placeholder="Password" size="30" type="password">
+			<div align="center">
+				<button type="submit" class="button" id="submitButton" name="commit" value="Log in">Log in</button>
+			</div>
+		</form>		
+
+	</div>
+</body>
+</html>

@@ -50,18 +50,18 @@ class HtppIgrepHandler():
 			metadata_from_experiment_database   All metadata associated with experiments List of dictionaries
 	        ===============						================						================
 		"""
-		
-		
+				
 		# CREATE an instance of the class made to query data via proxy from database		
 		exp_collection_data = query.RunQuery(proxy_path=proxy_path) 		
 		# REQUEST information of the current user running program
 		# returns user information from database including name, lab, email, administrator access 
 		users = exp_collection_data.get_user_access_info()._return(to_file=False).next()
-		
+		if not users:
+			return {}
 		users = users[0]
 		if not(users['user']): #the user was not found in the database
 		#	appsoma_api.communicate_javascript_run_function('NoAccess',[])		
-			return []
+			return {}
 			#os._exit(1) #exit program
 								
 		# REQUEST all records from experiments collection;
@@ -72,9 +72,8 @@ class HtppIgrepHandler():
 		metadata_from_experiment_database =  []
 		for list_of_docs in exp_collection_data.get_exp_docs()._return(to_file = False,chunk_size = 1000):
 			metadata_from_experiment_database.extend(list_of_docs)						
-		return [users,metadata_from_experiment_database]
-		
-
+		return {'metadata':metadata_from_experiment_database ,'user_data':users}		
+	
 	def run(self):
 		#run function passed in by user			
 		fxn_to_eval = 'self.{0}(*{1},**{2})'.format(self.fxn,json.dumps(self.args),json.dumps(self.kargs))

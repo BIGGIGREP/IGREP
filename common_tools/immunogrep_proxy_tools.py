@@ -36,7 +36,7 @@ def http(url, params={}, data="", action="GET", headers={}, progressCallback=Non
 				h = httplib.HTTPSConnection(parsed.netloc)
 			else:
 				h = httplib.HTTPConnection(parsed.netloc)
-
+				
 			# The URL may have a query string which is combined with the params
 			if parsed.query:
 				inlineQueryAsDict = urlparse.parse_qs(parsed.query)

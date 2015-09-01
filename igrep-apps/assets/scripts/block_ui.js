@@ -11,11 +11,11 @@
  *
  * Thanks to Amir-Hossein Sobhi for some excellent contributions!
  */
-
-;(function() {
+alert('imported')
+;(function() {	
 /*jshint eqeqeq:false curly:false latedef:false */
 "use strict";
-
+	
 	function setup($) {
 		$.fn._fadeIn = $.fn.fadeIn;
 

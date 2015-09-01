@@ -272,3 +272,65 @@ ConnectionFailure: timed out
 ########################################
 
 
+###ERROR AT: 2015-08-31 10:41:00.510000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150831104039498000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 52, in handle_POST
+    [db_reader,_ig_]= igdbconnect.connectToIgDatabase('reader',password_dict['reader'])
+  File "../common_tools/immunogrep_igdbtools.py", line 60, in connectToIgDatabase
+    [db,connection] = ig_DB_PATH()
+  File "../common_tools/immunogrep_igdbtools.py", line 31, in ig_DB_PATH
+    connection = pymongo.MongoClient(host=whichserver,port=port)
+  File "C:\Users\constantine\Anaconda\lib\site-packages\pymongo\mongo_client.py", line 377, in __init__
+    raise ConnectionFailure(str(e))
+ConnectionFailure: timed out
+########################################
+
+
+###ERROR AT: 2015-08-31 10:42:13.607000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150831104211974000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 128, in handle_POST
+    new_query_object._return_results(wfile) #ok all commands have been run, lets return the results via proxy
+  File "../common_tools/immunogrep_db_query_api.py", line 1351, in _return_results
+    wfile.write(Simple_Process_Output(self.query_results)+'\n')
+  File "../common_tools/immunogrep_db_query_api.py", line 1143, in Simple_Process_Output
+    RemoveObjId(document)
+NameError: global name 'RemoveObjId' is not defined
+########################################
+
+

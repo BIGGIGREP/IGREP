@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+<title></title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script type="text/javascript" src="/scripts/block_ui.js"></script>
+
+<script type="text/javascript">
+//REAL JAVASCRPIPT STARTS HERE
+	//open config file, get settings for proxy for running quick python functions for app assisitance and address for igrep database proxy
+	//run an ajax call to get:
+		//1) the current user of the experiment
+		//2) a list of metadata user has access to 
+	exp_metadata = []
+	$(function () {
+		//$.getJSON("../../http_service/igrep_service.cfg",function(json){
+		//	console.log(json);
+		//})
+		
+		proxy_path = "http://localhost:6200" //connect to new mongoproxy!!!
+		http_service_port = "6100" //port for recieving http_service to python functions
+
+		params = {
+			module: 'get_metadata_on_proxy', //run this function
+			args: [proxy_path] //use this proxy path to database
+		}
+		//setup ajax call
+		var opts = {
+			//url: encodeURI("http://biotseq.icmb.utexas.edu/call"),
+			url: encodeURI("http://localhost"+http_service_port), //always use local host 
+			type: "POST",
+			contentType: "application/json",
+			dataType: "json",
+			data: JSON.stringify(params),
+			//run this function when successful
+			success: function (res) {
+				exp_metadata=res
+			},
+			//run this function when not successful
+			error: function (jqXHR, textStatus, errorThrown) {
+				alert(jqXHR.responseText);
+			},
+			//async: false,// If you don't want the $.ajax() function to return immediately, set the async option to false:,		
+			beforeSend:function () {
+				$.blockUI({ message: 'Loading APP vars...' });
+			},
+			complete:function () {
+				$.unblockUI();
+				//got all variables needed to initialize the APP 
+				InitializeApp();
+			}
+		};
+	});
+
+
+	// Example POST via jquery ajax call
+	//dataVar: object containing following keys: module,kwargs,args	
+	function doPost(dataVar,success_fxn,failure_fxn,use_block_ui,block_ui_message) {
+		//on_success: a function to run upon a successful post...not using this now...
+		/*var on_success= function (res) {			
+				alert(String(res))
+					return res
+			}*/
+		var xhr = null;
+		var response;
+		var opts = {
+			//url: encodeURI("http://biotseq.icmb.utexas.edu/call"),
+			url:encodeURI("http://localhost:6100"),
+			type: "POST",		
+			contentType: "application/json",
+			dataType:"json",
+			data: JSON.stringify(dataVar),		
+			//run this function when successful
+			success: function (res) {
+				if (success_fxn) {				
+					success_fxn(res);
+				}
+			},
+			//run this function when not successful
+			error: function (jqXHR, textStatus, errorThrown) {
+				alert(jqXHR.responseText);
+			},
+			//async: false,// If you don't want the $.ajax() function to return immediately, set the async option to false:,		
+		};
+
+		if (use_block_ui) {
+			opts.beforeSend = function () {
+				$.blockUI({ message: block_ui_message });
+			}
+			opts.complete = function () {
+				$.unblockUI();
+			}
+		}
+	
+		//actually run the ajax call using option from opts
+		xhr = $.ajax(opts);
+			
+		//once ajax call runs, then the variable response should be equal to the answer if successful	
+		return response
+	}
+	
+
+	$(document).ready(function(){
+		// Example usage
+		var res
+		var scripts = document.getElementsByTagName("script");
+		alert(scripts)
+		console.log(scripts)
+		$('#me').click(function () {		
+			alert('clicked')			
+		});
+	});
+
+</script>
+
+</head>
+<body>
+	IM A HOMEPAGE
+	<input id='me' type='button' value='clickme'>
+	<img src="images/aphere.png" />
+</body>
+</html>

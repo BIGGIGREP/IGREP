@@ -11,6 +11,9 @@ import errno
 import os
 import traceback
 import handle_http_service_calls
+import re
+import httplib
+import urlparse
 
 def return_error_string(e):
 	exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -27,31 +30,76 @@ class HttpHandler( BaseHTTPRequestHandler ):
 	def do_HEAD(self):
 		pass
 	
-	def do_GET(self):		
-		self.homepage_path = 'igrep-apps'		
-		if self.path.startswith('/'):
-			self.path=self.path[1:]		
-		if self.path=='igrep':
+	def get_reply_str(self):
+		"""
+			
+			Process self.path in http request to figure out what html files or figures to server to webpage
+		
+		"""
+		# CURRENT ROUTES
+		# /apps/:appName
+		# HARDCODED ROUTES
+			#IGREP/igrep-apps/assets/images/
+			#IGREP/igrep-apps/assets/scripts/		
+
+			#to get to harcoded routes from server (http_service.py), use 
+				#../igrep-apps/assets/
+		print('original path',self.path)
+		orig_path  =self.path
+		self.homepage_path = '/igrep-apps'
+		self.image_path = '/images'
+		self.scripts_path = '/scripts'
+		self.styles_path = '/styles'
+		self.reroute = '../igrep-apps/assets'
+		
+		if self.path == '/':
+			self.path = '..'+self.homepage_path+'/'
+		elif self.path == self.homepage_path:
+			self.path = '..'+self.path+'/'
+		elif self.path == self.homepage_path+'/':
+			self.path = '..'+self.path
+		elif re.match(self.homepage_path+'/.',self.path):
+			self.path = '..'+self.path
+		elif re.match(self.image_path+'/.',self.path):
+			self.path = self.reroute+self.path
+		elif re.match(self.scripts_path+'/.',self.path):
+			self.path = self.reroute+self.path
+		elif re.match(self.styles_path+'/.',self.path):
+			self.path = self.reroute+self.path
+		elif self.path.strip('/')=='igrep':
 			reply_str = "it2sasstart"	
-		elif self.path==self.homepage_path:			
-			#html homepage		
-			with open('../apps/homepage/index.html') as w:
-				reply_str = w.read()					
-		elif self.path.startswith(self.homepage_path+'/'):
-			#load other app webpages
-			folder_path = self.path[len(self.homepage_path):]
-			if folder_path[-1]!='/':
-				folder_path+='/'				
-			with open('../apps'+folder_path+'index.html') as w:
-				reply_str = w.read()
+			return reply_str		
+		# Someday you might have other routes				
+		print('newpath',self.path)
+		
+		#self.path has been re-routed, now search f
+		if os.path.isfile(self.path):
+			with open(self.path,'rb') as w:
+				reply_str = w.read()		
+		elif os.path.isdir(self.path):			
+			if self.path[-1]!='/':
+				self.path+='/'					
+			if os.path.isfile(self.path+'index.html'):
+				with open(self.path+'index.html') as w:
+					reply_str = w.read()
+			else:
+				raise Exception('The following folder provided does not have an index.html file: '+self.path)				
 		else:
-			reply_str ='notsure'
-				
-		self.send_response( 200 )
-		self.send_header( "Content-length", str(len(reply_str)) )
-		self.send_header( "Access-Control-Allow-Origin", "*" )
-		self.end_headers()
-		self.wfile.write( reply_str )
+			raise Exception('The following path does not exist: '+self.path)			
+		
+		return reply_str
+
+	def do_GET(self):		
+		try:
+			reply_str = self.get_reply_str()
+			self.send_response( 200 )	
+			self.send_header( "Content-length", str(len(reply_str)) )
+			self.send_header( "Access-Control-Allow-Origin", "*" )
+			self.end_headers()
+			self.wfile.write( reply_str )
+		except Exception as e:			
+			self.send_error(401,str(e))
+			print('Error in html request: '+str(e))
 	
 	def do_DELETE(self):
 		pass
@@ -62,8 +110,7 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		#user passes in data/a function they want to run
 		data = self.rfile.read( length )
 		if not(data):
-			return
-		
+			return		
 		#function requested by user
 		try:
 			#we load the function as a dict

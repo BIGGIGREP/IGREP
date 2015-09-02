@@ -4,6 +4,14 @@ import sys
 sys.path.insert(0,'../common_tools/') #add scripts in this file to the proxy list
 import immunogrep_db_query_api as query
 
+try:
+	from simplepam import authenticate as authenticate_user
+	#pass
+except:
+	from fakepam import authenticate as authenticate_user
+	print('IM USING A WINDOWS MACHINE WITHOUT SIMPLEPAM')
+
+
 #THIS MODULE SHOULD SERVE AS A HELPER SCRIPT FOR MAKING OUR IGREP APPS
 #JAVASCRIPT FUNCTIONS CAN MAKE AJAX CALLS TO THE PROXY WHICH CAN SUBSEQUEENTLY CALL ANY OF THE
 #FUNCTIONS DEFINED IN HTTPIGREPHANDLER
@@ -18,6 +26,15 @@ class HtppIgrepHandler():
 	def sum_vals(self,a,b=3):
 		print a
 		return a+b		
+	def authenticate(username,password):
+		"""
+
+			Function for authenticating the current user accessing the computer
+			It will check whether the user logging in is a current user in the computer
+
+		"""
+		return authenticate_user(username,password)
+
 	def get_metadata_on_proxy(self,proxy_path=''):
 		"""
 			Queries the database and returns information necessary for running javascript functions.

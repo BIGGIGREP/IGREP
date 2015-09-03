@@ -213,7 +213,7 @@ def CDR3Productivity(field_row):
 		
 		General steps:
 			1) Extract the CDR3 nucleotide field 
-			2) If length of CDR3 is not a multiple of 3 or length of CDR3 < 9
+			2) If length of CDR3 is not a multiple of 3 
 				=> return false 
 			3) Translate CDR3 to amino acid 
 			4) If there is a stop codon (*) in sequence
@@ -223,7 +223,7 @@ def CDR3Productivity(field_row):
 	"""
 	global cdr3_field
 	cdr3_nt = field_row[cdr3_field]
-	if len(cdr3_nt)%3!=0 or len(cdr3_nt)<9:
+	if len(cdr3_nt)%3!=0:
 		return False		
 	cdr3_aa = str(Seq(cdr3_nt,generic_dna).translate())
 	if '*' in cdr3_aa:
@@ -234,8 +234,6 @@ def CDR3Productivity(field_row):
 	
 def populate_clusters(filename,delimiter='\t'):
 	d = {}
-	if not(os.path.isfile(filename)):
-		return d
 	with open(filename) as f_in:
 		for line_text in f_in:			
 			line_text = line_text.strip()
@@ -562,10 +560,11 @@ def parse_sorted_paired_file(pairing_temp_file):
 	print('Will now sort file by MiSeq ID to determine which sequences should be paired')
 	fullcode_column = num_elem_stored+1#last column number in file should be equal to the number of elements stored (in ab_field_loc) +1
 	#sort all sequences sent to file by the full code field (the last column in file) 		
-	subprocess.call('''sort -T "{2}" -t '\t' "{0}" -k{1}>"{0}.sorted" '''.format(pairing_temp_file,str(fullcode_column),my_folder), shell=True)	
+	#subprocess.call('''sort -T "{2}" -t '\t' "{0}" -k{1}>"{0}.sorted" '''.format(pairing_temp_file,str(fullcode_column),my_folder), shell=True)	
 	print('File sorted. Will now parse sequences into their H-L pairs')	
-	os.remove(pairing_temp_file)	
-	os.rename(pairing_temp_file+'.sorted',pairing_temp_file)
+	#os.remove(pairing_temp_file)
+	#os.rename(pairing_temp_file,pairing_temp_file+'.old')
+	#os.rename(pairing_temp_file+'.sorted',pairing_temp_file)
 	
 	paired_fullcode = ''
 	num_paired=0
@@ -892,35 +891,17 @@ def parse_sorted_paired_file(pairing_temp_file):
 		#vj_data['JGENE'] = max(jgene_counts_vj, key=jgene_counts_vj.get)
 
 		##store the ALL genes matching MAX MODE of the V(D)J genes 
-		if vgene_counts_vdj:
-			max_item = max(vgene_counts_vdj.values())
-			vdj_data['VGENE'] = ','.join([g for g,num in vgene_counts_vdj.iteritems() if num==max_item]) if max_item > 0 else ''
-		else:
-			vdj_data['VGENE'] = ''
+		max_item = max(vgene_counts_vdj.values())
+		vdj_data['VGENE'] = ','.join([g for g,num in vgene_counts_vdj.iteritems() if num==max_item]) if max_item > 0 else ''
+		max_item = max(dgene_counts_vdj.values())
+		vdj_data['DGENE'] = ','.join([g for g,num in dgene_counts_vdj.iteritems() if num==max_item]) if max_item > 0 else ''
+		max_item = max(jgene_counts_vdj.values())
+		vdj_data['JGENE'] = ','.join([g for g,num in jgene_counts_vdj.iteritems() if num==max_item]) if max_item > 0 else ''
 		
-		if dgene_counts_vdj:	
-			max_item = max(dgene_counts_vdj.values())
-			vdj_data['DGENE'] = ','.join([g for g,num in dgene_counts_vdj.iteritems() if num==max_item]) if max_item > 0 else ''
-		else:
-			vdj_data['DGENE'] = ''
-		
-		if jgene_counts_vdj:
-			max_item = max(jgene_counts_vdj.values())
-			vdj_data['JGENE'] = ','.join([g for g,num in jgene_counts_vdj.iteritems() if num==max_item]) if max_item > 0 else ''
-		else:
-			vdj_data['JGENE'] = ''
-		
-		if vgene_counts_vj:
-			max_item = max(vgene_counts_vj.values())
-			vj_data['VGENE'] = ','.join([g for g,num in vgene_counts_vj.iteritems() if num==max_item]) if max_item > 0 else ''				
-		else:
-			vj_data['VGENE'] = ''
-		
-		if jgene_counts_vj:
-			max_item = max(jgene_counts_vj.values())
-			vj_data['JGENE'] = ','.join([g for g,num in jgene_counts_vj.iteritems() if num==max_item]) if max_item > 0 else ''
-		else:
-			vj_data['JGENE'] = ''
+		max_item = max(vgene_counts_vj.values())
+		vj_data['VGENE'] = ','.join([g for g,num in vgene_counts_vj.iteritems() if num==max_item]) if max_item > 0 else ''				
+		max_item = max(jgene_counts_vj.values())
+		vj_data['JGENE'] = ','.join([g for g,num in jgene_counts_vj.iteritems() if num==max_item]) if max_item > 0 else ''
 				
 		#the variable ab_field_loc stores the index position for each antibody region in the array 
 		CDRH3=vdj_data['CDR3_SEQ']
@@ -1540,34 +1521,30 @@ def WriteSummaryFile(annotated_file_paths,total_seqs,passed_filter,no_result,no_
 
 
 
-def RunPairing(annotated_file_paths,analysis_method,output_folder_path='',prefix_output_files='', annotated_file_formats=None,field_names=None,cluster_cutoff = [0.96,0.96,0],annotation_cluster_setting=None,use_low_memory = False,files_from_igrep_database=False,productivity_function=None):
+def RunSingleChainClustering(annotated_file_paths,analysis_method,output_folder_path='',prefix_output_files='', annotated_file_formats=None,field_names=None,cluster_cutoff = [0.96,0.96,0],annotation_cluster_setting=None,use_low_memory = False,files_from_igrep_database=False,productivity_function=None):
 	"""
 		
 		Brief Description 
 		
-		This is the main function for pairing VH-VL antibody data using the Georgiou lab pipeline. The pairing function is not dependent on a specific file type/format and will pair sequences using any files passed into the field annotated_file_paths.
-		Pairing of VH-VL antibodies is performed by grouping together sequences by their MISEQ header (Miseq id). This program should only be used to pair 'paired end NGS data'. That is, we assume sequences come from MISEQ paired-end sequences containing complementary R1/R2 header names.
+		This function serves as an addition to the current function RunPairing found in immunogrep_gglab_pairing.py file. 
+	    This function preforms the same outlined steps and outputs the same information as the pairing program except it only considers the CDR3 of each chain seperately.
+		Whereas RunPairing function will group together sequences by their respective R1-R2 reads (VH-VL pairs), this function will consider each chain independently. 
+		Clustering therefore only considers VH only generated libraries and VL only generated libraries.
+		Clustering of CDR3 sequences is again performed using Usearch program, and the output file should match the format of the RunPairing program except excludes VH-VL pairs.
 		
 		General algorithm:
 		
-		The pairing program follows the following steps: 
+		The single chain analysis program follows the following steps: 
 			Step A: Go through the provided AB annotated files (IMGT, parsed IGBLAST files, etc), and filter out sequences that lack good results 
 				1) Loop through all sequences provided in all files 
-				2) Only select sequences that have a sequence header. Extract the MISEQ ID from the sequence header. 
+				2) Only select sequences that have a sequence header. 
 				3) Filter out sequences that do not have a cdr3 sequence 
-				4) Filter out sequences that are deemed 'unproductive' using our Productivity Rules, or a custom productivity rule provided by user 
-			
-			Step B: Parse the filtered file 
-				1) Sort the generated outputfile by the MISEQ ID
-				2) Only consider sequences where both the R1 and R2 read (sequences with identicals MISEQ ID) passed all filter steps in Step A 
-				3) Filter out sequences that:
-					a) are found to be VH-VH pairs
-					b) are found to be VL-VL pairs
-					c) are found to be pairs of calls from different loci (i.e. IGH-TRA )
-				4) All sequences that pass the above rules are considered to be proper VH-VL paired antibodies. We store these MISEQ ids inside 'annnotation files' that can be used to update the database with properly paired sequences
-			
-			Step C: Group together CDRH3-CDRL3 pairs
-				1) We group together sequences with identical CDRH3-CDRL3 pairs from the filtered VH-VL paired sequences in Step B
+				4) Filter out sequences that are deemed 'unproductive' using our Productivity Rules, or a custom productivity rule provided by user 						
+				5) Seperate VDJ annotated sequences from VJ annoated sequences into seperate files
+				6) The user provided parameter (include_vl_analysis) which determine whether to cluster both the VDJ and VJ files. By default we only consider VDJ data.
+
+			Step B: Group together CDRH3 sequences for each VDJ and/or VJ file
+				1) We group together sequences with identical CDRH3 sequences from the filtered sequences in Step B
 				2) For each CDRH3-CDRL3 group, we calculate the following as extra information for the group: 
 					a) average SHM (if an SHM field is provided) and standard deviation SHM 
 					b) mode of V,D, and J gene calls (if V, D, or J genes are provided). Mode of gene calls are based on top genes only (genes whose alignment scores are equal to the top alignment score)

@@ -9,7 +9,7 @@ import sys
 import os
 import json
 import re
-
+import subprocess
 try:
 	from Bio import SeqIO
 except:
@@ -416,7 +416,8 @@ class immunogrepFile():
 			preview_lines = 100
 			temp_file = self.filelocation+'__temp__'
 			bash_command = 'head -{0} "{1}" > "{2}" '.format(preview_lines,self.filelocation,temp_file)
-			os.system(bash_command)
+			subprocess.call(bash_command,shell=True)
+			#os.system(bash_command)
 			with open(temp_file,"r") as f:			
 				line=f.readline()
 				
@@ -432,7 +433,7 @@ class immunogrepFile():
 					check=True
 				except:	
 					check=False
-			os.system('rm "{0}"'.format(temp_file))
+			os.remove(temp_file)#os.system('rm "{0}"'.format(temp_file))
 			return check
 		except:
 			return False
@@ -443,7 +444,8 @@ class immunogrepFile():
 			preview_lines = 100
 			temp_file = self.filelocation+'__temp__'
 			bash_command = 'head -{0} "{1}" > "{2}" '.format(preview_lines,self.filelocation,temp_file)
-			os.system(bash_command)
+			#os.system(bash_command)
+			subprocess.call(bash_command,shell=True)
 			with open(temp_file,"r") as f:
 				line=f.readline()
 				if line.startswith(descriptor_symbol):
@@ -456,7 +458,8 @@ class immunogrepFile():
 					check=True
 				except:
 					check=False
-			os.system('rm "{0}"'.format(temp_file))
+			#os.system('rm "{0}"'.format(temp_file))
+			os.remove(temp_file)
 			return check
 		except:
 			return False

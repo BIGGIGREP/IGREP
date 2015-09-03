@@ -3,7 +3,7 @@ import os
 import time
 import errno
 import shutil # needed for a probably unnecessary class below
-import appsoma_api
+#import appsoma_api
 from datetime import datetime
 
 #---A GENERATOR FUNCTION FOR PREVIEWING ZIPPED FILES. THIS FUNCTION IS WITH THE 'SHOWRESULTS' CLASS IN MAKEAPPFUNCTIONS. 
@@ -24,7 +24,6 @@ def PreviewCompressedFilesGenerator(filepath):
 		else:
 			yield None
 
-
 #------PARAMETERS liable to change------#
 _projName_ = 'igrep' # When we think of something better than 'repsoma'
 expDirParams = {'start':'Exp', # Experiment directory format.
@@ -41,15 +40,31 @@ expDirTemplate = "{start}{delim}{{exp_num:0{nd}d}}{delim}{{exp_name}}".format(nd
 	Exp_01123_Platyhelminthes
 	(or something else if expDirParams has changed)
 """
-def url_to_path(path):
-	"""convert a workspace URL to a home directory path.
-	Has no effect if given path is not a workspace URL."""
-	ws_url = appsoma_api.environment_get_workspace_url()
-	home_dir = appsoma_api.environment_get_home()
-	prefix = os.path.commonprefix([ws_url,path])
-	return os.path.join(home_dir,path[len(prefix):])
+#def url_to_path(path):
+#	"""convert a workspace URL to a home directory path.
+#	Has no effect if given path is not a workspace URL."""
+#	ws_url = appsoma_api.environment_get_workspace_url()
+#	home_dir = appsoma_api.environment_get_home()
+#	prefix = os.path.commonprefix([ws_url,path])
+#	return os.path.join(home_dir,path[len(prefix):])
 
-scratch = url_to_path(appsoma_api.environment_get_scratch_url())
+
+def InitializeHomeScratch(home):
+	"""
+
+		Make sure a 'scratch' folder is found directly at the users' home folder.
+		If not, then make the directory
+
+	"""
+	scratch = os.path.join(home,'scratch')
+	if not os.path.isdir(scratch):
+		os.makedirs(scratch)
+	return scratch
+
+#get the current users' home directory 
+home = os.path.expanduser('~')
+#within the home directory, we want to define a default scratch folder to start from
+scratch = InitializeHomeScratch(home)
 
 def mkdir_p(path):
 	"""same as shell 'mkdir -p'. Will not throw error if dir already exists."""
@@ -426,8 +441,8 @@ class ExperimentDirs(object):
 		pathname = (os.path.join(self.basedir, dirname))
 		mkdir_p(pathname)
 		return pathname
-	
 
+'''
 ### --- Below here is an older class that may or may not be useful
 job_dir = url_to_path(appsoma_api.environment_get_job_url())
 class JobFiles(object):
@@ -489,7 +504,7 @@ class JobFiles(object):
 
 			self.paths[t_file_name] = t_symln_path
 		assert self._min_nfiles <= len(self.paths) <= self._max_nfiles
-
+'''
 
 #This module is not meant to be run
 if __name__ == "__main__":	

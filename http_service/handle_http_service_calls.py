@@ -77,7 +77,8 @@ class HtppIgrepHandler():
 			return {}
 		users = users[0]
 		if not(users['user']): #the user was not found in the database
-		#	appsoma_api.communicate_javascript_run_function('NoAccess',[])		
+		#	
+		.communicate_javascript_run_function('NoAccess',[])		
 			return {}
 			#os._exit(1) #exit program
 								

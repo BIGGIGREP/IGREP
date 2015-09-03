@@ -47,14 +47,18 @@ def get_stdout(bash_command):
 		Python wrapper for running python subprocess.call function
 		Returns the output from command
     """
-	time=str(datetime.now()).replace(' ','').replace(':','').replace('/','').replace('\\','').replace('-','')
-	temp_file_name = 'scratch/stdout'+time+'.txt'
+	output = subprocess.check_output(bash_command)
+	#time=str(datetime.now()).replace(' ','').replace(':','').replace('/','').replace('\\','').replace('-','')
+	#temp_file_name = 'scratch/stdout'+time+'.txt'
 	#os.system(bash_command +" > {0}".format(temp_file_name))
-	subprocess.call(bash_command +" > {0}".format(temp_file_name))
-	with open(temp_file_name) as e:
-		output = e.read().strip()
-	os.remove(temp_file_name)
-	#os.system("rm '{0}'".format(temp_file_name))
+	#subprocess.call(bash_command +" > {0}".format(temp_file_name),shell=True)
+	#if os.path.isfile(temp_file_name):
+	#	with open(temp_file_name) as e:
+	#		output = e.read().strip()
+	#	os.remove(temp_file_name)
+		#os.system("rm '{0}'".format(temp_file_name))
+	#else:
+	#	output = ""
 	return output
 
 def file_line_count(filepath):
@@ -65,7 +69,13 @@ def file_line_count(filepath):
 			If path is not found, raises an error
     """
 	if os.path.isfile(filepath):
-		return int(get_stdout("wc -l '{0}'".format(filepath)).split()[0])# int(subprocess.check_output(['wc', '-l', filepath]).split()[0]) => subprocess.check_output creates zombie processes, so want to avoid that?
+		filepath = os.path.abspath(filepath)
+		value = get_stdout("wc -l '{0}'".format(filepath)).split()[0]
+		if value:
+			return int(value)
+		else:
+			return 0 
+		#return int()# int(subprocess.check_output(['wc', '-l', filepath]).split()[0]) => subprocess.check_output creates zombie processes, so want to avoid that?
 	else:
 		raise Exception('File does not exist: '+filepath)
 

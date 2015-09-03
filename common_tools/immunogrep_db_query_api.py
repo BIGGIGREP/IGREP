@@ -204,7 +204,7 @@ def split_file_to_multiple_files(inputfile,default_filename = '',ext='query',max
 	time_now = str(datetime.now()).replace(' ','').replace(':','')
 	location_of_files_created = "query_files_created_"+time_now+str(random.randint(1, 100))+".txt"
 	
-	awk_command = '''awk 'BEGIN{{FS="{0}";OFS="";limitseq=({5}>0);num_header=0;check_for_header=1}}						   
+	awk_command = '''gawk 'BEGIN{{FS="{0}";OFS="";limitseq=({5}>0);num_header=0;check_for_header=1}}						   
 					   check_for_header && $1=="HeaderDescription"{{header_lines[num_header]=$2;num_header+=1;next}}					   
 					   check_for_header{{check_for_header=0}}
 					   {{											

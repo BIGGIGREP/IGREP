@@ -43,40 +43,52 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		# CURRENT ROUTES
 		# /apps/:appName
 		# HARDCODED ROUTES
-			#IGREP/igrep-apps/assets/images/
-			#IGREP/igrep-apps/assets/scripts/		
+			#IGREP/igrep-webpage/assets/images/
+			#IGREP/igrep-webpage/assets/scripts/		
+			#IGREP/igrep-webpage/apps/
 
 			#to get to harcoded routes from server (http_service.py), use 
-				#../igrep-apps/assets/		
+				#../igrep-webpage/assets/		
 		#with open('test.txt','a') as f:
 		#	f.write('original path '+self.path+'\n')
-		print('original path',self.path)
+		#print('original path',self.path)
 		orig_path  =self.path
-		self.homepage_path = '/igrep-apps'
-		self.image_path = '/images'
-		self.scripts_path = '/scripts'
-		self.styles_path = '/styles'
-		self.reroute = '../igrep-apps/assets'
+		self.homepage_path = 'igrep-webpage'
+		self.image_path = 'images'
+		self.app_path = 'apps'
+		self.scripts_path = 'scripts'
+		self.styles_path = 'styles'
+		self.parent_of_proxy = os.path.dirname(os.path.dirname(os.path.abspath("__file__")))
+		self.reroute = os.path.join(self.parent_of_proxy,self.homepage_path,'assets')
+		self.reroute_apps = os.path.join(self.parent_of_proxy,self.homepage_path)
 		
-		if self.path == '/':
-			self.path = '..'+self.homepage_path+'/'
+		print(self.parent_of_proxy)
+		#remove the '/' or '\' from beginning of path
+		self.path = self.path.lstrip('/\\')
+		if self.path == '':
+			self.path = os.path.join(self.parent_of_proxy,self.homepage_path)
 		elif self.path == self.homepage_path:
-			self.path = '..'+self.path+'/'
-		elif self.path == self.homepage_path+'/':
-			self.path = '..'+self.path
-		elif re.match(self.homepage_path+'/.',self.path):
-			self.path = '..'+self.path
-		elif re.match(self.image_path+'/.',self.path):
-			self.path = self.reroute+self.path
-		elif re.match(self.scripts_path+'/.',self.path):
-			self.path = self.reroute+self.path
-		elif re.match(self.styles_path+'/.',self.path):
-			self.path = self.reroute+self.path
-		elif self.path.strip('/')=='igrep':
+			self.path = os.path.join(self.parent_of_proxy,self.homepage_path)
+		elif self.path == self.homepage_path+'/' or self.path == self.homepage_path+'\\':
+			self.path = os.path.join(self.parent_of_proxy,self.homepage_path)			
+		elif re.match(self.homepage_path+'[/\\\\].',self.path):			
+			self.path = os.path.join(self.parent_of_proxy,self.path)
+		elif re.match(self.image_path+'[/\\\\].',self.path):			
+			self.path = os.path.join(self.reroute,self.path)
+		elif re.match(self.scripts_path+'[/\\\\].',self.path):						
+			self.path = os.path.join(self.reroute,self.path)
+		elif re.match(self.styles_path+'[/\\\\].',self.path):
+			self.path=self.path.lstrip('/\\\\')
+			self.path = os.path.join(self.reroute,self.path)
+		elif re.match(self.app_path+'[/\\\\].',self.path):
+			self.path=self.path.lstrip('/\\\\')
+			self.path = os.path.join(self.reroute_apps,self.path)
+		elif self.path.strip('/\\')=='igrep':
 			self.reply_string = "it2sasstart"	
+			return
 			#return reply_str		
 		# Someday you might have other routes				
-		print('newpath',self.path)
+		#print('newpath',self.path)
 		#with open('test.txt','a') as f:
 		#	f.write('original path: '+self.path+'\n')
 		
@@ -85,17 +97,17 @@ class HttpHandler( BaseHTTPRequestHandler ):
 			#with open(self.path,'rb') as w:
 			#	reply_str = w.read()		
 			self.reply_path = self.path
-		elif os.path.isdir(self.path):			
-			if self.path[-1]!='/':
-				self.path+='/'					
-			if os.path.isfile(self.path+'index.html'):
-				self.reply_path = self.path+'index.html'
+		elif os.path.isdir(self.path):						
+			if os.path.isfile(os.path.join(self.path,'index.html')):
+				self.reply_path = os.path.join(self.path,'index.html')
 				#with open(self.path+'index.html') as w:
 					#reply_str = w.read()
 			else:
-				self.reply_string=''#raise Exception('The following folder provided does not have an index.html file: '+self.path)				
+				#self.reply_string=''
+				raise Exception('The following folder provided does not have an index.html file: '+self.path)				
 		else:
-			self.reply_string=''#raise Exception('The following path does not exist: '+self.path)			
+			#self.reply_string=''
+			raise Exception('The following path does not exist: '+self.path)			
 		
 		#return reply_str
 

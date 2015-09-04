@@ -1,3 +1,267 @@
+nav {
+	vertical-align: middle;
+	font-weight: bold;
+	font-size: 16px;
+	font-family: "Titillium Web";
+	padding: 0px;
+	margin: 0px;
+	height: 54px;
+	white-space: nowrap;
+	overflow: hidden;
+	display: table-cell;
+	vertical-align: top;
+}
+/*Adapted from BASS.SAS on appsoma.com*/
+/*login*/
+.login{
+	margin: 80px auto;
+	background-color: #FFF;
+	width: 600px;
+	border-radius: 6px;
+	box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.35);
+	font: 13px "Signika",sans-serif;
+	padding: 1px 10px 10px;
+	color: #777;
+}
+.login .button:hover{
+	color:#FFF;
+	background:#40C598 none repeat scroll 0% 0%;
+}
+.login .button:disabled{
+	color: white;
+	background: lightgray;
+	cursor: inherit;
+}
+.authentication-fail{
+	background-color: #FFD9D9;
+	border: 1px solid #F00;
+	font-weight: bold;
+	text-align: center;
+	padding: 10px;
+	color: black;
+	margin:10px 0px;
+}
+.login h2 {
+	font-family: "Titillium Web";
+	font-size: 18pt;
+	font-weight: lighter;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #00CBCF;
+	text-align: center;
+}
+
+.login .button {
+	font-weight: normal;
+	color: #FFF;
+	padding: 10px 15px;
+	background: rgba(64, 197, 152, 0.85) none repeat scroll 0% 0%;
+	text-shadow: none;
+	border: medium none;
+	box-shadow: none;
+	font-size: 16px;
+	cursor: pointer;
+	font-family: Signika;
+	border-radius: 5px;
+}
+
+.login input {
+	display: block;
+	width: 300px;
+	height: 30px;
+	padding: 5px;
+	margin: 0px auto 10px;
+	border-radius: 5px;
+}
+.simpletab-tabs .close-icon{
+		position: relative;
+		top: 4px;
+	}
+.simpletab-tabs .label{
+		white-space: nowrap;
+		position: relative;
+		top: -2px;
+}
+.simpletab-tabs .simpletab {
+	display: block;
+	color: black;
+	cursor: pointer;
+	margin: 0px 4px 0px 0px;
+	padding: 15px 10px 15px 25px;
+	/*//word-break: break-all;*/
+	overflow: hidden;
+	/*//height: 20px!important;*/
+	/*//&.unselected*/
+	/*//	background-color: #5F6464*/
+}
+
+.simpletab-panels .simpletab-panel {
+	padding: 10px 10px 10px 10px;
+}
+
+/*
+// Application header
+//-----------------------------------------------------------------------------------
+*/
+#top-header {
+	position: fixed;
+	top: 0px;
+	width: 100%;
+	height: 54px;
+	/*// background-image: url('/images/morris.png')*/
+	/*// background-repeat: repeat-x;*/
+	/*background-color: #00404C !important;*/
+	/* background-color: #7C2900 !important;*/
+	background-color: #333 !important;
+	
+	z-index: 100;
+	display: table;
+}
+#top-header .col {
+	display: table-cell;
+	vertical-align: top;
+}
+	
+#top-header .col.hidden {
+	display: none;
+}
+
+#top-header table{
+		border: none;
+		border-spacing: 0px;
+		padding: 0;
+		margin: 0;
+}
+
+/*#top-header a img {	
+	display: none;
+	position: absolute;
+	width: 70px;
+	left: 72px;
+	bottom: 0px;
+}*/
+
+#top-header .beta {
+	font-size: 17px;
+	font-weight: bold;
+	color: #c15f5f;
+	position: absolute;
+	left: 110px;
+	top: 29px;
+	text-shadow: -1px 0 #411f1f, 0 1px #411f1f, 0px 0 #411f1f, 0 -1px #411f1f;
+}
+
+#main-tabs{
+	vertical-align: middle;
+	font-weight: bold;
+	font-size: 16px;
+	/*font-family: $heading-font-type;*/
+	padding: 0;
+	margin: 0;
+	height: 54px;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+#main-tabs .simpletab-tabs {
+	display: -ms-flexbox;
+	display: flex;
+	-ms-flex-pack: space-around;
+	justify-content: space-around;
+}
+
+#main-tabs .simpletab-tabs .simpletab {
+	display: inline-block;
+	cursor: pointer;
+	text-transform: uppercase;
+	vertical-align: middle;	
+	border-top: 5px solid #333;
+	border-bottom: 5px solid #333;
+	text-align: center;
+	/*background-color: #00404C !important; /* $menu-tab-background;*/
+	/*background-color: #7C2900 !important;*/
+	box-sizing: border-box;
+	height: 54px;
+	line-height: 49px;
+	padding: 0 4px;
+	margin: 0;
+}
+
+#main-tabs .simpletab-tabs .simpletab.unselected {
+	color: #FFFFFF;
+	text-shadow: none;
+	background-color:inherit;	
+}
+
+#main-tabs .simpletab-tabs .simpletab.selected {
+	/*color: #00E5E1;*/
+	color:white;
+	padding:0px 10px;
+	border-top: 5px solid #4677BF;
+	border-bottom: 5px solid #4677BF;
+	background-color: #7E878C;
+	/*background-color: #00404C !important;*/
+	/*background-color: #333 !important;*/
+}
+
+#main-tabs .simpletab-tabs .simpletab:hover {
+	background-color:  #7E878C !important;
+	border-top: 5px solid #7E878C;
+	border-bottom: 5px solid #7E878C;
+	color: white !important;	
+}
+
+#main-tabs .simpletab-tabs .simpletab a, a:hover, a:visited, a:active {
+	outline:none;
+	display:block;
+	color:inherit;
+	text-decoration: none;
+	padding:0px 10px;
+	background-color:  inherit;			
+}
+
+
+
+#top-header .logout .username{
+	text-align: center;
+	line-height: 49px;
+	color: white;
+}
+
+#top-header .logout a{
+	outline:none;
+	display:block;
+	color:inherit;
+	text-decoration: none;
+	padding:0px;
+	background-color:  inherit;			
+}
+
+#top-header .logout .logout-img {
+    background-image: url("/images/Turnoff.png");
+    background-position: 0px 17px;
+    height: 17px;
+    width: 16px;
+    display: inline-block;
+    cursor: pointer;
+    vertical-align: middle;
+    margin-right: 17px;
+}
+
+#top-header .logout:hover{
+	cursor:pointer;
+}
+
+#top-header .logout .logout-img:hover {
+    background-position: 0px 0px;
+	padding:0px;
+}
+
+#top-header .logout a:hover > .logout-img{
+	background-position: 0px 0px;
+	padding:0px;
+}
+/*end of bass.sass usage*/
+
 body {
 	background-color: white;
 }

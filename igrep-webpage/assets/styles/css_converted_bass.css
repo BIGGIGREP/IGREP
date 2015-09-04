@@ -1,0 +1,135 @@
+﻿.simpletab-tabs .close-icon{
+		position: relative;
+		top: 4px;
+	}
+.simpletab-tabs .label{
+		white-space: nowrap;
+		position: relative;
+		top: -2px;
+}
+.simpletab-tabs .simpletab {
+	display: block;
+	color: black;
+	cursor: pointer;
+	margin: 0px 4px 0px 0px;
+	padding: 15px 10px 15px 25px;
+	/*//word-break: break-all;*/
+	overflow: hidden;
+	/*//height: 20px!important;*/
+	/*//&.unselected*/
+	/*//	background-color: #5F6464*/
+}
+.simpletab-tabs .simpletab.selected{
+		background-color: #7E878C;
+		color: white;
+}
+.simpletab-panels .simpletab-panel {
+	padding: 10px 10px 10px 10px;
+}
+
+/*
+// Application header
+//-----------------------------------------------------------------------------------
+*/
+#top-header {
+	position: fixed;
+	top: 0px;
+	width: 100%;
+	height: 54px;
+	/*// background-image: url('/images/morris.png')*/
+	/*// background-repeat: repeat-x;*/
+	background-color: #00404C !important;
+	z-index: 100;
+	display: table;
+}
+	#top-header .col {
+		display: table-cell;
+		vertical-align: top;
+	}
+	
+	#top-header .col.hidden {
+		display: none;
+	}
+
+#top-header table{
+		border: none;
+		border-spacing: 0px;
+		padding: 0;
+		margin: 0;
+}
+
+#top-header a img {	
+	display: none;
+	position: absolute;
+	width: 70px;
+	left: 72px;
+	bottom: 0px;
+}
+
+#top-header .beta {
+	font-size: 17px;
+	font-weight: bold;
+	color: #c15f5f;
+	position: absolute;
+	left: 110px;
+	top: 29px;
+	text-shadow: -1px 0 #411f1f, 0 1px #411f1f, 0px 0 #411f1f, 0 -1px #411f1f;
+}
+
+#main-tabs{
+	vertical-align: middle;
+	font-weight: bold;
+	font-size: 16px;
+	/*font-family: $heading-font-type;*/
+	padding: 0;
+	margin: 0;
+	height: 54px;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+#main-tabs .simpletab-tabs {
+display: -ms-flexbox;
+display: flex;
+-ms-flex-pack: space-around;
+justify-content: space-around;
+}
+
+#main-tabs .simpletab-tabs .simpletab {
+	display: inline-block;
+	cursor: pointer;
+	text-transform: uppercase;
+	vertical-align: middle;
+	border-top-left-radius: 0px 0px;
+	border-top-right-radius: 0px 0px;
+	text-align: center;
+	background-color: #00404C !important; /* $menu-tab-background;*/
+	box-sizing: border-box;
+	height: 54px;
+	line-height: 49px;
+	padding: 0 4px;
+	margin: 0;
+}
+
+#main-tabs .simpletab-tabs .simpletab a, a:hover, a:visited, a:active {
+  color:inherit;
+  text-decoration: none;
+}
+
+#main-tabs .simpletab-tabs .simpletab.unselected {
+	color: #FFFFFF !important;
+	text-shadow: none !important;
+	border-top: 5px solid #00404C !important;
+}
+
+#main-tabs .simpletab-tabs .simpletab.selected {
+	color: #00E5E1 !important;
+	border-top: 5px solid #00DCFF;
+	background-color: #00404C !important;
+}
+
+#main-tabs .simpletab-tabs .simpletab:hover {
+	background-color: #3c3e40 !important;
+	color: white !important;
+	border-top: 5px solid #3c3e40;
+}

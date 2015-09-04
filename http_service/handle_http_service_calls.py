@@ -15,10 +15,8 @@ except:
 	print('IM USING A WINDOWS MACHINE AS MY SERVER WITHOUT POSIX')
 
 def authenticate_user(u,p):
-	print u
-	print p
 	if use_posix:
-		res =  subprocess.check_output('sudo python authenticate_script.py '+u+' '+p)
+		res =  subprocess.check_output('sudo python authenticate_script.py '+u+' '+p,shell=True)
 		if int(res)==0:
 			return False
 		else:

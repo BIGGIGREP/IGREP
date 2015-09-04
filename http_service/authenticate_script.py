@@ -1,9 +1,10 @@
+import sys
 from simplepam import authenticate
 
 user = sys.argv[1]
-pass = sys.argv[2]
+passwd = sys.argv[2]
 
-try:
-	print simplepam.authenticate(user,pass)
-except:
-	print 0
+if authenticate(user,passwd):
+	print 1
+else:
+	print 0 

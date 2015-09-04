@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <title></title>
+	<meta charset="utf-8" />
+	<title></title>
+	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">
+	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>
+	<script type="text/javascript" src="/scripts/igrep.script.tools.js"></script>		
 	<style>
 		.login{
 			margin: 80px auto;
@@ -14,7 +17,24 @@
 			padding: 1px 10px 10px;
 			color: #777;
 		}
-
+		.login .button:hover{
+			color:#FFF;
+			background:#40C598 none repeat scroll 0% 0%;
+		}
+		.login .button:disabled{
+			color: white;
+			background: lightgray;
+			cursor: inherit;
+		}
+		.authentication-fail{
+			background-color: #FFD9D9;
+			border: 1px solid #F00;
+			font-weight: bold;
+			text-align: center;
+			padding: 10px;
+			color: black;
+			margin:10px 0px;
+		}
 		.login h2 {
 			font-family: "Titillium Web";
 			font-size: 18pt;
@@ -46,25 +66,90 @@
 			margin: 0px auto 10px;
 			border-radius: 5px;
 		}
-
 	</style>
+	
+	<script type="text/javascript">
+		//make an ajax call to confirm user
+		$(document).ready(function(){
+			$("#submitButton").click(function () {
+				authenticate()
+			});
+		});
+		function authenticate() {			
+			if ($('#session_name').val() == "" || $('#session_password').val() == "") {
+				$("#form-usernamepassword-error").html("<span class='errors'>Please enter a valid username and password</span>")
+				return
+			}
+			else {				
+				$('#submitButton').prop('disabled',true)
+				$("#form-usernamepassword-error").html("")
+				//call the http_service proxy and see if username/password match computer
+				params = {
+					'module':'authenticate',
+					'args':[$('#session_name').val(),$('#session_password').val()]
+				}
+				opts = get_ajax_params(params)
+				opts.success = function (res) {
+					authenticate_answer(res)
+				}
+				opts.complete = function(){
+					//$('#submitButton').prop('disabled',false)
+				}				
+				opts.error = function (jqXHR, textStatus, errorThrown) {
+					alert(jqXHR.responseText);
+				}		
+				xhr = $.ajax(opts);
+			}
+		}
+
+		//do this event after ajax response
+		function authenticate_answer(authenticated) {
+			if(authenticated){
+				$("#authentication-error").hide()
+				alert('success!')
+			}
+			else{
+				$("#authentication-error").show()
+			}
+		}
+
+	</script>
 </head>
 <body>
 	<div class="login">
 		<h2>Login</h2>		
 
 		<div style="padding-bottom:18px;"></div>
-		
-		<form accept-charset="UTF-8" action="/sessions?" method="post">
-			<div style="margin:0;padding:0;display:inline"><input name="utf8" value="✓" type="hidden"><input name="authenticity_token" value="LMRAutGuGj/D2QQxfQnnnmYHy9HdUUGhsJbkizjkDCU=" type="hidden"></div>
-			<div class="errors">
-			</div>
-			<input id="session_name" name="session[name]" placeholder="Username" size="30" value="" type="text">
-			<input id="session_password" name="session[password]" placeholder="Password" size="30" type="password">
-			<div align="center">
-				<button type="submit" class="button" id="submitButton" name="commit" value="Log in">Log in</button>
-			</div>
-		</form>		
+		<!--
+		<div id="username_password_div">
+			<form accept-charset="UTF-8" onsubmit="authenticate()">
+				<div style="margin:0;padding:0;display:inline"><input name="utf8" value="✓" type="hidden"><input name="authenticity_token" value="LMRAutGuGj/D2QQxfQnnnmYHy9HdUUGhsJbkizjkDCU=" type="hidden"></div>
+				<div id="authentication-error" class="errors">
+				</div>
+				<input id="session_name" name="session[name]" placeholder="Username" size="30" value="" type="text">
+				<input id="session_password" name="session[password]" placeholder="Password" size="30" type="password">
+				<div align="center">
+					<button type="submit" class="button" id="submitButton" name="commit" value="Log in">Log in</button>
+				</div>
+				<div id="form-usernamepassword-error" class="errors space_down">
+				</div>				
+			</form>
+		</div>
+		-->
+		<div id="username_password_div">
+			<form action="" onsubmit="authenticate()">				
+				<div id="authentication-error" class="hidden errors space_down authentication-fail">
+					Authentication Failed
+				</div>
+				<input id="session_name" name="username" placeholder="Username" size="30" value="" type="text">
+				<input id="session_password" name="password" placeholder="Password" size="30" type="password">
+				<div align="center">
+					<button type="button" class="button" id="submitButton" value="Log in">Log in</button>
+				</div>
+				<div align='center' id="form-usernamepassword-error" class="errors space_up_down">
+				</div>
+			</form>
+		</div>
 
 	</div>
 </body>

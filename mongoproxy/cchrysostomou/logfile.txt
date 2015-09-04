@@ -328,3 +328,49 @@ Successfully executed function at time: 2015-08-31 11:54:40.853000.
 User cchrysostomou has logged on to proxy at time: 2015-08-31 11:54:41.917000.
 Successfully executed function at time: 2015-08-31 11:54:42.119000.
 #################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 00:54:25.999000.
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 00:56:25.034000.
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 01:00:06.622000.
+Successfully executed function at time: 2015-09-03 01:00:07.664000.
+#################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 01:00:09.065000.
+Successfully executed function at time: 2015-09-03 01:00:10.112000.
+#################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 14:55:57.942000.
+Successfully executed function at time: 2015-09-03 14:55:59.667000.
+#################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 14:56:01.371000.
+Successfully executed function at time: 2015-09-03 14:56:03.258000.
+#################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 16:07:58.159000.
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 16:08:49.709000.
+Successfully executed function at time: 2015-09-03 16:08:51.178000.
+#################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 16:08:52.897000.
+Successfully executed function at time: 2015-09-03 16:08:54.818000.
+#################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 16:10:48.011000.
+Successfully executed function at time: 2015-09-03 16:10:49.464000.
+#################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 16:10:51.120000.
+Successfully executed function at time: 2015-09-03 16:10:52.839000.
+#################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 16:11:03.577000.
+Successfully executed function at time: 2015-09-03 16:11:05.061000.
+#################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-03 16:11:06.718000.
+Successfully executed function at time: 2015-09-03 16:11:08.655000.
+#################################

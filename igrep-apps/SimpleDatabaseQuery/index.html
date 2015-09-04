@@ -1,13 +1,21 @@
-<!doctype html>
+﻿<!doctype html>
 <html>
 <head>
+<meta charset="utf-8" />
 <title></title>
-	
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.8/css/jquery.dataTables.css">
-<script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.9.4/js/jquery.dataTables.js"></script>
-<script src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.11.4/jquery-ui.js"></script>
-<link rel="stylesheet" href="/scripts/jquery-ui-1.11.4.custom/jquery-ui.theme.css" />
+<!--<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.8/css/jquery.dataTables.css">-->
+<link rel="stylesheet" type="text/css" href="/styles/datatables.css" />
+<link rel="stylesheet" type="text/css" href="/scripts/jquery-ui-1.11.4.custom/jquery-ui.theme.css" />
+<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">
+<!--<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>-->
+<!--<script type="text/javascript" src="/scripts/jquery-1.11.3.js"></script>-->
+<!--<script type="text/javascript" src="/scripts/jquery.js"></script>-->
+<!--<script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.9.4/js/jquery.dataTables.js"></script>-->
+<!--<script src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.11.4/jquery-ui.js"></script>-->
+
+<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="/scripts/datatables.min.js"></script>
+<script type="text/javascript" src="/scripts/jquery-ui-1.11.4.js"></script>
 <script type="text/javascript" src="/scripts/qtip/jquery.qtip.js"></script>
 <script type="text/javascript" src="/scripts/block_ui.js"></script>
 <script type="text/javascript" src="/scripts/exptable.js"></script>
@@ -48,7 +56,7 @@
 					exp_metadata = res
 				},
 				complete: function () {
-					$.unblockUI();
+						$.unblockUI();
 					$("#mainstuff").show()
 					//got all variables needed to initialize the APP 
 					InitializeAPP(exp_metadata);
@@ -98,7 +106,7 @@
 	});
 
 </script>
-<link href="/styles/immunogrep_stylesheet.css" rel="stylesheet" type="text/css">
+
 <style>
 		input.multirowselect.not-multiple {
 			display: none;
@@ -389,7 +397,7 @@
 			</div>
 			<div class='space_up_down'></div>
 			<div>
-				<span name='error-dl' style='color:red;' hidden>Please define which annotation types to return<br><br></span>
+				<span style='color:red;' hidden>Please define which annotation types to return<br><br></span>
 				<input id='run-seq-dl' class='callout-button' type='button' value='Download Sequence Data' disabled>
 			</div>
 

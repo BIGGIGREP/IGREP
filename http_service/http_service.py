@@ -14,6 +14,8 @@ import handle_http_service_calls
 import re
 import httplib
 import urlparse
+import shutil
+
 
 def return_error_string(e):
 	exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -31,6 +33,8 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		pass
 	
 	def get_reply_str(self):
+		self.reply_string = None
+		self.reply_path = None
 		"""
 			
 			Process self.path in http request to figure out what html files or figures to server to webpage
@@ -43,7 +47,9 @@ class HttpHandler( BaseHTTPRequestHandler ):
 			#IGREP/igrep-apps/assets/scripts/		
 
 			#to get to harcoded routes from server (http_service.py), use 
-				#../igrep-apps/assets/
+				#../igrep-apps/assets/		
+		#with open('test.txt','a') as f:
+		#	f.write('original path '+self.path+'\n')
 		print('original path',self.path)
 		orig_path  =self.path
 		self.homepage_path = '/igrep-apps'
@@ -67,39 +73,51 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		elif re.match(self.styles_path+'/.',self.path):
 			self.path = self.reroute+self.path
 		elif self.path.strip('/')=='igrep':
-			reply_str = "it2sasstart"	
-			return reply_str		
+			self.reply_string = "it2sasstart"	
+			#return reply_str		
 		# Someday you might have other routes				
 		print('newpath',self.path)
+		#with open('test.txt','a') as f:
+		#	f.write('original path: '+self.path+'\n')
 		
 		#self.path has been re-routed, now search f
 		if os.path.isfile(self.path):
-			with open(self.path,'rb') as w:
-				reply_str = w.read()		
+			#with open(self.path,'rb') as w:
+			#	reply_str = w.read()		
+			self.reply_path = self.path
 		elif os.path.isdir(self.path):			
 			if self.path[-1]!='/':
 				self.path+='/'					
 			if os.path.isfile(self.path+'index.html'):
-				with open(self.path+'index.html') as w:
-					reply_str = w.read()
+				self.reply_path = self.path+'index.html'
+				#with open(self.path+'index.html') as w:
+					#reply_str = w.read()
 			else:
-				raise Exception('The following folder provided does not have an index.html file: '+self.path)				
+				self.reply_string=''#raise Exception('The following folder provided does not have an index.html file: '+self.path)				
 		else:
-			raise Exception('The following path does not exist: '+self.path)			
+			self.reply_string=''#raise Exception('The following path does not exist: '+self.path)			
 		
-		return reply_str
+		#return reply_str
 
 	def do_GET(self):		
 		try:
-			reply_str = self.get_reply_str()
+			#reply_str = self.get_reply_str()
+			self.get_reply_str()
+			
 			self.send_response( 200 )	
-			self.send_header( "Content-length", str(len(reply_str)) )
+			#self.send_header( "Content-length", str(len(reply_str)) )
 			self.send_header( "Access-Control-Allow-Origin", "*" )
 			self.end_headers()
-			self.wfile.write( reply_str )
+			#self.wfile.write( reply_str )
+			if self.reply_string!=None:
+				self.wfile.write(self.reply_string)
+			elif self.reply_path!=None:				
+				self.reply_path =  os.path.abspath(self.reply_path)
+				shutil.copyfileobj(open(self.reply_path,'rb'), self.wfile)
 		except Exception as e:			
 			self.send_error(401,str(e))
 			print('Error in html request: '+str(e))
+			print return_error_string(e)
 	
 	def do_DELETE(self):
 		pass
@@ -196,7 +214,7 @@ try:
 	thread_http_server.start()
 except KeyboardInterrupt:
 	thread_http_server.stop()
-	print "DIE"
+	print("DIE")
 	sys.exit(0)
 
 def signal_handler(signal, frame):
@@ -206,5 +224,5 @@ def signal_handler(signal, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-print "SERVING"
+print("SERVING")
 

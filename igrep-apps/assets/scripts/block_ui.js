@@ -11,7 +11,6 @@
  *
  * Thanks to Amir-Hossein Sobhi for some excellent contributions!
  */
-alert('imported')
 ;(function() {	
 /*jshint eqeqeq:false curly:false latedef:false */
 "use strict";

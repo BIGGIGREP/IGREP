@@ -1,16 +1,36 @@
 ﻿import json
 import sys
-import sys
+import os 
+import json
+
 sys.path.insert(0,'../common_tools/') #add scripts in this file to the proxy list
 import immunogrep_db_query_api as query
 
 try:
-	from simplepam import authenticate as authenticate_user
-	#pass
+	from simplepam import authenticate as authenticate_user	
 except:
 	from fakepam import authenticate as authenticate_user
-	print('IM USING A WINDOWS MACHINE WITHOUT SIMPLEPAM')
+	print('IM USING A WINDOWS MACHINE AS MY SERVER WITHOUT POSIX')
+	
+	
+def load_configuration_file():
+	'''
+		
+		The .cfg file inside the http_service.py folder defines some default parameters we use.
+		This will load the file, but if it doesnt exist, then it will set some default parameters.
+		
+	'''
+	if not os.path.isfile('igrep_services.cfg'):
+		print('There is no configuration file defining, will set default parameters')
+		igrep_params = {
+			'igrep_mongoproxy_path':'localhost:6200'
+		}
+	else:
+		with open('igrep_services.cfg','r') as ff:			
+			igrep_params = json.load(ff)
+	return igrep_params
 
+igrep_params = load_configuration_file()
 
 #THIS MODULE SHOULD SERVE AS A HELPER SCRIPT FOR MAKING OUR IGREP APPS
 #JAVASCRIPT FUNCTIONS CAN MAKE AJAX CALLS TO THE PROXY WHICH CAN SUBSEQUEENTLY CALL ANY OF THE
@@ -26,17 +46,21 @@ class HtppIgrepHandler():
 	def sum_vals(self,a,b=3):
 		print a
 		return a+b		
-	def authenticate(username,password):
+	def authenticate(self,username,password):
 		"""
-
+			
 			Function for authenticating the current user accessing the computer
 			It will check whether the user logging in is a current user in the computer
-
+			
 		"""
 		return authenticate_user(username,password)
 
-	def get_metadata_on_proxy(self,proxy_path=''):
+	def get_default_mongoproxy_address(self):
+		return igrep_params['igrep_mongoproxy_path']
+
+	def get_metadata_on_proxy(self,proxy_path=igrep_params['igrep_mongoproxy_path']):
 		"""
+			
 			Queries the database and returns information necessary for running javascript functions.
 			1) Returns metadata for experiments stored in the database.
 			2) Returns information regarding the current user running APP
@@ -66,6 +90,7 @@ class HtppIgrepHandler():
 			---------------						----------------						----------------
 			metadata_from_experiment_database   All metadata associated with experiments List of dictionaries
 	        ===============						================						================
+		
 		"""
 				
 		# CREATE an instance of the class made to query data via proxy from database		
@@ -76,10 +101,10 @@ class HtppIgrepHandler():
 		if not users:
 			return {}
 		users = users[0]
-		if not(users['user']): #the user was not found in the database
+		#if not(users['user']): #the user was not found in the database
 		#	
-		.communicate_javascript_run_function('NoAccess',[])		
-			return {}
+		#.communicate_javascript_run_function('NoAccess',[])		
+		#	return {}
 			#os._exit(1) #exit program
 								
 		# REQUEST all records from experiments collection;

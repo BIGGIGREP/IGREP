@@ -47,7 +47,7 @@ def get_stdout(bash_command):
 		Python wrapper for running python subprocess.call function
 		Returns the output from command
     """
-	output = subprocess.check_output(bash_command)
+	output = subprocess.check_output(bash_command,shell=True)
 	#time=str(datetime.now()).replace(' ','').replace(':','').replace('/','').replace('\\','').replace('-','')
 	#temp_file_name = 'scratch/stdout'+time+'.txt'
 	#os.system(bash_command +" > {0}".format(temp_file_name))

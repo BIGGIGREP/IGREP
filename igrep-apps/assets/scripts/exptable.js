@@ -1,5 +1,4 @@
 
-alert('imported also!')
 //global variable that will store metadata for each experiment returned from query 
 var exp_metadata_info = {}
 var exp_metadata_list = []

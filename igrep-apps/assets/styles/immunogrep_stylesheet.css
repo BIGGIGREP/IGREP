@@ -83,6 +83,11 @@ h3 {
 	color: red;
 }
 
+.errors{
+	color: red;
+	font-weight:bold;
+}
+
 .parameter-table td {
 	vertical-align: top;	
 	padding: 0.5em 0 0 0;

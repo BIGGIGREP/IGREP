@@ -2,16 +2,30 @@
 import sys
 import os 
 import json
+import subprocess
 
 sys.path.insert(0,'../common_tools/') #add scripts in this file to the proxy list
 import immunogrep_db_query_api as query
 
-try:
-	from simplepam import authenticate as authenticate_user	
-except:
-	from fakepam import authenticate as authenticate_user
+try:	
+	from simplepam import authenticate
+	use_posix = True
+except:	
+	use_posix = False
 	print('IM USING A WINDOWS MACHINE AS MY SERVER WITHOUT POSIX')
-	
+
+def authenticate_user(u,p):
+	print u
+	print p
+	if use_posix:
+		res =  subprocess.check_output('sudo python authenticate_script.py '+u+' '+p)
+		if int(res)==0:
+			return False
+		else:
+			return True
+	else:
+		print('im not doing authentication!!!!')
+		return True	
 	
 def load_configuration_file():
 	'''

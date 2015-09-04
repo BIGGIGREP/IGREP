@@ -72,6 +72,7 @@
 		//make an ajax call to confirm user
 		$(document).ready(function(){
 			$("#submitButton").click(function () {
+				$("#authentication-error").hide()
 				authenticate()
 			});
 		});
@@ -93,7 +94,7 @@
 					authenticate_answer(res)
 				}
 				opts.complete = function(){
-					//$('#submitButton').prop('disabled',false)
+					$('#submitButton').prop('disabled',false)
 				}				
 				opts.error = function (jqXHR, textStatus, errorThrown) {
 					alert(jqXHR.responseText);

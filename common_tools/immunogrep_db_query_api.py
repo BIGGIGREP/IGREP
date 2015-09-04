@@ -60,9 +60,11 @@ test2=type({})
 
 try:
 	#cython code defining useful_functions	
-	#from immunogrep_cython_db_tools import flatten_dictionary
-	#from immunogrep_cython_db_tools import RemoveObjId				
-	print('aaahhh im commented out!!!! visual studio jazz!!!')
+	from immunogrep_cython_db_tools import flatten_dictionary
+	from immunogrep_cython_db_tools import RemoveObjId				
+	#print('aaahhh im commented out!!!! visual studio jazz!!!')
+	#from immunogrep_useful_functions import flatten_dictionary 
+	#from immunogrep_useful_functions import RemoveObjId
 except:
 	#it wont work if there is no cython module (currently immunogrep_cython_db_tools). when dit doesnt work, import non cyhton version
 	from immunogrep_useful_functions import flatten_dictionary 

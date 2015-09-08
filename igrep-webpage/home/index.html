@@ -12,7 +12,7 @@
 	<link rel="stylesheet" type="text/css" href="/styles/bootstrap/css/bootstrap.min.css">	
     <link rel="stylesheet" type="text/css" href="/styles/dashboard.css">	
 	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">	
-	<script src="/styles/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/styles/bootstrap/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="/scripts/igrep.script.tools.js"></script>		
 		
 	<style>		
@@ -213,8 +213,7 @@
 							
 							
 				for(var j = 0; j<app_lists[i]['apps'].length;j++){
-					var sub_app = app_lists[i]['apps'][j]
-					console.log(sub_app)
+					var sub_app = app_lists[i]['apps'][j]					
 					p = panel_classes[Math.floor((Math.random() * panel_classes.length))]
 					app_classes = 'All-apps '+sub_app['classes'].join(' ')
 					id='app_panel_'+String(panel_id_nums)
@@ -316,8 +315,7 @@
 				$('#apps-go-here').find(class_search).each(function(){
 					$(this).show()
 					$(this).closest('div.row').prev('.page-header').show()
-				}) 
-				console.log($('#apps-go-here').find(class_search).show())
+				}) 				
 				//only_show_active()
 			});
 		})

@@ -164,8 +164,7 @@ class HtppIgrepHandler():
 			
 								
 		directory_dictionary = dict(useful.DotAccessible(directory_dictionary))
-		print('RESPONSE FOUND!')
-		print(app_list)
+		
 		return {'directory_dictionary':directory_dictionary,'apps':app_list}
 
 	def get_metadata_on_proxy(self,proxy_path=igrep_params['igrep_mongoproxy_path']):

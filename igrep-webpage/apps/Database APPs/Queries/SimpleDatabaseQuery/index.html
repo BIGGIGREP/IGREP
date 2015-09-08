@@ -1,113 +1,77 @@
-﻿<!doctype html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="utf-8" />
-<title></title>
-<!--<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.8/css/jquery.dataTables.css">-->
-<link rel="stylesheet" type="text/css" href="/styles/datatables.css" />
-<link rel="stylesheet" type="text/css" href="/scripts/jquery-ui-1.11.4.custom/jquery-ui.theme.css" />
-<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">
-<!--<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>-->
-<!--<script type="text/javascript" src="/scripts/jquery-1.11.3.js"></script>-->
-<!--<script type="text/javascript" src="/scripts/jquery.js"></script>-->
-<!--<script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.9.4/js/jquery.dataTables.js"></script>-->
-<!--<script src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.11.4/jquery-ui.js"></script>-->
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        
+    <title>Simple Experiment Query</title>
 
-<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>
-<script type="text/javascript" src="/scripts/datatables.min.js"></script>
-<script type="text/javascript" src="/scripts/jquery-ui-1.11.4.js"></script>
-<script type="text/javascript" src="/scripts/qtip/jquery.qtip.js"></script>
-<script type="text/javascript" src="/scripts/block_ui.js"></script>
-<script type="text/javascript" src="/scripts/exptable.js"></script>
-
-
-<script type="text/javascript">
-
-//REAL JAVASCRPIPT STARTS HERE
-	//open config file, get settings for proxy for running quick python functions for app assisitance and address for igrep database proxy
-	//run an ajax call to get:
-		//1) the current user of the experiment
-		//2) a list of metadata user has access to 
-	exp_metadata = {}
-	proxy_path = "http://localhost:6200" //connect to new mongoproxy!!!
-
+	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>
+	<script type="text/javascript" src="/scripts/datatables.min.js"></script>
+	<script type="text/javascript" src="/scripts/jquery-ui-1.11.4.js"></script>
+	<script type="text/javascript" src="/scripts/qtip/jquery.qtip.js"></script>
+	<script type="text/javascript" src="/scripts/block_ui.js"></script>
+	<script type="text/javascript" src="/scripts/exptable.js"></script>
+	<script type="text/javascript" src="/styles/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/scripts/igrep.script.tools.js"></script>		
 	
+	<link rel="stylesheet" type="text/css" href="/styles/datatables.css" />
+	<link rel="stylesheet" type="text/css" href="/scripts/jquery-ui-1.11.4.custom/jquery-ui.theme.css" />
+	<link rel="stylesheet" type="text/css" href="/styles/bootstrap/css/bootstrap.min.css">	
+	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">
 
-	$(document).ready(function(){
-		// Example usage
-		var res		
+
+
+	<script type="text/javascript">
+
+	//REAL JAVASCRPIPT STARTS HERE
+		//open config file, get settings for proxy for running quick python functions for app assisitance and address for igrep database proxy
+		//run an ajax call to get:
+			//1) the current user of the experiment
+			//2) a list of metadata user has access to 
+		exp_metadata = {}
 		
-		$('#me').click(function () {
-			$.blockUI({ message: 'Getting data' });
-			var xhr = null;
-			var params = {
-				module: 'get_metadata_on_proxy', //run this function
-				args: [proxy_path] //use this proxy path to database
+		//Run an ajax call to the http server. Request metadata from database or proxy_path 
+		//empty proxy_path => have server use default path
+		//Upon successful request, generate the datatable using exp_metadata
+		function GetMetaData(proxy_path){
+			$.blockUI({ message: 'Searching metadata...' });
+			if(proxy_path!=undefined)
+				var args = [proxy_path]
+			else
+				var args = []
+			params = {
+				'module':'get_metadata_on_proxy',
+				'args':args
 			}
-			var opts = {
-				//url: encodeURI("http://biotseq.icmb.utexas.edu/call"),
-				url: encodeURI("http://localhost:6100"),
-				type: "POST",
-				contentType: "application/json",
-				dataType: "json",
-				data: JSON.stringify(params),
-				success: function (res) {
-					console.log(res)
-					exp_metadata = res
-				},
-				complete: function () {
-						$.unblockUI();
-					$("#mainstuff").show()
-					//got all variables needed to initialize the APP 
-					InitializeAPP(exp_metadata);
-				},
-				//timeout:1000,
-				error: function (jqXHR, textStatus, errorThrown) {
-					alert('error')
-					alert(jqXHR.responseText);
-				}
-				//async:false
-			};
-			//actually run the ajax call using option from opts
-			xhr = $.ajax(opts);
-		});
-
-		$('#me2').click(function () {
-			//alert('ok')
-			$.blockUI({ message:'Loading' });
-			var params = {
-				module: 'sum_vals', //run this function
-				args: [], //use this proxy path to database
-				kwargs:{a:3,b:5}
+			opts = get_ajax_params(params) //from the javascript igrep.script.tools.js
+			opts.success = function (res) {
+				exp_metadata = res
+				InitializeAPP(exp_metadata)
 			}
-			var opts = {
-				//url: encodeURI("http://biotseq.icmb.utexas.edu/call"),
-				url: encodeURI("http://localhost:6100"),
-				type: "POST",
-				contentType: "application/json",
-				dataType: "json",
-				data: JSON.stringify(params),
-				success: function (res) {
-					alert('The answer is '+String(res))
-				},
-				complete: function () {
-					$.unblockUI();
-					//got all variables needed to initialize the APP 
-					//InitializeApp();
-				},
-				error: function (jqXHR, textStatus, errorThrown) {
-					alert(jqXHR.responseText);
-				}
-				//async:false
-			};
-			//actually run the ajax call using option from opts
+			opts.complete = function(){
+				$.unblockUI();
+				
+			}				
+			opts.error = function (jqXHR, textStatus, errorThrown) {
+				alert(jqXHR.responseText);
+				ClearPage();
+			}		
 			xhr = $.ajax(opts);
-		});
-	});
+		}
+		function ClearPage(){
+			$('#main-app-page').html('<div class="alert alert-danger" role="alert">There was an error when processing the database query. Please report this to an administrator</div>')
+		}
+		$(document).ready(function(){
+			GetMetaData();
+			// Example usage
+		});		
+			
+	</script>
 
-</script>
-
-<style>
+	<style>
 		input.multirowselect.not-multiple {
 			display: none;
 		}
@@ -121,31 +85,31 @@
 			opacity: 0.2;
 		}
 
-			.div-btn.disabled:hover {
-				background: none;
-			}
+		.div-btn.disabled:hover {
+			background: none;
+		}
 
 		/*therese are nice but cannot get them to format correctly withe everythign else
-	.top {
-		position:absolute;
-		left:0; right:0;
-		height: 92px;
-	}
-	.left {
-		position:absolute;
-		left:0; top:150px; bottom: -300px;
-		width: 250px;
-		background-color:#F6F6F6;
-		float:left;
-		padding-left:10px;
+		.top {
+			position:absolute;
+			left:0; right:0;
+			height: 92px;
+		}
+		.left {
+			position:absolute;
+			left:0; top:150px; bottom: -300px;
+			width: 250px;
+			background-color:#F6F6F6;
+			float:left;
+			padding-left:10px;
 
-	}
-	.main {
-		position: absolute;
-		left:250px; top:120px; right:0; bottom:0;
-		color:black;
-		padding-left:50px;;
-	}*/
+		}
+		.main {
+			position: absolute;
+			left:250px; top:120px; right:0; bottom:0;
+			color:black;
+			padding-left:50px;;
+		}*/
 
 		.top {
 		}
@@ -178,21 +142,14 @@
 			color: black;
 		}
 
-			.back-btn:hover {
-				color: #F9BE03;
-				font-weight: bold;
-				cursor: pointer;
-			}
-</style>
+		.back-btn:hover {
+			color: #F9BE03;
+			font-weight: bold;
+			cursor: pointer;
+		}
+	</style>
 </head>
 <body>
-	IM A HOMEPAGE
-	<input id='me' type='button' value='clickme for functio 1'>
-	<input id='me2' type='button' value='clickme for functio n'>
-	<img src="/images/apphere.png" />
-	<div id="expdata">
-	</div>
-	<div id="mainstuff" class="hidden">
 	<div class="top2">
 		<div class='top-header space_up_down'>
 			<img src="/images/ab.png" />
@@ -203,7 +160,7 @@
 		</div>
 	</div>
 
-	<div class='section'>
+	<div class='section row'>
 		<div class='left'>
 			<div id='schema' class='hidden'>
 				<h2><span id='#go-back-to-selection' class='back-btn' style='padding: 0px 0.2em;'>&lt;</span>Report the following</h2>
@@ -215,27 +172,19 @@
 				<div id='all-exp-filters'>
 					<h2>Set Experiment Filters</h2>
 					<div style='padding-left:5px; padding-right:20px;'>
-
 						<div class='filter-parent filter-my-exp'>
-
 							<div class='exp-filter div-btn'>
 								My Experiments
 								<input type='checkbox' class='filter-my-exp hidden'>
 							</div>
-
 						</div>
-
 						<div class='filter-parent filter-seq-count'>
-
 							<div class='div-btn exp-filter'>
 								Contains NGS Data
 								<input type='checkbox' class='filter-seq-count hidden'>
 							</div>
 						</div>
-
-
 						<div class='filter-parent filter-annotation'>
-
 							<div class='exp-filter div-btn' name='any_annotation'>
 								Contains AB Annotated Data
 								<input type='checkbox' class='filter-annotation hidden'>
@@ -244,15 +193,12 @@
 								<!--javascritp fucntion above populates this div-->
 							</div>
 						</div>
-
-
 						<div class='filter-parent filter-paired'>
 							<div class='exp-filter div-btn'>
 								VH:VL Paired
 								<input type='checkbox' class='filter-paired hidden'>
 							</div>
 						</div>
-
 					</div>
 				</div>
 
@@ -281,19 +227,13 @@
 							</div>
 						</div>
 					</div>
-
 				</div>
 				<div class='space_up_down' align='right' style='padding: 5em 0em; padding-right:20px;'>
 					<input name='modify-fields' id='modify-output-fields' class='space_up callout-button' type='button' value='Modify desired fields' style='padding: 4px 6px; border-radius: 8px;' disabled>
 				</div>
 			</div>
-
-
-
 		</div>
-
 		<div class="main" style="float:left;">
-
 			<div class='space_down'>
 				<h2>Select experiment(s) to download</h2>
 			</div>
@@ -302,18 +242,14 @@
 				<!--javascritp fucntion above populates this div-->
 			</div>
 
-
 			<div name='output-data'>
 				<h2>Ouput Settings</h2>
-
 				<div class='space_down'>
 					<input type='radio' name='save-exp-by' value='exp' checked>Save result files by their experiment names<br>
 					<input type='radio' name='save-exp-by' value='file'>Save result files by their original uploaded filename<br>
 					<input type='radio' name='save-exp-by' value='custom'>Save all results to a single file  <span style='padding-left:2em' hidden><input name='file-name' placeholder='File name'></span>
 				</div>
-
 				<table>
-
 					<tr>
 						<td>
 							<span>
@@ -382,17 +318,7 @@
 								</select>
 							</span>
 						</td>
-					</tr>
-					<!--<tr>
-						<td>
-							<span>
-								Prefix files with
-							</span>
-						</td>
-						<td>
-							<input name='file-prefix'>
-						</td>
-					</tr>-->
+					</tr>					
 				</table>
 			</div>
 			<div class='space_up_down'></div>
@@ -400,14 +326,12 @@
 				<span style='color:red;' hidden>Please define which annotation types to return<br><br></span>
 				<input id='run-seq-dl' class='callout-button' type='button' value='Download Sequence Data' disabled>
 			</div>
-
 		</div>
-
 	</div>
 	<div style="clear:both;"></div>
 	<div id='filepreviewdiv'>
 	</div>
-		</div>
+</div>
 
 </body>
 </html>

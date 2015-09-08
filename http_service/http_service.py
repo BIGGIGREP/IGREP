@@ -32,7 +32,7 @@ class HttpHandler( BaseHTTPRequestHandler ):
 	def do_HEAD(self):
 		pass
 	
-	def get_reply_str(self):
+	def get_reply_str(self):		
 		self.reply_string = None
 		self.reply_path = None
 		"""
@@ -52,7 +52,9 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		#with open('test.txt','a') as f:
 		#	f.write('original path '+self.path+'\n')
 		#print('original path',self.path)
-
+		if self.path.endswith('favicon.ico'):
+			self.reply_string = ""
+			return
 		self.path=os.path.normpath(urllib.url2pathname(self.path) )
 		orig_path  =self.path
 		self.root_path = 'igrep-webpage'
@@ -64,8 +66,7 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		self.parent_of_proxy = os.path.dirname(os.path.dirname(os.path.abspath("__file__")))
 		self.reroute = os.path.join(self.parent_of_proxy,self.root_path,'assets')
 		self.reroute_apps = os.path.join(self.parent_of_proxy,self.root_path)
-		
-		print(self.parent_of_proxy)
+				
 		#remove the '/' or '\' from beginning of path
 		self.path = self.path.lstrip('/\\')
 		if self.path == '':

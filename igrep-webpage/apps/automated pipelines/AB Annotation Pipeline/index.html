@@ -1,0 +1,3583 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        
+    <title>BIGG Data Analysis</title>
+	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>	
+	<link rel="stylesheet" type="text/css" href="/styles/bootstrap/css/bootstrap.min.css">	
+    <link rel="stylesheet" type="text/css" href="/styles/dashboard.css">	
+	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">	
+	<script src="/styles/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/scripts/igrep.script.tools.js"></script>		
+
+
+<script>		
+
+//global variable that will store metadata for each experiment returned from query 
+var exp_metadata_info = {}
+var exp_metadata_list = []
+var exps_with_write_access = {}
+var analysis_schema_datatypes = {}
+var global_annotation = {}
+var all_analyses = []
+var all_recomb = []
+var exp_user
+var expdT
+var global_table_header
+var global_use_qtip
+var current_selection = []
+var current_exp_set = []
+var file_option;
+var user_info = {}
+var global_settings = []
+
+
+var update_sequences_to_db = false //this variable will help us determine how to add the results from the APP to the databse 
+var downloaded_input_from_db = false //this variable tells us whether the user is going to first download results from the database (not selecteing files from scratch)
+
+var input_file_data = [] //this variable will be a list of objects whose keys are 'filepath' and 'metadata'. If downloading from database, then 'filepath' will just be the experiment name, whereas if selecting from scratch, then filepath will be the path of the file in scratch 
+						//if selecting files from scratch AND those files have metadata files associated with them, then this object will be a an object containing the '_id', 'EXPERIMENT_NAME', 
+
+var imgt_file_data = []
+var num_groups
+
+var files_in_groups = []//this variable will be a list of lists. it will store all of the files to be annotated for each group
+
+var default_isotype_barcodes =  [
+									['CCTCCACCAAGGGCCCATCGCAG','IGHG'],
+					  				['GGAGTGCATCCGCCCCAACC','IGHM'],
+					  				['CATCCCCGACCAGCCCCAAGC','IGHA'],
+					  				['GAACTGTGGCTGCACCATCT','IGK'],
+					  				['GTCACTCTGTTCCCGCCCTC','IGL']
+								]
+
+	
+////THE FOLLOWING CODE CORRESPONDS TO CREATING A 'WIDGET SORTA' FOR SELECTING GERMLINE DATABASE
+var germline_data //list of dictionaries from database
+var unique_productive_genes //unique values for the field 'PRODUCTIVE_GENES'
+var filter_variables = ['SPECIES','LOCUS','GENETYPE','SOURCE-VERSION','UPLOADED-BY','PRODUCTIVITY'] //these are the variables from the documents that we want to filter by
+var filter_dict = {}
+var current_filters = {}//filters currently requested by user 
+
+var exp_insertion_method = {} //how will each of the experiments be inserted into the database (using update or insertion)
+
+var using_imgt_files=false
+
+function AddGermlineMetadata(data){
+	germline_data = data 
+}
+
+function ReturnFilteredData(){
+	//go through the list of germlines
+	//for every germline set, confirm whether it passes the filter settings	
+	var filtered_results = []
+	var passed_filter
+	var element_found 
+	var overlap
+	var groups = {}	
+	var index
+	var group_names = []
+	var index_num = 0 
+	for (var i = 0; i<germline_data.length;i++){			
+		passed_filter = true //by default all germlines pass filter (that is if there are no settings for current_filters, then return all data) 		
+		for(filter in current_filters){ //go through each of the filters			
+			if(current_filters[filter].length==0)
+				continue //there is nothing to filter so continue 					
+			if(germline_data[i][filter]==Array){ //its a list, so take the INTERSECTION between the elements in variable and filter 
+				overlap = germline_data[i][filter].filter(function(n){
+					return current_filters[filter].indexOf(n)!=-1
+				})
+				if(overlap.length>0)
+					element_found = true									
+			}
+			else{ //just a single element, so check if filters contains this element 
+				element_found = current_filters[filter].indexOf(germline_data[i][filter])!=-1
+			}	
+			if (element_found == false){
+				passed_filter = false
+				break
+			}
+		}		
+		if(passed_filter){
+			filtered_results.push(germline_data[i])
+			//group filtered_results by their 'SPECIES','LOCUS','SOURCE,'VERSION','AND UPLOADED-BY' fields 
+			index = germline_data[i]['SPECIES']+germline_data[i]['LOCUS']+germline_data[i]['SOURCE']+germline_data[i]['UPLOADED-BY']+germline_data[i]['VERSION']
+			if (!(index in groups)){											
+				var s = germline_data[i]['SPECIES'].split(' ')
+				//3element list. element 1=> name, element2=>all germline data ,element3=> unique id of germline database (ELEMENT 2 GETS CHANGED BELOW (LINE 129-130))
+				group_names.push([s[0][0]+'.'+s[1]+' '+germline_data[i]['LOCUS'],[germline_data[i]],[germline_data[i]['_id']]])
+				groups[index] = index_num
+				index_num+=1
+			}else{
+				group_names[groups[index]][1].push(germline_data[i])
+				group_names[groups[index]][2].push(germline_data[i]['_id'])
+			}
+		}		
+	}
+	
+	//loop through grouped results and generate a 'SUMMARY' list of elements that groups all foothe genetypes togther and generates TITLE content	
+	tooltip_text = []
+	for (var i = 0; i<group_names.length;i++){
+		var genetypes= []
+		tooltip_text.push({})
+		for (var j = 0; j<group_names[i][1].length;j++){
+			genetypes.push(group_names[i][1][j]['GENETYPE'])
+			
+			tooltip_text[i][group_names[i][1][j]['GENETYPE']+'_GENE_SET'] = {
+				'Name':group_names[i][1][j]['NAME'],
+				'Description':group_names[i][1][j]['DESCRIPTION'],
+				'Number Genes':group_names[i][1][j]['NUMBER_GENES'],
+				'Number Alleles':group_names[i][1][j]['NUMBER_ALLELES'],
+				'Productive Genes':group_names[i][1][j]['PRODUCTIVE_GENES']
+			}
+		}
+		genetypes = MakeUnique(genetypes)
+		group_names[i][0]+=':'+genetypes.join(',')				
+		tooltip_text[i] = '<pre>'+group_names[i][1][0]['SPECIES']+' '+group_names[i][1][0]['LOCUS']+'\nSource: '+group_names[i][1][0]['SOURCE']+', Version: '+group_names[i][1][0]['VERSION']+'\nSubmitted By: '+group_names[i][1][0]['UPLOADED-BY']+'\n'+JSON.stringify(tooltip_text[i],null,4)+'</pre>'
+		//CHANGE GROUPNAMES[I][1] TO JUST BE LOCUS AND SPCIES (we are going to use this in the python script to query for cdr3 motifs)		
+		group_names[i][1] = [group_names[i][1][0]['SPECIES'],group_names[i][1][0]['LOCUS']]				 		
+	}				
+	return [group_names,tooltip_text]
+}
+
+function UpdateSelectTable(div){
+	divid=div
+	var filtered_list
+	var tooltip_list
+	r= ReturnFilteredData()
+	filtered_list=r[0]
+	tooltip_list=r[1]
+	var selectable_html = ""
+	
+	if(filtered_list.length==0){
+		$(divid +' div.selecttable_germline ol').html("<div class='indent1'><b><br>No results found<br></b></div>")
+		return
+	}
+	for (var i = 0; i< filtered_list.length; i++){
+		//create li elements, add tooltips using tooltip list data, add names using filtered_list data 
+		selectable_html+="<li title='"+tooltip_list[i]+"' name='"+(i+1)+"' class='igrep-select-widget'>"+
+								filtered_list[i][0]+								
+								"<input class='query-info hidden' name='germline_ids' value='"+filtered_list[i][2].join(',')+"'>"+ //store a list of unique ids for all germline elements 
+								"<input class='query-info hidden' name='species_locus' value='"+filtered_list[i][1].join(',')+"'>" //store a list of unique ids for all germline elements 
+							"</li>"
+	}	
+	$(divid +' div.selecttable_germline ol').html(selectable_html)
+	//finally associate a qtip jquery to all of the li elements
+	$(divid +' li').qtip({
+		content:{	
+			title:'Germline sets in group',
+			text: false
+		},
+		show:{
+			delay:1000
+		},
+		hide: {
+			fixed: true, // Make it fixed so it can be hovered over
+			delay: 100//add a delay from hiding tooltip
+		},
+		position:{
+			target: 'mouse',
+			adjust: {
+			  mouse: false  
+			}
+		},
+		style:{		
+		}
+	});			
+}
+
+//germlinetable => a jquery element containing the selectable value 
+//germlinetable will contain: the selectable adn all of the filters UI 
+function ReturnGermlineTableResults(germlinetable){
+	//find all highlighed elements in table 
+	var unique_list_germlineids = []
+	var unique_locus_species = {}
+	var s_l
+	germlinetable.find('li.ui-selected').each(function(){
+		$(this).children('.query-info').each(function(){
+			//identify the unique locus/species pair 
+			if($(this).attr('name')=='germline_ids')
+				unique_list_germlineids = unique_list_germlineids.concat($(this).attr('value').split(',')) //add tot he growing list of germline ids 
+			else if($(this).attr('name')=='species_locus'){
+				s_l =$(this).attr('value').split(',')
+				
+				if(s_l[0] in unique_locus_species)
+					unique_locus_species[s_l[0]].push(s_l[1])
+				else
+					unique_locus_species[s_l[0]] = [s_l[1]]			
+			}
+		});
+	})	
+	//search for the div 'PRODUTIVITY' within element. search for all ind-filter-elements children that are highlighted
+	var productivity_filter = []
+	germlinetable.find('div[name="PRODUCTIVITY"].filter-options').find('.ind-filter-element.filter-selected').each(function(){	
+		productivity_filter.push($(this).attr('name'))//add the productivity filter to the array 
+	})	
+	return {'productivity':productivity_filter,'germline_ids':unique_list_germlineids,'species-locus':unique_locus_species}			
+}
+
+function MixcrSelectTable(divid){
+	var selecting_color="#FECA40"
+	var selected_background_color="#d6730e"
+	var color="white"
+	var orientation="grid"//if gride, then use float:left for ul li class (we can do this in the future that is allow list/grid if necessary)
+	var width=200;
+	var row_width=String(4*width)+'px';
+	
+	//create special styles for selectable
+	updated_styles = "<style>"+
+			divid+" ol li.ui-selecting{background:"+selecting_color+";}"+
+			divid+" ol li.ui-selected{background:"+selected_background_color+";}"+
+			divid+" ol{list-style-type:none;margin:0;padding:0;width:"+row_width+";}"+
+			divid+" ol li{float:left;margin:1px;padding:0.0em;height:20px;width:20%;font-size:1.4em;text-align:center;}"+			
+					"</style>"
+	
+	//updatestyles in head 
+	$('html > head').append(updated_styles)
+	
+	//create selectable jquery 
+	$(divid +' ol').selectable({
+		stop: function() {								
+		},
+		selecting: function(){
+			$( ".ui-selecting", this ).each(function() {										
+			});			
+		}
+	}); 	
+}
+
+function CreateSelectTable(div){
+	var selecting_color="#FECA40"
+	var selected_background_color="#d6730e"
+	var color="white"
+	var orientation="grid"//if gride, then use float:left for ul li class (we can do this in the future that is allow list/grid if necessary)
+	var width=200;
+	var row_width=String(4*width)+'px';
+	divid=div
+		
+	
+	//create special styles for selectable
+	updated_styles = "<style>"+
+			divid+" ol li.ui-selecting{background:"+selecting_color+";}"+
+			divid+" ol li.ui-selected{background:"+selected_background_color+";}"+
+			divid+" ol{list-style-type:none;margin:0;padding:0;width:"+row_width+";}"+
+			divid+" ol li{float:left;margin:1px;padding:0.0em;height:20px;width:25%;font-size:1.4em;text-align:center;}"+			
+					"</style>"
+	
+	//updatestyles in head 
+	$('html > head').append(updated_styles)
+	
+	var selectable_html = "<h3>Below, please select all of the germline databases that you would like to query your sequences against</h3>"+
+							"<ol class='select-list'>"+
+							"</ol><div style='clear:both;'>"+
+							"<span class='selectable-count'><h3>Current options selected: <span class='selected-num'></h3></span>"+
+							"<span name='germline-errors' class='hidden' style='color:red;'>Please select at least one germline database</span>"
+			
+	$(divid +' div.selecttable_germline').html(selectable_html)
+	
+	//create selectable jquery 
+	$(divid +' ol').selectable({
+		stop: function() {					
+			var temp="";
+			var count_elem = $(this).closest('.selecttable_germline').find('.selectable-count').find('.selected-num')			
+			$( ".ui-selected", this ).each(function() {			
+				temp+=" #"+String($(this).attr('name'))+",";
+			});
+			temp = temp.slice(0,-1)
+			count_elem.html(temp)											
+		},
+		selecting: function(){
+			$( ".ui-selecting", this ).each(function() {
+				//var name = "#tooltipobject"+$(this).attr('name');						
+				//var remove_d = "removedialog"+$(this).attr('name');						
+				//var inside_t= "insidetooltip"+$(this).attr('name');												
+										
+			});			
+		}
+	});  		
+	//now actually add li elements to the ol tag using filtered data
+	UpdateSelectTable(div)
+}
+
+function NewFilterSettings(div){
+	current_filters ={}//reset current filters	
+	//Search for which fields have filters set 	
+	$(div).find('div.div-btn.ind-filter-element.filter-selected').each(function(){
+		var field_name = $(this).parent().attr('name') //find the filter name 
+		if (field_name in current_filters) //already created this filed in object
+			current_filters[field_name].push($(this).html())//add to current list
+		else
+			current_filters[field_name] = [$(this).html()] //create new object in field
+	})
+	//now re-add li elements based on new filters 
+	UpdateSelectTable(div)
+}
+
+//accepts a list of JSON variables from the databse query/python function 
+//each element is a specific germline 
+//append the following HTML code to a specific div 
+function CreateGermlineDBHTML(div,germline_query){
+	germline_data = germline_query
+	//create default html text for germline database 
+	html = "<div class='selecttable_germline'></div>"+					
+		   "<div class='space_down'></div>"+
+		   "<div name='current-motif-num'></div>"+			
+		   "<input type='button' name='show-filters' class='link-btn' value='Set Filters'>"+
+			"<div class='indent1'>"+
+				"<div class='germline-filters hidden'></div>"+
+			"</div>"+
+			"<div style='clear:both;'></div>"+
+			"<div class='space_down'></div>"+
+			"<div class='space_down'></div>"+
+			"<div class='errorselecttable error'></div>"
+	
+	//update div with html 
+	var divid =div
+	
+	$(divid).append(html)
+
+		
+	h=""
+	for (var i = 0; i<filter_variables.length;i++){		
+		var all_vals = []
+		var is_list = germline_data[0][filter_variables[i]].constructor== Array
+		if(filter_variables[i] != 'PRODUCTIVITY'){
+			for(var j =0; j<germline_data.length;j++)
+				if(filter_variables[i] in germline_data[j])
+					if(is_list)//its a list
+						all_vals = all_vals.concat(germline_data[j][filter_variables[i]])
+					else
+						all_vals.push(germline_data[j][filter_variables[i]])
+			filter_dict[filter_variables[i]] = {
+				'dtype': is_list,
+				'default':[],				
+				'unique':MakeUnique(all_vals)			
+			}
+		}
+		else{							
+			for(var j =0; j<germline_data.length;j++)
+				if('PRODUCTIVE_GENES' in germline_data[j]){
+					all_vals = all_vals.concat(Object.keys(germline_data[j]['PRODUCTIVE_GENES']))										
+				}
+						
+			unique_productive_genes = MakeUnique(all_vals).sort()
+			filter_dict['PRODUCTIVITY'] = {
+				'dtype':true,				
+				'default':[],
+				'unique':unique_productive_genes
+			}
+			
+		}
+		
+		//current_filters[filter_variables[i]] = filter_dict[filter_variables[i]]['unique']
+		
+		h += "<div class='space_down' style='float:left;overflow:hidden;padding-right:1.5em'>"+			
+				"<div value=1 name='"+filter_variables[i]+"' class = 'div-btn filter-var-parent'>"+				
+					"<h4>"+filter_variables[i]+"</h4>"+
+				"</div>"+				
+				"<div class='indent1 filter-options' name='"+filter_variables[i]+"' >"+
+					"<div name='deselect' class='div-btn deselect space_down'>"+
+						"Deselect all"+
+					"</div>"					
+						
+		for(var j =0; j<filter_dict[filter_variables[i]]['unique'].length;j++){
+			h+="<div name='"+filter_dict[filter_variables[i]]['unique'][j]+"' class='div-btn ind-filter-element' value=0>"+
+					filter_dict[filter_variables[i]]['unique'][j]+
+				"</div>"						
+		}
+		
+		h+="</div></div>"
+		
+	}
+	
+	$(divid).find('.germline-filters').html(h)
+	
+	new_style = "<style>"+
+					".ind-filter-element.filter-selected{"+
+					"color:#CCAB00;"+
+					"font-weight: bold;"+
+				"}</style>"
+					
+	$('html > head').append(new_style)
+	
+	filter_dict['SPECIES']['default'] = ['Homo sapiens','Mus musculus'] //set default filters for species field
+	filter_dict['UPLOADED-BY']['default'] = ['immunogrep'] //set default filters for uploaded-by fiel			
+	current_filters['SPECIES'] = filter_dict['SPECIES']['default']
+	current_filters['UPLOADED-BY'] = filter_dict['UPLOADED-BY']['default']		
+	
+	for(filter in current_filters){
+		//set the list of 'current_filters' currently set (it shoudl start as default fields)
+		for(var j= 0; j<current_filters[filter].length;j++){
+			//go to the parent (whose naem is labeled filter, FIND THE CHILDREN WHOSE NAME MATCHES FILTER VALUE IN LIST, add the proper class
+			$('div[name="'+filter+'"].filter-options').children('div[name="'+current_filters[filter][j]+'"]').each(function(){
+				$(this).addClass('filter-selected')
+				$(this).attr('value',1)
+			})
+		}
+	}
+	
+	//Create the actual selecttable for all of the possible genesets
+	CreateSelectTable(div)		
+	
+	
+	//jquery for when user preseses SHOW FILTERS/HIDE filters button 
+	$(divid).on('click','input[name="show-filters"]',function(){		
+		if ($(this).attr('value')=='Set Filters'){
+			$(this).attr('value',"Hide Filters");			
+			$(this).next().children('div').show();
+		}
+		else{
+			$(this).attr('value',"Set Filters");			
+			$(this).next().children('div').hide();
+		}
+	});
+	
+	
+	//jquery for hiding and showing filterable fileds within a section (i.e clicking 'SPECIES' hides or shows all the fields theyc an filter by using species)
+	$('div.div-btn.filter-var-parent').click(function(){		
+		if($(this).attr('value')=="0"){
+			$(this).attr('value',"1");
+			$(this).siblings('.filter-options').show()
+		}
+		else{
+			$(this).attr('value',"0");
+			$(this).siblings('.filter-options').hide()
+		}
+	});
+	
+	
+	//jquery for selecting or deslecting specific fields 
+	$('.div-btn.ind-filter-element').click(function(){
+		if($(this).attr('value')=="0"){
+			$(this).addClass('filter-selected')
+			$(this).attr('value',"1")
+		}
+		else{
+			$(this).removeClass('filter-selected')	
+			$(this).attr('value',"0")
+		}
+		//settings have changed. now update the variable 'current_filters' and then update the selectable based on filters
+		NewFilterSettings(div)
+			
+	})
+	
+	//jquery for when user presses 'DESELECT ALL'
+	$('.div-btn.deselect').click(function(){
+		$(this).siblings('.div-btn.ind-filter-element').each(function(){
+			$(this).attr('value',0)
+			$(this).removeClass('filter-selected')
+		})
+		//settings have changed. now update the variable 'current_filters' and then update the selectable based on filters
+		NewFilterSettings(div)
+	})
+}
+///
+
+//returns a unique array 
+function MakeUnique(input_array,sort){
+	if (typeof sort == 'undefined') {
+        sort = false;
+    }
+
+	var uniqueNames = [];
+	$.each(input_array, function(i, el){
+		if($.inArray(el, uniqueNames) === -1) uniqueNames.push(el);		
+	});
+	if (sort)
+		uniqueNames.sort()
+	return uniqueNames
+}
+
+//will add html code inot the page. Basically undername the section for 'selected annotated experiments' it will add fields for specific annotation types 
+function AddAnnotationFilter(){
+	//The global variable 'all_analyses' stores all annotation types found in the provided experiments (this could change by users running app)
+	var subsection_html = ''
+	
+	for (var i = 0; i<all_analyses.length;i++){
+		//loop through eachannotation type and add html below the tag for ffilterby annotation 
+		subsection_html += "<div class='exp-filter div-btn' name='"+all_analyses[i]+"'>"+
+								all_analyses[i]+
+								"<input type='checkbox' class='hidden'>"+
+							"</div>"
+	}
+	
+	//now find the parent div and replace its child (subsection) wiht this html 	
+	$('.filter-annotation').children('.subsection').html(subsection_html)
+}
+
+
+//will add html code inot the page. Basically undername the section for 'selected annotated experiments' it will add fields for specific annotation types and recombination types 
+function AddAnalysesRecombResults(){
+	//The global variable 'all_analyses' stores all annotation types found in the provided experiments (this could change by users running app)
+	var subsection_html = ''
+	
+	for (var i = 0; i<all_analyses.length;i++){
+		//loop through eachannotation type and add html below the tag for ffilterby annotation 
+		subsection_html += "<div name='"+all_analyses[i]+"' class='report div-btn analyses_program annotation_"+all_analyses[i]+"'>"+
+								"<span name='"+all_analyses[i]+"'>"+all_analyses[i]+"</span>"+
+								"<input type='checkbox' class='hidden'>"+
+							"</div>"
+	}
+	subsection_html+="<div class='space_up_down_small'>-----------</div>"
+	for (var i = 0; i<all_recomb.length;i++){
+		//loop through eachannotation type and add html below the tag for ffilterby annotation 
+		subsection_html += "<div name='"+all_recomb[i]+"' class='report div-btn recombination recombination_"+all_recomb[i]+"'>"+
+								"<span name='"+all_recomb[i]+"'>"+all_recomb[i]+"</span>"+
+								"<input type='checkbox' class='hidden'>"+
+								"</div>"
+	}
+	
+	//now find the parent div and replace its child (subsection) wiht this html 	
+	$('.annotateddata').children('.subsection').html(subsection_html)
+}
+
+
+//main function for generating the app. 
+//It will accept two fields: 
+	//a list of dictionaries describing metadata for each experiment 
+	//a string corresponding to the users name in the database (want to avoid use appsoma_api.get_user_info)
+function InitializeAPP(metadata,db_userdata){
+	
+	var IgnoreFields = ['DUPLICATED_FIELDS','ANALYSES_SETTINGS']
+	var temp_dict 
+	user_info = db_userdata
+	db_username = db_userdata['user']
+	exp_user = db_username	
+	var is_admin
+	if ('administrator' in user_info)
+		is_admin = user_info['administrator']
+	else
+		is_admin = false
+	
+	//parse metadata provided 
+	//remove keys we dont want to show 
+	//also set global variables for the app (schema fields, annotation methods) 
+				
+	//loop through list of metadata
+	for (var i = 0; i<metadata.length;i++){
+		
+		//check if the user was WRITE access to experiment 
+		if(is_admin || metadata[i]['OWNERS_OF_EXPERIMENT'].indexOf(db_username)>-1){
+			exps_with_write_access[metadata[i]['_id']] = metadata[i] //add this epxeriment to objcect -> exps_with_write_access
+		}		
+		
+		//FOR THE DATABASE SELECTION TABLE ONLY CHOOSE EXPERIMENTS WHOSE SEQ_COUNT > 0 
+		if(!('SEQ_COUNT' in metadata[i])|| metadata[i]['SEQ_COUNT']==0)
+			continue
+		
+		//initialize object/dictionary 'exp_metadata_info' . each key = id of experiment. each value = metadta
+		exp_metadata_info[metadata[i]['_id']] = {}		
+		for (each_key in metadata[i]){			
+			if (each_key == 'ANALYSES_COUNT'){					
+				exp_metadata_info[metadata[i]['_id']]['ANALYSES'] = Object.keys(metadata[i][each_key])
+				all_analyses = all_analyses.concat(exp_metadata_info[metadata[i]['_id']]['ANALYSES']) //keep track of all observed analyses
+				exp_metadata_info[metadata[i]['_id']]['ANALYSES_COUNT'] = metadata[i][each_key]		
+				for (each_analysis in metadata[i]['ANALYSES_COUNT']){
+					all_recomb=MakeUnique(all_recomb.concat(all_recomb,Object.keys(metadata[i]['ANALYSES_COUNT'][each_analysis])))
+				}
+			}
+			else if(IgnoreFields.indexOf(each_key)==-1){ //if we are not ignoring a key in metadta ( see IgnoreFields var)
+				exp_metadata_info[metadata[i]['_id']][each_key] = metadata[i][each_key]	//add to dict 
+			}
+			
+			
+			
+		}
+		exp_metadata_list.push(exp_metadata_info[metadata[i]['_id']])//also add redundant metadta data to a list var. list of metadata 
+	}	
+		
+	
+	//make all analyses unique and then sort 
+	all_analyses = MakeUnique(all_analyses,true)
+	all_recomb = MakeUnique(all_recomb,true)
+	current_exp_set = exp_metadata_list
+	
+	//draw the experiment table 
+	expdT = MakeHTMLTable('exp-table-goes-here','name',[{'colname':'PROJECT_NAME'},{'colname':'EXPERIMENT_NAME'},{'colname':'READ_ACCESS'},{'colname':'OWNERS_OF_EXPERIMENT'},{'colname':'DESCRIPTION'},{'colname':'SEQ_COUNT'},{'colname':'ANALYSES'},{'colname':'_id','hidden':true}],exp_metadata_list,true,false,true,'Experiment Metadata',[],'','300px','200px', '',false)	
+	
+	//adds annotation section to the html page
+	AddAnnotationFilter()
+	AddAnalysesRecombResults()	
+	
+	if (metadata.length==0){ //do not have access to any experiemnts!
+		$('#no-exp-data').show()
+		$('#output-data').hide()		
+	}
+	
+}
+
+
+//tool_tip_text_array => a list of text to associate as qtips to each of the rows 
+function AddQTipTitle(datatable_var,tool_tip_text_array,tooltipheader){
+	
+	if (typeof tooltipheader == 'undefined') {
+        tooltipheader = '';
+    }
+	
+	//$('#'+tableid+' tbody tr').each(function(){{	--> DO NOT USE THIS, USE DATATABLE ROWS. TABLEID WILL ONLY LIST THE FIRST TEN ROWS
+	datatable_var.$('tr').each(function(){
+		
+		
+		$(this).attr('title',tool_tip_text_array[datatable_var.fnGetPosition(this)]);																		
+	});	
+	//finally associate a qtip jquery to all of the rows in the datatable
+	datatable_var.$('tr').qtip({
+		content:{	
+			title: tooltipheader,
+			text: false
+		},
+		show:{
+			delay:1000
+		},
+		hide: {
+			fixed: true, // Make it fixed so it can be hovered over
+			delay: 100//add a delay from hiding tooltip
+		},
+		position:{
+			target: 'mouse',
+			adjust: {
+			  mouse: false  
+			}
+		},
+		style:{
+		
+		}
+	});		
+}
+
+function RenderTable(datatable_var,data){	
+	var dT = datatable_var;
+	dT.fnClearTable();
+	dT.fnAddData(data);		
+	$(window).trigger( "resize" );//ADJUST TABLE HEIGHT AND COLUMNS SEE window resize function below 	
+	return dT
+}
+
+function RefreshTableWidths(){
+	$(window).trigger( "resize" );//ADJUST TABLE HEIGHT AND COLUMNS SEE window resize function below 	
+}
+
+//data => list of json docs. key corresponds to headr/colum name
+//header=>list of dictioary containing three keys: 
+	//colname
+	//hidden: true/false
+	//width: column width 	
+/*,minColWidth='200px',maxColWidth='',wrap_text=false*/
+//class_table_name => optional if user wants to add a new class to the table 
+function MakeHTMLTable(divid,name,header,data,multiple_row_selection,use_cell_tooltips,use_row_qtips,qTipHeader,row_tooltips,class_table_name,maxTableHeight,minColWidth, maxColWidth,wrap_text){	
+	
+	
+	
+	if (typeof header == 'undefined') {
+        header = [];
+    }
+	
+	if (typeof data == 'undefined') {
+        data = [];
+    }
+	
+	if (typeof multiple_row_selection == 'undefined') {
+        multiple_row_selection=true
+    }
+	
+	if (typeof use_cell_tooltips == 'undefined') {
+        use_cell_tooltips=false
+    }
+	
+	if (typeof use_row_qtips == 'undefined') {
+        use_row_qtips = false
+    }
+	
+	if (typeof qTipHeader == 'undefined') {
+        qTipHeader = ''
+    }
+	
+	if (typeof row_tooltips == 'undefined') {
+        row_tooltips=[]
+    }
+	
+	if (typeof class_table_name == 'undefined') {
+        class_table_name=''
+    }
+	
+	if (typeof maxTableHeight == 'undefined') {
+        maxTableHeight='500px'
+    }
+	
+	if (typeof minColWidth == 'undefined') {
+        minColWidth=''
+    }
+	if (typeof maxColWidth == 'undefined') {
+        maxColWidth=''
+    }
+	
+	if (typeof wrap_text == 'undefined') {
+        wrap_text=false
+    }
+	
+	
+	var myDataTable;
+	global_use_qtip=use_row_qtips
+	//this variable will control visibilty to datatable
+	var datatable_column_visibilty = []	
+	//initialize string for making header row 
+	table_hd = "<tr>"
+	//parse throguh header variable
+		//based on keys, update datacolumn visibility field 
+	for (var i = 0; i< header.length;i++){
+		var headername = header[i]['colname'];		
+		if( ('hidden' in header[i]) && header[i]['hidden']==true){
+			
+			if('width' in header[i])
+				datatable_column_visibilty.push({'bVisible':false,'sWidth':String(header[i]['width'])+'px'})
+			else
+				datatable_column_visibilty.push({'bVisible':false})
+		}
+		else{
+			if ('width' in header[i])
+				datatable_column_visibilty.push({'sWidth':String(header[i]['width'])+'px'})
+			else
+				datatable_column_visibilty.push('null')					
+		}
+		table_hd+="<td class='"+headername+"'>"+headername+"</td>"		
+	}
+	table_hd+="</tr>"
+	global_table_header = header
+	
+	//make html code for the necessary elements we will want 
+	//we will inject html TABLE code and inject inputs/buttons 	
+	html_code = "<table class='igrep-datatable "+class_table_name+"'>" +
+	"<thead>"+table_hd+"</thead>"+
+	"<tbody></tbody>"+
+	"</table>"+
+	"<div align='right'>"+
+		"<input type='button' class='all-row-select multirowselect not-multiple' value='Select all filtered rows'>"+
+		"<input type='button' class='all-row-deselect multirowselect not-multiple' value='Deselect all rows'>"+
+		"<div class='table-errors' style='color:red;'></div>"
+	"</div>"		
+	$('#'+divid).html(html_code);	
+	tableid = divid+' table.igrep-datatable'				
+	//settings used for making datatable
+	datatable_parameters = {
+		'bSort':true,                                                                            		
+		"sScrollX": "100%",
+		"bScrollCollapse": true,
+		"bJQueryUI": true,
+		"sPaginationType": "full_numbers",
+	//	"bAutoWidth": false, //does weird things to the scrollbar...it moves the horizontal scrollbar back after sorting..
+		"autowidth":false,					
+	//	"sScrollXInner": "100%",
+	//	"bStateSave": true,
+	//	"bDeferRender": true,							
+		"bRetrieve": true,
+		"aoColumns": datatable_column_visibilty,					 		
+	}	
+	if (maxTableHeight!=''){
+		if(typeof maxTableHeight!='string')
+			maxTableHeight = String(maxTableHeight)+'px'				
+		datatable_parameters["sScrollY"] = maxTableHeight
+	}			
+	//add this key to the variable above if we want to use cell tool tips
+	//basically each of the values in the table will appear as tooltips also 
+	if (use_cell_tooltips==true){
+		datatable_parameters['fnCreatedRow']=function(nRow,aData,iDataIndex){
+					for (var i =0 ;i<aData.length;i++){
+						$('td:eq('+i.toString()+')', nRow).attr('title',aData[i]);
+					}				
+				}
+	}	
+	myDataTable = $('#'+tableid).dataTable(datatable_parameters)						
+	if (multiple_row_selection){
+		$('.multirowselect').removeClass('not-multiple')
+	
+		//Allow the HTML table to be selectable using the jquery selectable	
+		$('#'+tableid+' tbody').selectable({		
+			items:'tr',
+			stop: function( event, ui ) {					
+				var current_rows
+				if(event.ctrlKey){//the user is pressing down the ctrl key for selection (so perhaps we want to save all hihglihged rows in all pages 
+					//find all selected rows that are ONLY in the filtered table 
+					current_rows = myDataTable.$('tr.ui-selected', {"filter": "applied"}); 
+				}
+				else{
+					//only find selected rows that IN THE CURRENT PAGE!
+					current_rows = myDataTable.$('tr.ui-selected', {"page":"current"});
+				}				
+				//remove all rows in the entire datatable (including rows not filtered)
+				myDataTable.$('tr').removeClass('ui-selected');
+				//now re-select the rows from first statement (selected rows only in filtered table) 				
+				current_rows.addClass('ui-selected');		
+				//trigger a click event so that other HTML or other functions can detect SELECTING of datatable rows (not just clicking of rows)
+				myDataTable.$('tr').first().trigger('click')
+				
+				
+			}
+		}).disableSelection()
+		
+		//add javascript/jquery to allow multiple selection of fields
+		$('#'+divid+' .all-row-deselect').on('click',function(){					
+			//FIND ALL ROWS in the datatable var (must use datatable() function to include non -filtered rows
+			myDataTable.$('tr').removeClass('ui-selected');					
+		});				
+		
+		$('#'+divid+' .all-row-select').on('click',function(){
+			//FIND ROWS THAT ARE FILTERED
+			var filteredrows = myDataTable.$('tr', {"filter": "applied"});					
+			myDataTable.$('tr').removeClass('ui-selected'); //remove class from ALL rows in table
+			filteredrows.addClass('ui-selected');//add class to filtered rows only 
+		});		
+	}
+	else{ //ALLOW only one row to be selected
+				
+		$('#'+tableid).on('click', 'tbody tr', function() { // tbody tr').click( function( event ) {												
+			if ( $(this).hasClass('ui-selected') ) {						
+				$(this).removeClass('ui-selected');						
+			}                                              
+			else {                             
+				myDataTable.$('tr').removeClass('ui-selected'); //remove class from ALL rows in table
+				$(this).addClass('ui-selected');  												
+			}; 								 								
+
+		});
+	}
+
+	var timer_id;	
+	$(window).resize(function() {				
+		console.log('resizing!!')
+		clearTimeout(timer_id);
+		timer_id = setTimeout(function() {    		        						
+			myDataTable.fnAdjustColumnSizing();
+		}, 300);
+	});
+					
+	
+	//NOW populate the actual table wiht the data variable 
+	myDataTable = ModifyHTMLData(myDataTable,header,data,use_qtip=use_row_qtips,qtipname=qTipHeader)		
+	
+	//Use jquery to change some css styles provided by user 
+	var css_styles = {}
+	if (minColWidth!='')
+		css_styles['min-width'] = String(minColWidth).replace('px','')+'px' //use .replace just incease user passed in a number. so, i.e.,this style will work if user said 200px OR 200 
+	if (maxColWidth!='')
+		css_styles['max-width'] = String(maxColWidth).replace('px','')+'px' //use .replace just incease user passed in a number. so, i.e.,this style will work if user said 200px OR 200 
+	
+		//modfiy table header css
+	//myDataTable.$('thead td').css(css_styles)
+	$('#'+divid+' table.dataTable thead td').css(css_styles)
+	
+	if (wrap_text){
+		css_styles['white-space'] = 'normal' 
+		css_styles['word-wrap'] = 'break-word'		
+	}
+	else{
+		css_styles['white-space'] = 'nowrap' 
+		css_styles['text-overflow'] = 'ellipsis'			
+	}		
+		//modify table body css 
+		//use datatable var if, use just table then only modifies first 10 rows 
+	myDataTable.$('td').css(css_styles)
+				
+	return myDataTable;
+}
+
+
+//data =>list, each element of list is a dict where key = colname
+//header => list, each element is list. key in each element called colname refers to column name 		
+function ModifyHTMLData(myDataTable,header,data,use_qtip,qtipname,row_tooltips){		
+	
+	if (typeof use_qtip == 'undefined') {
+        use_qtip = false
+    }
+	
+	if (typeof qtipname == 'undefined') {
+		qtipname=''
+    }
+	
+	if (typeof row_tooltips == 'undefined') {
+        row_tooltips=[]
+    }
+	
+	//NOW populate the actual table wiht the data variable 
+	var rows_of_data = []
+	//data =>list, each element of list is a dict where key = colname
+	//header => list, each element is list. key in each element called colname refers to column name 	
+	for (row_num= 0; row_num<data.length;row_num++){
+		data_row = data[row_num]
+		row_info = []
+		for (i = 0; i<header.length;i++){
+			var colname = header[i]['colname']
+			if (colname in data_row)
+				if(data_row[colname].constructor==Array){					
+					row_info.push(data_row[colname].join(','));
+				}
+				else
+					row_info.push(String(data_row[colname]));
+				
+			else
+				row_info.push('')
+		}
+		rows_of_data.push(row_info );
+	}	
+	myDataTable = RenderTable(myDataTable,rows_of_data);
+	
+	//the user wants to use qtips for hovering and showing information at each row 
+	if (use_qtip){
+		//The user passed DID not pass in list of strings to use as q tips
+		//So we will just use json dumps on the current data and display those results as q tips 
+		if(row_tooltips=[]){
+			for(var row_num = 0; row_num < data.length; row_num+=1){
+				//use json dumps and an indentation of 4 spaces to present the data in a prety format 
+				//use <pre> to make sure html reads in \t \n and spaces in toolstips
+				row_tooltips.push('<pre>'+JSON.stringify(data[row_num],null,4)+'</pre>')
+			}
+		}
+		//Now generate the qtips on the provided datatable 
+		AddQTipTitle(myDataTable,row_tooltips,qtipname);
+	}
+	return myDataTable	
+}
+
+//THIS SORT PART MUST COME AFTER THE ABOVE FUNCTION TO ENSURE THAT ALL ROWS CAN BE SELLECTED....IF IT IS ABOVE THEN ONLY THE FIRST TEN ROWS ARE SELECTD
+//pass in the 'div' parent that contains the datatable 	
+//When useres sets exp filters using div-btn below, then this function is called 
+//for all set filters, this funciton will filter experiments from databae 
+function ResetTableFilters(){			
+	current_exp_set = []
+	var passed_filter
+	var filter_type
+	for (var i = 0; i<exp_metadata_list.length;i++){ //loop through all metadata
+		
+		exp_row = exp_metadata_list[i]
+		passed_filter = true
+		
+		$('.exp-filter').each(function(){ //find al lhtml elements taht are filters 			
+			
+			if($(this).children('input').is(':checked')){ //only consider elements whose filters are chekced				
+				filter_type	 = $(this).closest('.filter-parent')
+				if(filter_type.hasClass('filter-my-exp')){ //filter by  experiments owned by uesr 
+					if (exp_row['OWNERS_OF_EXPERIMENT'].indexOf(exp_user)==-1){
+						passed_filter = false //user was not found in this experiment
+					}			
+				}
+				else if(filter_type.hasClass('filter-seq-count')){
+					if( !('SEQ_COUNT' in exp_row)||exp_row['SEQ_COUNT'] == 0)
+						passed_filter = false
+				}
+				else if(filter_type.hasClass('filter-paired')){
+					if ( !('VH:VL_PAIRED' in exp_row)||exp_row['VH:VL_PAIRED'] == false)
+						passed_filter = false
+				}
+				else if(filter_type.hasClass('filter-annotation')){
+					if (!('ANALYSES' in exp_row)) //experiment doesn't have this field which means it hassnt beenannotated
+						passed_filter = false 
+					else if ($(this).attr('name') != 'any_annotation'){ //if the filter attribute is 'any_annotation' then the previous if statement (analysis in exp_row) satisfies requriment
+						if (exp_row['ANALYSES'].indexOf($(this).attr('name'))==-1) //this curernt anotation type was not found in the list in exp_row
+							passed_filter = false
+					}
+				}							
+			}
+		})
+		if (passed_filter) //all filters passed 
+			current_exp_set.push(exp_row)
+	}
+		
+	expdT = ModifyHTMLData(expdT,global_table_header,current_exp_set,global_use_qtip,'Experiment Metadata')	
+	
+}
+
+
+//WE ASSUME IMGT FILES ARE LABELED USING IMGT RULES:
+//=>FILENUMBER_IMGTFILENAME_USERFILENAME.txt
+function GroupIMGTFiles(imgt_files){
+	//#imgt_files = sorted([str(im_f) for im_f in imgt_files],key=str.lower)	
+	var grouped_files = {}	
+	for (var k = 0; k<imgt_files.length;k++){
+		each_file = imgt_files[k]
+		name = each_file['name']				
+		substrings = name.split('_')		
+		filenum = parseInt(substrings[0])		
+		if(filenum>=1&&filenum<=11){			
+			if(substrings.length<=2){
+				exp_name = substrings[0]
+				for (var j = 1;j<substrings.length;j++)
+					exp_name = exp_name+'_'+substrings[j]
+			}
+			else{
+				exp_name = substrings[2]
+				for (var j = 3;j<substrings.length;j++)
+					exp_name = exp_name+'_'+substrings[j]
+			}
+			
+			if(exp_name in grouped_files)
+				grouped_files[exp_name].push(each_file)
+			else
+				grouped_files[exp_name]=[each_file]			
+		}
+	}			
+	return grouped_files
+}
+
+
+//we will use this for figure-ing out how to group together all of the files selected for IMGT analysis 
+function SetupIMGTFiles(){	
+	ind_text_files = []
+	all_experiment_files = []
+	var s 
+	var ext
+	for(var i = 0; i<input_file_data.length;i++){		
+		s = input_file_data[i]['name']
+		ext = s.substr(s.length-3)
+		if (ext =='txt')
+			ind_text_files.push(input_file_data[i])							
+		else
+			all_experiment_files.push(input_file_data[i])			
+	}
+	
+	new_groups = GroupIMGTFiles(ind_text_files)
+	for (group_name in new_groups){
+		all_experiment_files.push({'name':group_name,'metadata':{},'filetype':'IMGT','filepath':new_groups[group_name]})
+	}	
+	imgt_file_data = all_experiment_files
+	SetUpIMGTExpsUI(all_experiment_files)
+	
+}
+
+//using the input files selected by ther euser, 
+//create jquery-ui using the draggable and droppbable ui features to allow users to move files between groups
+function SetUpIMGTExpsUI(imgt_experiments){
+	$('.step2').hide()
+	$('.step2z').show()	
+	console.log(imgt_experiments)
+	//GroupIMGTExpTogether()
+	GroupIMGTSeperate()
+}
+
+
+//update global var input_file_data with list of files provided by user 
+function UpdateExperimentFiles(list_of_files){
+	input_file_data = list_of_files
+	
+	if(using_imgt_files)
+		SetupIMGTFiles()
+	else
+		SetUpGroups()
+}
+
+function GetSelectedExperiments(dT){
+	current_selection = []							
+	//get selected rows that ONLY Mmatch the dattable filter 
+	var anselected=dT.$('tr.ui-selected', {"filter": "applied"}); // only return selected rows that are filtered								
+	//report results here (go through all selected rows and report the results from the table)
+	for (i = 0; i<anselected.length;i++){					
+		var iRow=expdT.fnGetPosition(anselected[i]);   
+		//get ids from the selected table 			
+		current_selection.push(current_exp_set[iRow]['_id'])
+	}
+	return current_selection
+}
+
+
+function ShowPipeline(){
+	$('#automated-settings').show();
+	$('.select-files-and-options').hide();
+	
+}
+
+
+
+function CopySettings(name_variables){
+	for (var k in name_variables){
+		if ( name_variables.hasOwnProperty(k) ){
+			var form_object = $('.group-bioinformatics-form').find("[name='"+k+"']")
+			if (form_object.is(':checkbox'))
+				form_object.attr('checked',name_variables[k])				
+			else
+				form_object.attr('value',name_variables[k])				
+		}
+	}				   
+}
+
+function split (val) {
+	return val.split( /,\s*:()/ );
+}
+
+function splitComma(val){
+	return val.split(',');
+}
+
+function splitParenthesis(val){
+	return val.split('(')[0];
+}
+	
+
+function extractLast(term){
+	return split(term).pop();
+}
+
+
+function autocompleteGeneral($ctl,data,delim,restrictToListValues){
+	
+	$ctl.autocomplete({
+			minLength: 0,			
+			autoFocus: true,
+			
+			source: function( request, response ) {
+			// delegate back to autocomplete, but extract the last term
+				var e = $.ui.autocomplete.filter(data, extractLast( request.term ))					
+				response( 
+					e
+				); //).slice(0, 20));	
+			},
+			
+			change: function (e, ui) {
+				values = []
+				var s;
+				if (delim !='')
+					current_values = e.target.value.split(delim);
+				else
+					current_values = [e.target.value];
+				
+				for (i = 0; i<current_values.length;i++){
+					s = current_values[i].replace(/^\s+|\s+$/g,'')						
+					if (restrictToListValues){											
+						if (data.indexOf(s)!=-1){
+							values.push(s);
+						}
+					}				
+					else{
+						if (s!=''){
+							values.push(s);
+						}
+					}
+				}
+				if (delim !='')
+					e.target.value = values.join(delim);
+				else{
+					if (values[0])
+						e.target.value = values[0];
+					else
+						e.target.value = '';
+				}
+				//if (!(restrictToListValues || ui.item)) 
+					//e.target.value = "";
+			},
+			
+			focus: function(e,ui) {
+				// prevent value inserted on focus						
+				return false;										
+			},
+			select: function( event, ui ) {									
+				if (delim!=''){						
+					var terms = splitComma( this.value );						
+					// remove the current input
+					terms.pop();
+											
+					// add the selected item
+					terms.push( splitParenthesis(ui.item.value) );
+					// add placeholder to get the comma-and-space at the end
+					terms.push( "" );
+					
+					this.value = terms.join( delim );
+				}
+				else{
+					this.value = ui.item.value;
+					
+				}
+				
+				if (this.value!=''&&this.value!='Do not add to database'){						
+					
+					for (var each_exp in exp_data){
+						if (exp_data[each_exp]['PROJECT_NAME']+' : '+exp_data[each_exp]['EXPERIMENT_NAME'] == this.value){
+							id=each_exp;
+							exp_name = exp_data[each_exp]['EXPERIMENT_NAME'];		
+							if (exp_data[id].hasOwnProperty('SEQ_COUNT'))									
+								seq_count = exp_data[id]['SEQ_COUNT']
+							else
+								seq_count = 0
+							break;
+						}
+					}
+					
+					$(this).parent().hide();
+					//$(this).closest('tr').children('.expid').attr('value',id);
+					$(this).parent().siblings('.expid').attr('value',id);
+					$(this).parent().siblings('.expnameselection').children('span').html(exp_name+' ('+seq_count+')');
+					$(this).parent().siblings('.expnameselection').show();						
+				}
+				EnsureDBCheckbox($(this).closest('form'));
+				
+				return false;
+			}			           
+	});
+}
+
+function emptyObject(obj){
+	var i = 0;
+	for(var key in obj){
+		++i;
+	}	
+	return i==0;	
+}
+
+function SortArray(row1,row2){	
+	if (row1[0] === row2[0]) {
+		return 0;
+	}
+	else {
+		return (row1[0] < row2[0]) ? -1 : 1;
+	}
+}
+
+function EnsureVisibility(){			
+	$('#annotation-pipeline').find('.bioinformatics-setting').each(function(){			
+		if($(this).find(':checkbox').is(":checked")){
+			$(this).siblings().removeClass('hidden')				
+		}
+		else{
+			$(this).siblings().addClass('hidden')
+		}						
+	});				
+}
+
+//This will make a single group based on the selected files from previous section 
+function CreateGroup(){	
+	//first make sure we can't OVERMAKE groups (the number of groups should not exceed the number of files)
+	var num_groups_made = $('#reorganize-groups .groups-parent .group-div').length; 	
+	if (num_groups_made>=input_file_data.length)
+		return
+
+	//Step1 => initialize groups to organize files 	
+	group_div_html = '<div name="group_num_'+String(num_groups)+'" class="groups group-div">'+		
+  						'<h4>Group '+String(num_groups+1)+'</h4>'+
+						'<ul name="fileshere">'+
+						'</ul>'+
+						'</div>'
+	num_groups+=1	
+	
+	//Add group to html pages 
+	$( '#reorganize-groups .groups-parent').append( group_div_html);
+	
+	$('.group-div').droppable({
+		
+      accept: "li.file-select-groups" && function(d) {
+	  	//write a fucntion to determine what objects are 'acceptable'
+		//we dont want to be able to 'REDROP' elements back in current group parent		
+		if($(d).closest('div').first().attr('name') == $(this).attr('name') )
+			return false
+		else
+			return true
+	  },      	  
+	  activeClass: "highlight-drop-div",
+	  hoverClass: "hover-drop-div",
+      drop: function( event, ui ) { 
+		$(ui.draggable).appendTo($(this).children('ul'))
+      }
+    });		
+}
+
+//This will make a single group based on the selected files from previous section 
+function CreateIMGTGroup(){	
+	//first make sure we can't OVERMAKE groups (the number of groups should not exceed the number of files)
+	var num_groups_made = $('#reorganize-groups-imgt .groups-parent .group-div').length; 	
+	if (num_groups_made>=imgt_file_data.length)
+		return
+	//Step1 => initialize groups to organize files 	
+	group_div_html = '<div name="group_num_'+String(num_groups)+'" class="groups group-div">'+		
+  						'<h4>Experiment '+String(num_groups+1)+'</h4>'+
+						'<ul name="fileshere">'+
+						'</ul>'+
+						'</div>'
+	num_groups+=1		
+	//Add group to html pages 
+	$( '#reorganize-groups-imgt .groups-parent').append( group_div_html);	
+	$('.imgt_exp_selection .group-div').droppable({		
+      accept: "li.file-select-groups" && function(d) {
+	  	//write a fucntion to determine what objects are 'acceptable'
+		//we dont want to be able to 'REDROP' elements back in current group parent		
+		if($(d).closest('div').first().attr('name') == $(this).attr('name') )
+			return false
+		else
+			return true
+	  },      	  
+	  activeClass: "highlight-drop-div",
+	  hoverClass: "hover-drop-div",
+      drop: function( event, ui ) { 
+		$(ui.draggable).appendTo($(this).children('ul'))
+      }
+    });		
+}
+
+
+//This will make a single group based on the selected files from previous section 
+function GroupIMGTExpTogether(){
+	input_file_data_imgt = imgt_file_data
+	$('#unselected ul').html('')	
+	//Step1 => initialize groups to organize files 
+	num_groups = 0 
+	group_div_html = '<div name="group_num_'+String(num_groups)+'" class="groups group-div">'+		
+  						'<h4>Experiment '+String(num_groups+1)+'</h4>'+
+						'<ul name="fileshere">'						
+	var name	
+	for (var f = 0;f<input_file_data_imgt.length;f++){
+		name = input_file_data_imgt[f]['name']		
+		group_div_html+= '<li name="'+name+'" title="'+name+'" class="file-select-groups">'+
+							'<h5>'+name+'</h5>'+							
+						'</li>'						
+	}	
+	group_div_html+='</ul></div>'
+	num_groups+=1
+	//Add group to html pages 
+	$( '#reorganize-groups-imgt .groups-parent').html( group_div_html);			
+	AddIMGTDraggableJQuery()
+}
+
+//this will place all selected files into seperate individual groups fro analysis 
+function GroupIMGTSeperate(){	
+	input_file_data_imgt = imgt_file_data
+	$('#unselected ul').html('')	
+	//Step1 => initialize groups to organize files 
+	num_groups = 0 			
+	for (var f = 0;f<input_file_data_imgt.length;f++){
+		group_div_html = '<div name="group_num_'+String(num_groups)+'" class="groups group-div">'+		
+							'<h4>Experiment '+String(num_groups+1)+'</h4>'+
+							'<ul name="fileshere">'							
+		var name
+			name = input_file_data_imgt[f]['name']
+			
+			group_div_html+= '<li name="'+name+'" title="'+name+'" class="file-select-groups">'+
+								'<h5>'+name+'</h5>'+								
+							'</li>'						
+			
+		group_div_html+='</ul></div>'
+		if (num_groups==0)
+			$( '#reorganize-groups-imgt .groups-parent').html( group_div_html);
+		else
+			//Add group to html pages 			
+			$( '#reorganize-groups-imgt .groups-parent').append( group_div_html);
+		num_groups+=1		
+	}	
+	AddIMGTDraggableJQuery()	
+}
+
+
+//This will make a single group based on the selected files from previous section 
+function GroupAllExpTogether(){
+	$('#unselected ul').html('')	
+	//Step1 => initialize groups to organize files 
+	num_groups = 0 
+	group_div_html = '<div name="group_num_'+String(num_groups)+'" class="groups group-div">'+		
+  						'<h4>Group '+String(num_groups+1)+'</h4>'+
+						'<ul name="fileshere">'						
+	var name	
+	for (var f = 0;f<input_file_data.length;f++){
+		name = input_file_data[f]['name']		
+		group_div_html+= '<li name="'+name+'" title="'+name+'" class="file-select-groups">'+
+							'<h5>'+name+'</h5>'+							
+						'</li>'						
+	}	
+	group_div_html+='</ul></div>'
+	num_groups+=1
+	//Add group to html pages 
+	$( '#reorganize-groups .groups-parent').html( group_div_html);	
+	AddDraggableJQuery()
+}
+
+//this will place all selected files into seperate individual groups fro analysis 
+function GroupExperimentsSeperately(){	
+	$('#unselected ul').html('')	
+	//Step1 => initialize groups to organize files 
+	num_groups = 0 			
+	for (var f = 0;f<input_file_data.length;f++){
+		group_div_html = '<div name="group_num_'+String(num_groups)+'" class="groups group-div">'+		
+							'<h4>Group '+String(num_groups+1)+'</h4>'+
+							'<ul name="fileshere">'
+							
+		var name
+			name = input_file_data[f]['name']
+			
+			group_div_html+= '<li name="'+name+'" title="'+name+'" class="file-select-groups">'+
+								'<h5>'+name+'</h5>'+								
+							'</li>'						
+			
+		group_div_html+='</ul></div>'
+		if (num_groups==0)
+			$( '#reorganize-groups .groups-parent').html( group_div_html);
+		else
+			//Add group to html pages 			
+			$( '#reorganize-groups .groups-parent').append( group_div_html);
+		num_groups+=1		
+	}
+	AddDraggableJQuery()	
+}
+
+function AddIMGTDraggableJQuery(){
+	// Let all group divs be 'droppable'
+    $('.imgt_exp_selection .group-div').droppable({
+		
+      accept: "li.file-select-groups" && function(d) {
+	  	//write a fucntion to determine what objects are 'acceptable'
+		//we dont want to be able to 'REDROP' elements back in parent		
+		if($(d).closest('div').first().attr('name') == $(this).attr('name') )
+			return false
+		else
+			return true
+	  },      	  
+	  activeClass: "highlight-drop-div",
+	  hoverClass:"hover-drop-div",
+      drop: function( event, ui ) { 
+		$(ui.draggable).appendTo($(this).children('ul'))
+      }
+    });
+	
+	//Make all LI elements draggable
+	$(".imgt_exp_selection li.file-select-groups").draggable({
+		placeholder:"ui-state-highlight",
+		helper:'clone',
+		revert:"invalid"		
+	});
+}
+
+function AddDraggableJQuery(){
+	// Let all group divs be 'droppable'
+    $('.group-div').droppable({
+		
+      accept: "li.file-select-groups" && function(d) {
+	  	//write a fucntion to determine what objects are 'acceptable'
+		//we dont want to be able to 'REDROP' elements back in parent		
+		if($(d).closest('div').first().attr('name') == $(this).attr('name') )
+			return false
+		else
+			return true
+	  },      	  
+	  activeClass: "highlight-drop-div",
+	  hoverClass:"hover-drop-div",
+      drop: function( event, ui ) { 
+		$(ui.draggable).appendTo($(this).children('ul'))
+      }
+    });
+	
+	//Make all LI elements draggable
+	$("li.file-select-groups").draggable({
+		placeholder:"ui-state-highlight",
+		helper:'clone',
+		revert:"invalid"		
+	});
+}
+
+//using the input files selected by ther euser, 
+//create jquery-ui using the draggable and droppbable ui features to allow users to move files between groups
+function SetUpGroups(){
+	$('.step2').hide()
+	$('.step2z').hide()
+	$('.step3').show()	
+	GroupAllExpTogether()				
+}
+
+//go through each of the group-div elements (each of the 'droppable' divs). 
+//For each element check whether a group div has any files inside
+//if it does, then add this group to the list files_in_groups
+function GetGroupSummary(){
+	files_in_groups = []
+	
+	$('.group_selection div.groups.group-div').each(function(){
+		single_group = $(this).find('li')
+		if(single_group.length>0){
+			files_in_groups.push([])
+			single_group.each(function(){			
+				for (var f = 0; f<input_file_data.length;f++){
+					if($(this).attr('name')==input_file_data[f]['name']){
+						files_in_groups[files_in_groups.length-1].push(input_file_data[f])
+						break
+					}
+				}
+			})
+		}
+	})
+	//now initialize the lengh of the global variable 'global_settings'
+	global_settings = new Array(files_in_groups.length)
+}
+
+function GroupIMGTIntoExperiments(){
+	input_file_data = []
+	
+	
+	$('.imgt_exp_selection div.groups.group-div').each(function(){		
+		single_group = $(this).find('li')
+		current_file_data = {'filepath':[],'name':'','metadata':{},'contains-seq-id':false,'filetype':'IMGT'}
+		
+		if(single_group.length>0){
+			files_in_groups.push([])
+			single_group.each(function(){			
+				for (var f = 0; f<imgt_file_data.length;f++){
+					if($(this).attr('name')==imgt_file_data[f]['name']){
+						if(current_file_data['name']==''){
+							current_file_data['name'] = imgt_file_data[f]['name']
+						}
+						current_file_data['filepath'].push(imgt_file_data[f])												
+					}
+				}
+			})
+			input_file_data.push(current_file_data)
+		}		
+	})	
+}
+
+//Generates UI for an annotation pipeline form 
+function AnnotationForm(group_num){
+	
+	//add some default values to the isotype template section 
+	var isotype_default = ""
+	for (var j = 0; j<default_isotype_barcodes.length;j++)
+		//add default barcodes in fasta format
+		isotype_default+=">"+default_isotype_barcodes[j][1]+"\n"+default_isotype_barcodes[j][0]+"\n"
+	$('#isotype-template').find('textarea').html(isotype_default)
+	
+	
+	var hidden_forms=''
+	var no_back=''
+	if(group_num > 0){
+		hidden_forms='hidden' //hide all forms that are not the first initially		
+	}
+	else{
+		no_back='hidden'
+	}
+	
+	var button_text
+	if(group_num==files_in_groups.length-1)
+		button_text = 'Run Analysis!'
+	else
+		button_text = 'Next Group'
+	
+	//form header (name of group)
+	html = "<form id='group-"+String(group_num+1)+"' class='indent1 group-annotation-form "+hidden_forms+"' value="+group_num+">"+
+				"<div class='space_down'>"+
+					"<span><h1>Analysis Group Name: <input style='position:relative;top:-2px;' name='group-name' value='Group "+String(group_num+1)+"'></h1></span>"+
+					"<div class='indent1'><h2>Files in group</h2>"+
+						"<div class='indent1'>"
+	
+	//loop through files in group, add them to top of form (name of files in group)
+	for(var i = 0; i<files_in_groups[group_num].length; i++){
+		html+="<div class='space_down_small'>"+
+					"<span><b>File "+String(i+1)+": "+files_in_groups[group_num][i]['name']+"</b></span>"+					
+			  "</div>"		
+	}
+	html+="</div></div></div>"+
+		"<div class='space_up_down' title='This option is useful if you just want to test settings for the analysis'>"+
+			"<div class='indent1'>"+
+				"<input type='checkbox' name='limit-seqs'>Make this analysis a test run and only analyze the first 10000 sequences in each file"+
+			"</div>"+
+		"</div>"
+	
+	//html for processing pipeline 
+	
+	html+="<div class='indent1'>"+
+				"<h2>ABSeq Processing Pipeline</h2>"+
+				"<div class='indent1'>"+
+					$('#ab-annotate-template').html()+
+					$('#isotype-template').html()+
+					$('#pairing-template').html()+
+					$('#summary-template').html()+										
+					//$('#clonotype-template').html()+
+					$('#mass-spec-file-template').html()+					
+					$('#add-to-db-template').html()+
+				"</div>"+
+			"</div>"	
+	
+	//html for options at the end (go back and forward in form)
+	html+="<div style='max-width:750px;'>"+
+				"<div align='right'>"+
+					"<input type='button' name='copy_settings' value='Copy settings to all downstream analyses' class='hidden'>"+
+						"<input name='copy-settings-checkbox' class='copy-settings-check hidden' type='checkbox'>"+
+					"</div>"+
+				"</div>"+
+				"<div class='space_up_down hidden errors_in_form'>"+		
+					"<div class='indent1'>"+
+						"<span style='font-size:1.2em;color:red;font-weight:bold;'>Please address errors in settings above</span>"+
+					"</div>"+
+				"</div>"+					
+				"<div class='space_up_down'></div>"+
+				"<input id='go-back-home' type='button' class='callout-button back-button "+no_back+"' value='< Previous Group'> <input type='button' class='space_left space_right callout-button submit_form_button' value='"+button_text+"'>"+
+			"</div>"+
+			"</form>"
+		
+	return html			
+	
+}
+
+
+//this will make a simple table for the user to define how to return teh results from the analysis back to the database
+function DetermineDatabaseUI(files,formid){
+	
+	exp_data = exps_with_write_access;
+	
+	//lets check if you even have write acces to any experiment 
+	if(emptyObject(exps_with_write_access)){
+		$(formid).find('div[name="db-settings-table-here"]').html("You do not have write access to any experiments")
+		return //exti function 
+ 	}
+	
+	
+	
+	html_table_code = "<div class='indent1'>"+
+						"<h3>Define where data should go</h3>"+
+						"<div class='indent1'>"+
+							"<table class='db-ui' name='db-add-details'>"+
+								"<thead>"+
+									"<td>Input filename</td>"+
+									"<td>DB experiment name (Current seq count)</td>"+
+									"<td>Add file to database</td>"+
+									"<td>Issues to address before adding to database</td>"+
+								"</thead>"+
+								"<tbody>"+
+								"</tbody>"+								
+							"</table>"+
+						"</div>"+
+					"</div>"
+	
+	//update table to teh proper location in the form 
+	$(formid).find('div[name="db-settings-table-here"]').html(html_table_code)
+	var id
+	var exp 		
+	var checked=''
+	
+	html_table_rows = ""
+	//create HTML of a table row for every file selected. each row will define how to add that specific file to the database
+	for (var index=0;index<files.length;index++){
+		html_table_rows+="<tr class='expdata'>"+
+								"<td class='ngs-filename'>"+ //name of file 
+									"<span title='"+files[index]['name']+"'>"+files[index]['name']+"</span>"+
+								"</td>"								
+				
+		if(downloaded_input_from_db){ //we will be downloading it from the database in this app so we can easily predict if user will have write acces
+				id = files[index]['metadata']['_id']
+				if (id in exps_with_write_access) //you are allowed to update experiment					
+					html_table_rows+="<td>"+ //name of experiment 										
+										"<span class='expnameselection'><span>"+exps_with_write_access[id]['EXPERIMENT_NAME']+" ("+exps_with_write_access[id]['SEQ_COUNT']+")</span></span>"+
+										"<input name='exp-id-"+files[index]['name']+"' class='hidden expid' value='na'>"+
+									"</td>"+ //checkbox for adding to experiment 
+									"<td class='dbcheckoption'>"+
+										"<input name='insert-method' value='update' class='hidden'><input name='db-add-"+files[index]['name']+"' class='dbcheck' type='checkbox' checked>"+
+									"</td>"+
+									"<td class='issues'>"+ //any issues encountered
+										"<span class='issuetypes noissues'>No issues found</span>"+
+									"</td>"										
+																					
+				else //not allowed to update experiment so disable check box 
+					html_table_rows+="<td>"+
+										"<span class='expnameselection'><span>"+files[index]['name']+"</span></span>"+
+										"<input name='exp-id-"+files[index]['name']+"' class='hidden expid' value='na'>"+
+									"</td>"+
+									"<td class='dbcheckoption'>"+
+										"<input name='insert-method' value='error' class='hidden'><input name='db-add-"+files[index]['name']+"' class='dbcheck' type='checkbox' disabled>"+ 
+									"</td>"+
+									"<td class='issues'>"+
+										"<span>You do not have write access for this experiment</span>"+
+									"</td>"															
+		}else{	//these files are from scratch , so finding the proper experiment may require user input 
+			if(files[index]['contains-seq-id']){ //the file is from scratch BUT because the file contains a sequence id, it must have come from the database previously. Adding to the database will be easy as it is simply an 'update' command
+				html_table_rows+="<td>"+ //name of experiment 
+										"<span class='expnameselection' title='This file contains sequences previously downloaded from the database. Therefore, defining an experiment is not needed. '><span>To be determined</span></span>"+
+										"<input name='exp-id-"+files[index]['name']+"' class='hidden expid' value='na'>"+ //when value == na it basicalyl means that we do not depend on knowing the ID of experiment (because we will use an update function)
+									"</td>"+ //checkbox for adding to experiment 
+									"<td class='dbcheckoption'>"+
+										"<input name='insert-method' value='update' class='hidden'><input name='db-add-"+files[index]['name']+"' class='dbcheck' type='checkbox' checked>"+
+									"</td>"+
+									"<td class='issues'>"+ //any issues encountered
+										"<span class='issuetypes noissues'>No issues found. Program will simply use the database SEQ-ID to update results properly</span>"+
+									"</td>"															
+			}				
+			else{ //this file does not contain seq_id, so we need to attempt other methods
+				id = ''				
+				//first lets check if we can find the right experiment for this file using any metadata associated with 
+				if('metadata' in files[index]){	
+					//this file came with metadata, so check if we can predicit the experiment it came from 
+					if('_id' in files[index]['metadata'] && files[index]['metadata']['_id'] in exps_with_write_access)
+						id = files[index]['metadata']['_id']
+					else if('EXPERIMENT_NAME' in files[index]['metadata'] && 'PROJECT_NAME' in files[index]['metadata']){ //search for experiment 
+						for(exp in exps_with_write_access){
+							if(exps_with_write_access[exp]['EXPERIMENT_NAME'] == files[index]['metadata']['EXPERIMENT_NAME'] && exps_with_write_access[exp]['PROJECT_NAME'] == files[index]['metadata']['PROJECT_NAME']){
+								id = exp // exp found 
+								break
+							}							
+						}
+					}
+				}
+				
+				if(id==''){ //so the steps above did not find an id, which means this file probably has no information with regard to its experiment. so have the user decide where to add the file  					
+					html_table_rows+="<td>"+											
+											"<span class='expnameselection'><span></span><input class='callout-button delete-button choose-new-exp' type='button' title='Choose another experiment' value='-'></span>"+
+											"<span class='expnamesearch custom-combobox'><a class='toggle-search'></a><input placeholder='search exps' name='expselection' class='expselection'></span>"+					
+											"<input name='exp-id-"+files[index]['name']+"' class='hidden expid' value='"+id+"'>"+
+									  "</td>"+
+									  "<td class='dbcheckoption'>"+ //adding check box option 
+											"<input name='insert-method' value='' class='hidden'><input name='db-add-"+files[index]['name']+"' class='dbcheck' type='checkbox' disabled >"+
+								 	  "</td>"+
+									  "<td class='issues'>"+
+									  		"<span class='issuetypes noissues'>No issues found</span>"+
+											"<select class='issuetypes' title='This experiment already has sequences in the database'  name='seqaddmethod'>"+
+												"<option value='select'>(Choose how to add NGS file to experiment)</option>"+
+												"<option value='update_map'>Map sequences in annotation file to sequences in database</option>"+											
+												"<option value='overwrite'>Delete all sequences currently in DB experiment</option>"+
+												"<option value='append'>Append the sequences in the annotation file to the database experiment</option>"+
+												"<option value='noadd'>Do not add sequences to database</option>"+
+											"</select>"+											
+									  "</td>"										
+				
+				}
+				else{ //so the steps above did found an id 
+					//if(exps_with_write_access[id]['SEQ_COUNT'] == 0) //if SEQ COUNT = 0 => then we will be INSERTING (not updating) data to the experiment in the database 
+					//	checked = 'checked'		
+					
+					html_table_rows+="<td>"+ //choosing an experiment 																									
+										"<span class='expnameselection'><span>"+exps_with_write_access[id]['EXPERIMENT_NAME']+" ("+exps_with_write_access[id]['SEQ_COUNT']+")</span><input class='callout-button delete-button choose-new-exp' type='button' title='Choose another experiment' value='-'></span>"+
+										"<span  class='expnamesearch custom-combobox'><input placeholder='define experiment' name='expselection' class='expselection'><a class='toggle-search'></a></span>"	+
+										"<input name='exp-id-"+files[index]['name']+"' class='hidden expid' value='"+id+"'>"+
+									 "</td>"+
+									 "<td class='dbcheckoption'>"+ //adding check box option 
+											"<input name='insert-method' value='' class='hidden'><input name='db-add-"+files[index]['name']+"' class='dbcheck' type='checkbox'>"+
+								 	  "</td>"+
+									  "<td class='issues'>"+
+									  		"<span class='issuetypes noissues'>No issues found</span>"+
+											"<select class='issuetypes' title='This experiment already has sequences in the database'  name='seqaddmethod'>"+
+												"<option value='select'>(Choose how to add NGS file to experiment)</option>"+
+												"<option value='update_map'>Map sequences in annotation file to sequences in database</option>"+											
+												"<option value='overwrite'>Delete all sequences currently in DB experiment</option>"+
+												"<option value='append'>Append the sequences in the annotation file to the database experiment</option>"+
+												"<option value='noadd'>Do not add sequences to database</option>"+
+											"</select>"+											
+									  "</td>"						
+				}																							
+			}
+		}
+		
+		html_table_rows+="</tr><tr><td class='errormessages' colspan='6'</td></tr>"			
+	}
+	
+	//update table with row data 	
+	$(formid).find('table[name="db-add-details"] tbody').html(html_table_rows)
+	
+	//add some jquery for making the 'AUTOCOMPLETE' select box when user wants to search for an experiment
+	var exp_list = []
+	
+	//make a list of 'PROJECT:EXP' variables
+	for (var each_exp in exp_data){
+		exp_list.push(exp_data[each_exp]['PROJECT_NAME']+' : '+exp_data[each_exp]['EXPERIMENT_NAME'])
+	}
+	exp_list.sort();
+	exp_list.unshift('')
+	exp_list.unshift('Do not add to database')
+	$(formid+' .expselection').each(function(){	
+		var input_search_box = $(this);
+		//$(this).combobox();
+		autocompleteGeneral($(this),exp_list,'',true,function(){});
+		var toggle_bar = $(this).siblings('a.toggle-search');			
+		toggle_bar.attr( "tabIndex", -1 )
+			.attr( "title", "" )	
+			.button({
+				icons: {
+					primary: "ui-icon-triangle-1-s"
+				},
+				text: false
+			})
+			.qtip()				
+		toggle_bar.on('click',function(){				
+			if($(this).attr('value')==1){
+				input_search_box.autocomplete('close');
+				$(this).attr('value',0);
+			}
+			else{
+				$(this).attr('value',1);
+				input_search_box.autocomplete('search','');
+			}
+			
+		});		
+	});
+																									
+	
+	//listen for changes tot he select box (when users selects how to insert data into database)
+	$(formid).on('change',"select[name='seqaddmethod']",function(){						
+		var id=$(this).closest('tr').find('.expid').attr('value');
+		
+		if($(this).attr('value')!='select'){
+			var addmethod = $(this).attr('value') //this was the method selected by user
+			
+			//based on the option selected by user, update two variables: exp_insertion_method and the input variable 'insert-method'
+			//these values should reflect how to handle experiments 
+			if(addmethod=='noadd'){							
+				$(this).closest('tr').find('.dbcheck').attr('checked',false);
+				$(this).closest('tr').find('.dbcheck').attr('disabled',true);
+				$(this).closest('tr').find('.dbcheck').show();											
+			}						
+			else{					
+				$(this).closest('tr').find('.dbcheck').attr('checked',true);
+				$(this).closest('tr').find('.dbcheck').attr('disabled',false);
+				$(this).closest('tr').find('.dbcheck').show();					
+				if(addmethod=='overwrite'){
+					exp_insertion_method[id] = 'insert'
+					$(this).closest('tr').find('input[name="insert-method"]').attr('value','insert')
+				}
+				else if ($(this).attr('value')=='append'){
+					exp_insertion_method[id] = 'append'
+					$(this).closest('tr').find('input[name="insert-method"]').attr('value','append')
+				}
+				else if (addmethod=='update_map'){
+					exp_insertion_method[id] = 'update_map'
+					$(this).closest('tr').find('input[name="insert-method"]').attr('value','update_map')
+				}
+			}
+		}
+		EnsureDBCheckbox($(this).closest('form'));
+	})
+	
+	//list for when user hits the 'CHANGE EXPERIMENT' button 
+	//basically remove the currently experiment selected and allow user to choose a new one 
+	$(formid).on('click','.choose-new-exp',function(){			
+		$(this).siblings().html('');					
+		$(this).parent().siblings('.expid').attr('value','');
+		$(this).find(".expnameselection").hide();
+		$(this).find(".expnamesearch").show();
+		$(this).parent().siblings('.expnamesearch').show();	
+		$(this).closest('tr').find("[name='seqaddmethod']").attr('value','select');
+		$(this).closest('tr').find(".expselection").attr('value','');
+		$(this).closest('tr').find("input[name='insert-method']").attr('value','');
+		
+		EnsureDBCheckbox($(this).closest('form'));
+	});
+	
+	EnsureDBCheckbox($(formid));	
+}
+
+
+//anytime a user makes a change to the add-to-database tabLe then run this function. 
+//basically search the experiments curertnly selected for a file and check if there are any issues that need to be addressed by user
+//input (from_dom_obj) => a jquery object referring to the current form containing database experiment table 
+function EnsureDBCheckbox(form_dom_obj){
+	//go through each row in table
+	form_dom_obj.find('tr.expdata').each(function(){	
+		
+		//find the hidden input tag (within column #2 -> the one that defines the experiment ) whose class is exp id. it shoudl contain the value of the experiment 
+		var exp_id = $(this).find('.expid').attr('value');						
+		//all rows in table have a 'HIDDEN' row right after it (thus the next()). basically the hidden row whose col span = 6 will containin any error messages from the current row being looked at
+		var error_row_object = $(this).next().children('.errormessages');
+		error_row_object.hide() //hide errors at start 
+		if(exp_id=='na')//this happens when we are going to use an update command. Basically when a file already containing seq_id from database will be used (therefore we dont need to use EnsureDBCheckbox)
+			return
+		
+		$(this).find('.issuetypes').hide();//hide any fields in the last column 
+		
+		if (exp_data.hasOwnProperty(exp_id)){							
+			//exp_insertion_method => this variable will be an object whose keys are experiment ids and values define whether experiment will be UPDATED or INSERTED with sequence results			
+			if (!exp_insertion_method.hasOwnProperty(exp_id))	//we havent yet defined a method for inserting data into this experiment (which is why there is no exp-id key n this object)			
+				if (exp_data[exp_id].hasOwnProperty('SEQ_COUNT') && exp_data[exp_id]['SEQ_COUNT']>0) //this experiment already has sequences!! so we need user input (that is, will we update, insert/replace, append?)
+					exp_insertion_method[exp_id]='';
+				else{ //there are no sequences in this experiment yet, so we just need to simply insert results 
+					exp_insertion_method[exp_id] = 'insert';								
+					$(this).find("input[name='insert-method']").attr('value','insert');//also change teh value of the field insert-method. make it equal to 'insert'
+					$(this).find("[name='seqaddmethod']").attr('value','overwrite');
+				}
+			
+			if (exp_insertion_method[exp_id]==''){	//we require user input -> deselect any check boxes and disable them first 
+				$(this).find('.dbcheck').attr('checked',false);									
+				$(this).find('.dbcheck').attr('disabled',true);
+				$(this).find('.dbcheck').attr('title','First select how to add results to database')					
+				$(this).find("[name='seqaddmethod']").show(); //show the select box asking the user how to add the results tot he database
+				error_row_object.show()
+				error_row_object.html('Address issue before insertion: The selected experiment from the database already contains sequences. Please define how to add annotated results into the database')
+			}
+			else{	
+				//user input is not required, so go ahead and enable any checkboxes and by default mayke them selected
+				$(this).find('.dbcheck').attr('checked',true);
+				$(this).find('.dbcheck').attr('disabled',false);
+				$(this).find('.dbcheck').show();														
+				$(this).find("[name='seqaddmethod']").hide();//hide the select box. we already know how to add to database								
+				$(this).find('.noissues').show();		
+				$(this).find("[name='insert-method']").attr('value',exp_insertion_method[exp_id])
+				error_row_object.html('')				
+			}
+			$(this).find(".expnameselection").show();
+			$(this).find(".expnamesearch").hide();
+		}
+		else{
+			//exp_id has not been defined yet. (if it was defined then exp_data would have it as a key)
+			//ask user to select an experiment 
+			$(this).find('.dbcheck').attr('checked',false);
+			$(this).find('.dbcheck').attr('disabled',true);	
+			$(this).find('.dbcheck').attr('title','Select database experiment')								
+			$(this).find(".expnameselection").hide();
+			$(this).find(".expnamesearch").show();
+			error_row_object.show()
+			error_row_object.html('Address issue before insertion: Define an experiment from the database to add results from analysis file')				
+		}
+	});
+}
+
+
+//go through all of the generated files that are in a single group 
+//generate a UI ANNOTATION PIPELINE FORM for each group 
+function GenerateForms(){
+	$('.step3').hide()
+	$('#annotation-pipeline').show()
+	for (var i = 0;i<files_in_groups.length;i++){
+		$('#annotation-pipeline').append(AnnotationForm(i))		
+		var pipe = $('#group-'+String(i+1))		
+		//add new fields for a germline table for EACH annotation form 		
+		CreateGermlineDBHTML('#group-'+String(i+1)+' .germlines-selectable-here',germline_data)		
+		//convert the MIXCR locus selection in html into a selecttable
+		MixcrSelectTable('#group-'+String(i+1)+' .mixcr-locus-select')
+		//Using the files in this group, determine how a user will be able to add the results to the database
+		DetermineDatabaseUI(files_in_groups[i],'#group-'+String(i+1))
+	}	
+	if(using_imgt_files){
+		$('input[name="annotate"]').each(function(){
+			$(this).attr('checked',false)
+		})
+	}
+	EnsureVisibility() //only show options for programs in pipelines that are selected (hide any non selected items just as mass spec db and isotyping)
+}
+
+
+
+var myRe =/[^actg]/i;
+//this will validate settings in the text-area boxes which should mimic FASTA files 
+function validate_fasta(text){
+	var sequences = text.split('>');
+	var badchars=false;
+	var good_char_array = ''// => this will return sequences as text
+	var good_char_list = [] //=> this will return sequences as list 
+	for (seqnum=1;seqnum<sequences.length;seqnum++){
+		
+		seq_info = sequences[seqnum].split('\n')	
+		header = seq_info[0].replace(' ','').replace('\t','');		
+		var seq=''
+		for (s =1;s<seq_info.length;s++){
+			seq+=seq_info[s]
+		}		
+		seq = seq.replace(/( |\r)/gm,"");		
+		if(myRe.exec(seq)){
+			badchars = true;			
+		}
+		else{
+			seq = seq.replace(' ','').replace('\t','')
+			if (seq!=''){
+				good_char_array+='>'+header+'\n'+seq+'\n';		
+				good_char_list.push([seq,header])
+			}
+		}    		
+	}
+	if(good_char_array=="")
+		badchars = true
+	return [good_char_array,good_char_list,badchars];
+}
+
+//takes a jquery object from an input type = number var, 
+//it evalutes if element is a number 
+function CheckInputNumber(input_dom){
+	var error_message = ""
+	var nan = false
+	if(input_dom.attr('value')=="" || isNaN(input_dom.attr('value'))){ //there is no value or a non-number was provided
+		error_message = "Please enter a valid number"
+		nan = true
+	}
+	else{
+		var max_val = Number(input_dom.attr('max'))
+		var min_val = Number(input_dom.attr('min'))
+		
+		var number = Number(input_dom.attr('value'))
+				
+		
+		if(!(isNaN(max_val))){ //the max val for this number is defined 
+			if(number>max_val){
+				error_message = "Please enter a valid number below or equal to "+String(max_val)			
+				nan=true
+			}
+			
+		}
+		
+		if(!(isNaN(min_val))){
+			if(number<min_val){
+				error_message = "Please enter a valid number above or equal to "+String(min_val)
+				nan=true
+			}
+		}
+								
+	}
+	
+	return [nan,error_message]
+}
+
+
+$(document).ready(function(){			
+	$('input[name="go-back-home"]').on('click',function(){			
+		$('.step1').show();
+		$('.step2').hide();					
+	});
+	
+	$('input[name="go-back-to-select"]').on('click',function(){			
+		$('.step2').show();
+		$('.step2z').hide();					
+	});
+	
+	$('#proceed-to-groups').on('click',function(){			
+		GroupIMGTIntoExperiments()
+		SetUpGroups()
+	});
+	
+					
+	
+	//anytime you click an div-btn element from the class 'left' then do the following 
+	$('.left').on('click','.div-btn',function(){		
+		var child=$(this).children('input')
+		if ($(this).hasClass('disabled')){ //button is disabled so turn off all settings 
+			$(this).removeClass('checked');
+			child.prop('checked',false)
+			$(this).siblings('.subsection').hide()
+			$(this).siblings('.subsection').children().each(function(){
+				$(this).removeClass('checked')
+				$(this).children('input').prop('checked',false)
+			})
+		}
+		else{						
+			
+			if($(this).hasClass('alldata')){//its a specific button that we want to treat caefully
+					//lets add extra functionality to the 'REPORT' div-btns
+
+				if($(this).children('input').is(':checked')){//we need to UNCHECK it 
+					$(this).removeClass('checked')
+					$(this).children('input').prop('checked',false)
+				}
+				else{
+					//everything gets highlighted 
+					$('.report.div-btn').each(function(){
+						$(this).children('input').prop('checked',true)
+						$(this).siblings('.subsection').show()
+						$(this).addClass('checked')
+					})
+				}
+			}
+			
+			else{			
+				child.prop("checked", !child.prop("checked"));				
+				if (child.is(':checked')){
+					$(this).addClass('checked')
+					$(this).siblings('.subsection').show()			
+				}
+				else{
+					$(this).removeClass('checked')
+					$(this).siblings('.subsection').hide()
+					$(this).siblings('.subsection').children().each(function(){
+						$(this).removeClass('checked')
+						$(this).children('input').prop('checked',false)
+					})
+				}
+				if($(this).hasClass("exp-filter"))
+					ResetTableFilters()
+			}
+		}	
+	})
+	
+	$('#reselect-file').on('click',function(){						
+		$('.post-step1').show();			
+		$('#automated-settings').hide();			
+	});				
+										
+	$('#file-type-selected').click(function(){			
+		var check = $('input[name=location]:checked')										
+		using_imgt_files=false
+		if (check.length){												
+			$('#radio-option-error').hide()
+			$('.step1').hide();				
+			$('.step2').show();						
+			
+			file_option = check.val();											
+			if (file_option=='db-download'){				
+				$('#exp-dl-form').show()				
+				$('#scratch-file-select').hide()
+			}
+			else if(file_option=='fastq'){
+				$('#exp-dl-form').hide()
+				$('#scratch-file-select').show()
+				$('#multifile-selection-ui-fasta').hide()
+				$('#multifile-selection-ui-fastq').show()				
+				$('#multifile-selection-ui-imgt').hide()
+			}
+			else if(file_option=='fasta'){
+				$('#exp-dl-form').hide()
+				$('#scratch-file-select').show()
+				$('#multifile-selection-ui-fastq').hide()
+				$('#multifile-selection-ui-fasta').show()
+				$('#multifile-selection-ui-imgt').hide()
+			}		
+			else if(file_option=='imgt'){
+				$('#exp-dl-form').hide()
+				$('#scratch-file-select').show()
+				$('#multifile-selection-ui-fastq').hide()
+				$('#multifile-selection-ui-fasta').hide()
+				$('#multifile-selection-ui-imgt').show()
+				using_imgt_files=true
+			}
+			/*else{
+				$('#exp-dl-form').hide()
+				$('#scratch-file-select').show()
+			}*/							
+			replyJson({'filetype':file_option})
+		}
+		else{			
+			$('#radio-option-error').show()				
+		}			
+	});
+	
+		
+	$('input[name="files-selected"]').click(function(){
+		var unique_files = {}
+		var exp_name 
+		var exp_id 
+		var proj_name
+		var counts = 0
+		if(file_option=='db-download'){
+			//user willl download from database, 
+			//so get the experiments the user will download and add these to the variable input_file_data
+			input_file_data = []
+			
+			selected_exps = GetSelectedExperiments(expdT) //get rows selected by user 
+			if (selected_exps.length==0){
+				$('#exp-dl-form .table_error').show()				
+			}
+			else{
+				$('#exp-dl-form .table_error').hide()
+				//loop through selected experiments 
+				for (var rows = 0; rows<selected_exps.length;rows++){
+					exp_id = selected_exps[rows]
+					//for each experiment, select EXP_ID, EXPERIMENT_NAME, AND PROJECT_NAME 
+					//the variable 'filepath' will just be equal to EXPERIMENT_NAME
+					if ('EXPERIMENT_NAME' in exp_metadata_info[selected_exps[rows]]){
+						exp_name = exp_metadata_info[selected_exps[rows]]['EXPERIMENT_NAME']
+						if (exp_name in unique_files){
+							counts+=1
+							filename=exp_name+'_'+String(counts)
+							unique_files[filename] = 1
+						}		
+						else
+							filename=exp_name
+					}
+					else{
+						exp_name = ''
+						filename = exp_id
+					}
+					
+					if ('PROJECT_NAME' in exp_metadata_info[selected_exps[rows]]){
+						proj_name = exp_metadata_info[selected_exps[rows]]['PROJECT_NAME']
+					}
+					else{
+						proj_name = ''
+					}
+					
+					input_file_data.push({'filepath':filename,'name':filename+'.fastq','metadata':{'_id':exp_id,'EXPERIMENT_NAME':exp_name,'PROJECT_NAME':proj_name},'contains-seq-id':true,'filetype':'FASTQ'})
+					
+				}				
+				
+				downloaded_input_from_db = true			
+				
+				
+				replyJson({'next-gsaf-pipeline-step':true,'get-file-list':false});
+				SetUpGroups()
+			}
+		}
+		else{
+			downloaded_input_from_db=false
+			replyJson({'next-gsaf-pipeline-step':true,'get-file-list':true});			
+		}
+				
+	});
+	
+	$('#new-file-group').click(function(){
+		CreateGroup()
+	});
+	$('#all-in-one-group').click(function(){
+		GroupAllExpTogether()
+	});
+	$('#all-in-sep-group').click(function(){
+		GroupExperimentsSeperately()
+	});
+	
+	$('#new-file-group-imgt').click(function(){
+		CreateIMGTGroup()
+	});
+	$('#all-in-one-group-imgt').click(function(){
+		GroupIMGTExpTogether()
+	});
+	$('#all-in-sep-group-imgt').click(function(){
+		GroupIMGTSeperate()
+	});
+	
+	
+	$('.step3 span.more-info').click(function(){	
+		$(this).siblings('.hide-details').show()
+		$(this).parent().siblings('.show-details').show()
+		$(this).hide()
+	});	
+	
+	$('.step3 span.hide-details').click(function(){			
+		$(this).siblings('.more-info').show()
+		$(this).parent().siblings('.show-details').hide()
+		$(this).hide()
+	});		
+	
+	$('#load-annotation-pipeline').click(function(){
+		GetGroupSummary()
+		GenerateForms()
+	});
+	
+	//allowing user to move back and forth through the annotation forms 
+	$('#annotation-pipeline').on('click','.back-button',function(){
+		var form = $(this).closest('form')		
+		var form_num = Number(form.attr('value'))
+		form.hide();
+		form.prev().show()	
+		EnsureVisibility()
+	});
+		
+	
+	//when checking options in bioinformatics pipeline/annotation pipline (if chekced make check box selected)
+	$('#annotation-pipeline').on('click','.bioinformatics-setting',function(e){
+		var check = $(this).find(':checkbox')
+		if(check.is(':disabled'))
+			return //do not do anythign when object is disabled 
+		var opposite = !(check.is(':checked'))
+		if(e.target.type=='checkbox'){//user actually pressed checkbox rather than clicking div parent \
+			//do not do anything/no need to modify checkbox attributes
+		}
+		else{// user did not select checkbox
+			check.attr('checked',opposite)//checked=true //so modify checkbox
+		}
+		
+		
+		if (check.is(':checked')){
+			$(this).siblings().removeClass('hidden')			
+		}
+		else{
+			$(this).siblings().addClass('hidden')			
+		}
+				
+	});				
+	
+	$('#annotation-pipeline').on('change','select[name="annotation-program"]',function(){
+		if($(this).attr('value').toLowerCase()=='mixcr'){			
+			//disable isotyping option. this is because mixcr includes isotypeing by default
+			//search for the parent '#'annotation-pipline, then find the div whose name is isotyping 
+			var iso = $(this).closest('#annotation-pipeline').find('div.bioinformatics-setting[name="isotyping"]')			
+			$(this).closest('.settings').find('.igblast_igfft_settings').hide()						
+			$(this).closest('.settings').find('.just-igblast').hide()
+			$(this).closest('.settings').find('.mixcr_settings').show()
+			iso.siblings().addClass('hidden')
+			var check = iso.find(':checkbox')
+			check.prop('disabled',true)
+			check.prop('checked',false)
+			iso.attr('title','This option is disabled since the MixCR program outputs isotype information')
+		}
+		else if($(this).attr('value').toLowerCase()=='igblast'){			
+			var	iso = $(this).closest('#annotation-pipeline').find('div.bioinformatics-setting[name="isotyping"]')
+			var check = iso.find(':checkbox')
+			$(this).closest('.settings').find('.igblast_igfft_settings').show()						
+			$(this).closest('.settings').find('.just-igblast').show()	
+			$(this).closest('.settings').find('.mixcr_settings').hide()
+			check.prop('disabled',false)			
+			iso.attr('title','')
+		}
+		else{
+			var	iso = $(this).closest('#annotation-pipeline').find('div.bioinformatics-setting[name="isotyping"]')
+			var check = iso.find(':checkbox')
+			$(this).closest('.settings').find('.igblast_igfft_settings').show()				
+			$(this).closest('.settings').find('.just-igblast').hide()
+			$(this).closest('.settings').find('.mixcr_settings').hide()
+			check.prop('disabled',false)			
+			iso.attr('title','')
+		}
+	})
+	
+	//user changes method for pairing (use range or single value)
+	$('#annotation-pipeline').on('click','input[name="cluster-range-radio"]',function(){
+		var method =$(this).attr('value') 
+		console.log(method)
+		$(this).siblings('.pairing_cluster_decision').hide();
+		if(method=='range')
+			$(this).siblings('.pairing_cluster_decision.range_cutoff').show()
+		else if(method=='single')
+			$(this).siblings('.pairing_cluster_decision.single_cutoff').show()
+						
+	})
+	
+	
+	
+	//GETTING SETTINGS FOR PIPELINE!!!///
+	//WHEN USER HITS THE BUTTON FOR CONFIRMING ANNOTATION SETTINGS (THIS IS THE LAST STEP AND WILL ACTUALLY GO THROUGH AND MAKE SURE ALL SETTINGS ARE CORRECT
+	//SO WILL COMPILE PROPERTIES FOR ALL ANNOTATION SETTINGS AND SELECTED FILES AND ADDING TO THE DATABASE 
+	$('#annotation-pipeline').on('click','.submit_form_button',function(){		
+		var form = $(this).closest('form')		
+		var form_num = Number(form.attr('value'))
+		
+		//what is the name of the group 
+		var group_name = form.find('input[name="group-name"]').attr('value')		
+		if(group_name==''){
+			group_name = 'group_'+String(form_num)
+		}
+		group_name = group_name.replace('/ ,:\/\\|/g','_') //remove spaces, commas, colons, forward slashes, back slashes, => replace with underscore
+		
+		//shoudl we only analyze a subset of sequenes 
+		var limit
+		if(form.find('input[name="limit-seqs"]').is(':checked'))
+			limit = 10000
+		else
+			limit = 0 		
+		
+		
+		//step1: get the input files for this form: 
+		var files = files_in_groups[form_num]		
+		
+		var steps = []
+		var annotation_fxn
+		
+		var errors_found = false
+		var annotation_settings 
+		var isotype_text
+		var settings_object
+		var germline_select
+		//for now, all settings for annotation will be hardcoded (we have a predetermined list of programs that we will run (i.e. annotation, isotyping, pairing, etc))
+			//so any changes to pipeline need to be hardcoded here...
+		//FIGURE OUT WHICH STEPS IN THE PIPELINE WILL BE ANALYZED 		
+		//1) find all check boxes in the form whose class is 'pipeline-option' (this will be the main checkboxes for deciding which pipelines will be run), 
+		form.find('input[type="checkbox"].pipeline-option').each(function(){
+			
+			//go through each checkbox and determien whether we will do that analysis and whether we need to get its settings
+			annotation_fxn = $(this).attr('name')		
+			
+			if($(this).is(':checked')){ //we will perform annotation
+				annotation_settings = {'annotation_type':annotation_fxn,'run_analysis':true}
+			
+				//now hard code grabbing settings for each annotation function 
+				if(annotation_fxn == 'annotate'){				
+					//settings for annotation 																	
+					settings_object = $(this).closest('div.div-btn2').siblings('div.settings') 										
+					annotation_settings['settings'] = {}
+					
+					//first check to see which program is being used: 
+					annotation_program = settings_object.find('select[name="annotation-program"] option:selected').attr('name').toLowerCase()
+					annotation_settings['settings']['program'] = annotation_program						
+					if(annotation_program=='mixcr'){
+						list_of_loci = []						
+						settings_object.find('div.mixcr-locus-select').find('li.ui-selected').each(function(){
+							list_of_loci.push($(this).attr('name'))
+						})
+						
+						if(list_of_loci.length==0){
+							errors_found = true
+							settings_object.find('.mixcr-error-message').show()
+						}
+						else{
+							settings_object.find('.mixcr-error-message').hide()
+						}						
+						species = settings_object.find('select[name="mixcr-species"] option:selected').attr('name')						
+						if (species=='NA')
+							species=''
+						annotation_settings['settings']['loci'] = list_of_loci
+						annotation_settings['settings']['species'] = species
+					}
+					else{
+						
+						//we need to get the germline database 
+						germline_select = ReturnGermlineTableResults(settings_object.find('div.selecttable_germline'))
+						
+						if(germline_select['germline_ids'].length==0){ //empty means that the user has not selected any options 
+							errors_found = true
+							settings_object.find('div.selecttable_germline').find('span[name="germline-errors"]').show()						
+						}
+						else{
+							annotation_settings['settings']['germline-source'] = germline_select
+							settings_object.find('div.selecttable_germline').find('span[name="germline-errors"]').hide()						
+						}
+						
+						
+						//Now get the settings for the maximum mismatch allowed 
+						//need to get the number of V, D, AND J GERMLINES to return 
+						var number_check = settings_object.find('input[name="vnum_hits"]')
+						r = CheckInputNumber(number_check)					
+						var badnumber = r[0]					
+						if(badnumber){
+							errors_found = true
+							number_check.addClass('contains_errors')
+							number_check.attr('title',r[1]) //r[1]=> error message returned by function 
+							mismatch_number=0
+						}						
+						else{					
+							number_check.removeClass('contains_errors')
+							number_check.attr('title','')						 			
+							annotation_settings['settings']['vnum_hits'] = parseInt(number_check.attr('value'))			
+						}
+						
+						//Now get the settings for the maximum mismatch allowed 
+						//need to get the number of V, D, AND J GERMLINES to return 
+						var number_check = settings_object.find('input[name="dnum_hits"]')
+						r = CheckInputNumber(number_check)					
+						var badnumber = r[0]					
+						if(badnumber){
+							errors_found = true
+							number_check.addClass('contains_errors')
+							number_check.attr('title',r[1]) //r[1]=> error message returned by function 
+							mismatch_number=0
+						}						
+						else{					
+							number_check.removeClass('contains_errors')
+							number_check.attr('title','')						 			
+							annotation_settings['settings']['dnum_hits'] = parseInt(number_check.attr('value'))			
+						}
+						
+						//Now get the settings for the maximum mismatch allowed 
+						//need to get the number of V, D, AND J GERMLINES to return 
+						var number_check = settings_object.find('input[name="jnum_hits"]')
+						r = CheckInputNumber(number_check)					
+						var badnumber = r[0]					
+						if(badnumber){
+							errors_found = true
+							number_check.addClass('contains_errors')
+							number_check.attr('title',r[1]) //r[1]=> error message returned by function 
+							mismatch_number=0
+						}						
+						else{					
+							number_check.removeClass('contains_errors')
+							number_check.attr('title','')						 			
+							annotation_settings['settings']['jnum_hits'] = parseInt(number_check.attr('value'))			
+						}
+						
+																					
+						//need to get the minimum length of gene 															
+						var number_check = settings_object.find('input[name="algnlen"]')
+						r = CheckInputNumber(number_check)					
+						var badnumber = r[0]					
+						if(badnumber){
+							errors_found = true
+							number_check.addClass('contains_errors')
+							number_check.attr('title',r[1]) //r[1]=> error message returned by function 
+							mismatch_number=0
+						}						
+						else{					
+							number_check.removeClass('contains_errors')
+							number_check.attr('title','')						 			
+							annotation_settings['settings']['min_len_cutoff'] = parseInt(number_check.attr('value'))			
+						}
+						
+						//need to get the minimum length of gene 															
+						var number_check = settings_object.find('input[name="algnper"]')
+						r = CheckInputNumber(number_check)					
+						var badnumber = r[0]					
+						if(badnumber){
+							errors_found = true
+							number_check.addClass('contains_errors')
+							number_check.attr('title',r[1]) //r[1]=> error message returned by function 
+							mismatch_number=0
+						}						
+						else{					
+							number_check.removeClass('contains_errors')
+							number_check.attr('title','')						 			
+							annotation_settings['settings']["min_cutoff"] = Number(number_check.attr('value'))			
+						}
+						
+						
+						//get the option for how to handle insertions and deletions  , 0 => never remove, 1= always remove, 2 => only remove if stop codons 
+						annotation_settings['settings']['remove_insertions'] = parseInt(settings_object.find('input[name="mutation"]:checked').val())																																					 				
+					
+						//add a few extra parameters for igblast settings
+						if(annotation_program=='igblast'){
+							annotation_settings['settings']['organism'] = settings_object.find('select[name="species"] option:selected').attr('name')
+							annotation_settings['settings']['ig_seqtype'] = settings_object.find('select[name="seqtype"] option:selected').attr('name')
+						}
+					}
+				}				
+				else if(annotation_fxn == 'isotype'){
+					
+					//get settings for isotyping 					
+					settings_object = $(this).closest('div.div-btn2').siblings('div.settings') 
+					
+					//extract the text provided in the textbox 
+					isotype_text = settings_object.find('textarea').val()
+					
+					
+					//validate the text, make sure it is a fasta file with only ACTG characters
+					var r = validate_fasta(isotype_text);
+					
+					sequences_as_text = r[0]
+					sequences_as_list = r[1]
+					badchars = r[2]
+										
+					if (badchars){		
+						errors_found= true
+						$(settings_object).find('textarea').addClass('contains_errors')
+						$(settings_object).find('textarea').attr('title','These sequences are not listed in FASTA format and/or they contain non DNA letters (do not have actg)')
+					}
+					else{
+						$(settings_object).find('textarea').removeClass('contains_errors')
+						$(settings_object).find('textarea').attr('title','')						
+					}
+					
+					//Now get the settings for the maximum mismatch allowed 
+					var maxmismatch = settings_object.find('input[name="maxmis"]')
+					r = CheckInputNumber(maxmismatch)
+					
+					var badnumber = r[0]					
+					if(badnumber){
+						errors_found = true
+						maxmismatch.addClass('contains_errors')
+						maxmismatch.attr('title',r[1]) //r[1]=> error message returned by function 
+						mismatch_number=0
+					}						
+					else{					
+						maxmismatch.removeClass('contains_errors')
+						maxmismatch.attr('title','')
+						mismatch_number = parseInt(maxmismatch.attr('value'))						
+					}		
+					
+					var minLen = settings_object.find('input[name="minlen"]')
+					r = CheckInputNumber(minLen)
+					var badnumber=r[0]
+					if(badnumber){
+						errors_found = true
+						minLen.addClass('contains_errors')
+						minLen.attr('title',r[1])
+						min_len=0
+					}
+					else{
+						minLen.removeClass('contains_errors')
+						minLen.attr('title','')
+						minLen_number = parseInt(minLen.attr('value'))
+					}
+					var penalize = settings_object.find("input[name='penalize-truncations']").is(':checked')
+					var search_rc = parseInt(settings_object.find("select[name='barcode-orientation'] option:selected").attr('value'))
+					annotation_settings['settings'] = {'barcodes':sequences_as_list,'maxmismatch':mismatch_number,'minlen':minLen_number,'penalize_truncations':penalize,'iso_search_direction':search_rc }									
+				}
+				
+				else if(annotation_fxn == 'descriptive-statistics'){
+					//get settings for isotyping 										
+					var settings_object = $(this).closest('div.div-btn2').siblings('div.settings') 
+					//go through all the checkboxes within descriptive statisitcs and recrod which summary files we should generate 
+					var list_of_stats = []
+					annotation_settings['settings'] = {}
+					settings_object.find('input[type="checkbox"]:checked').each(function(){
+						list_of_stats.push($(this).attr('name'))						
+					})
+					annotation_settings['settings']= list_of_stats
+				}
+				else if(annotation_fxn == 'pairing'){
+					//get the cluster cutoff for pairing 					
+					settings_object = $(this).closest('div.div-btn2').siblings('div.settings') 
+					var radio_option = settings_object.find('input[name="cluster-range-radio"]:checked')
+					console.log(radio_option.attr('value'))
+					var method = radio_option.attr('value')
+					if(method == 'range'){
+						cutoff_range = [0,0,0]
+						var min_cutoff = settings_object.find('input[name="min_pairing_cutoff"]')
+						var max_cutoff = settings_object.find('input[name="max_pairing_cutoff"]')
+						var range_cutoff = settings_object.find('input[name="range_pairing_cutoff"]')
+						r = CheckInputNumber(min_cutoff)												
+						var badnumber = r[0]										
+						if(badnumber){
+							errors_found = true
+							min_cutoff.addClass('contains_errors')
+							min_cutoff.attr('title',r[1]) //r[1]=> error message returned by function 							
+						}						
+						else{					
+							min_cutoff.removeClass('contains_errors')
+							min_cutoff.attr('title','')
+							cutoff_range[0] = Number(min_cutoff.attr('value'))						
+						}
+						
+						r = CheckInputNumber(max_cutoff)												
+						var badnumber = r[0]										
+						if(badnumber){
+							errors_found = true
+							max_cutoff.addClass('contains_errors')
+							max_cutoff.attr('title',r[1]) //r[1]=> error message returned by function 							
+						}						
+						else{					
+							max_cutoff.removeClass('contains_errors')
+							max_cutoff.attr('title','')
+							cutoff_range[1] = Number(max_cutoff.attr('value'))						
+						}
+						
+						r = CheckInputNumber(range_cutoff)												
+						var badnumber = r[0]										
+						if(badnumber){
+							errors_found = true
+							range_cutoff.addClass('contains_errors')
+							range_cutoff.attr('title',r[1]) //r[1]=> error message returned by function 							
+						}						
+						else{					
+							range_cutoff.removeClass('contains_errors')
+							range_cutoff.attr('title','')
+							cutoff_range[2] = Number(range_cutoff.attr('value'))						
+						}
+
+						var annotation_cutoff = settings_object.find('input[name="annotation_pairing_cutoff"]')
+						r = CheckInputNumber(annotation_cutoff)												
+						var badnumber = r[0]										
+						if(badnumber){
+							errors_found = true
+							annotation_cutoff.addClass('contains_errors')
+							annotation_cutoff.attr('title',r[1]) //r[1]=> error message returned by function 							
+						}						
+						else{					
+							annotation_cutoff.removeClass('contains_errors')
+							annotation_cutoff.attr('title','')
+							cutoff_for_annotation = Number(annotation_cutoff.attr('value'))						
+						}
+						annotation_settings['settings'] = {'cutoff':cutoff_range,'cutoff-method':'range','cutoff-annotation':cutoff_for_annotation}
+						
+					}
+					else if(method=='single'){
+					
+						var cutoff_input = settings_object.find('input[name="pairing_cutoff"]')
+						r = CheckInputNumber(cutoff_input)				
+						var badnumber = r[0]										
+						if(badnumber){
+							errors_found = true
+							cutoff_input.addClass('contains_errors')
+							cutoff_input.attr('title',r[1]) //r[1]=> error message returned by function 
+							cutoff=0
+						}						
+						else{					
+							cutoff_input.removeClass('contains_errors')
+							cutoff_input.attr('title','')
+							cutoff = Number(cutoff_input.attr('value'))						
+						}							
+						annotation_settings['settings'] = {'cutoff':cutoff,'cutoff-method':'single'}						
+					}																																													
+				}
+				else if(annotation_fxn == 'mass-spec-db'){
+					//get the cluster cutoff for pairing 
+					settings_object = $(this).closest('div.div-btn2').siblings('div.settings') 
+					var clono_input = settings_object.find('input[name="clonotyping_cutoff"]')
+					r = CheckInputNumber(clono_input)				
+					var badnumber = r[0]										
+					if(badnumber){
+						errors_found = true
+						clono_input.addClass('contains_errors')
+						clono_input.attr('title',r[1]) //r[1]=> error message returned by function 
+						clonotype_cutoff=0
+					}						
+					else{					
+						clono_input.removeClass('contains_errors')
+						clono_input.attr('title','')
+						clonotype_cutoff = Number(clono_input.attr('value'))						
+					}							
+					annotation_settings['settings'] = {'cutoff':clonotype_cutoff}																									
+				}
+				else if(annotation_fxn == 'db-add'){
+					settings_object = $(this).closest('div.div-btn2').siblings('div.settings') 
+					var db_table = settings_object.find('table')
+					var num_rows = files.length //number of rows in table 
+					//count howm any rows have an error messasage 
+					
+					if(db_table.find('td.errormessages:visible').length>0)
+						errors_found = true
+					else{
+						//no errors are found in table so lets record teh proper settings for this analysis 
+						//each index ni this list shoudl map to the filename from the group 
+						annotation_settings['settings'] = []
+						var rownum =0
+						var expdata
+						db_table.find('tr.expdata').each(function(){
+							expdata = {}
+							//go through each row in table and recrod 1) whether we will ad to database, 2) the name of the experiment we will add to (if valid) and 3) the method of how we are adding results to the database
+							expdata['add_to_db'] = $(this).find('input[type="checkbox"].dbcheck').is(':checked')
+							expdata['exp_to_add'] =  $(this).find('input.expid').attr('value')
+							expdata['insert_method'] =  $(this).find('input[name="insert-method"]').attr('value')
+							annotation_settings['settings'].push(expdata)
+						})
+					}
+				}											
+				steps.push(annotation_settings)
+			}
+			else{
+				steps.push({'annotation_type':annotation_fxn,'run_analysis':false}) //we will not be performing annotation
+			}
+			
+		})		
+		
+		if(errors_found){
+			form.find('.errors_in_form').show()
+		}
+		else{			
+			form.find('.errors_in_form').hide()
+			//now update global_settings 
+			global_settings[form_num] = {'files_in_group':files , 'group_name': group_name, 'pipeline':steps,'limit_seqs':limit}			
+			
+			//OK all settings were validated, so go to the next form 		
+			if(form_num<files_in_groups.length-1){
+				EnsureVisibility()
+				form.hide();
+				form.next().show()				
+			}
+			else{
+				form.hide();
+				//its the last form so start the program 
+				replyJson({'download_exps':downloaded_input_from_db,'analysis_groups':global_settings,'using_imgt':using_imgt_files})
+				//console.log({'download_exps':downloaded_input_from_db,'analysis_groups':global_settings,'using-imgt':using_imgt_files})
+			}
+			
+		}
+	});										
+
+});
+
+	
+</script>
+<style>
+
+
+span.file-present .select-file{
+	display:none;
+}
+
+span.file-needed .select-file{
+	display:inline;
+}
+
+span.file-present .file-selected{
+	display:inline;
+}
+
+span.file-needed .file-selected{
+	display:none;
+}
+
+.div-btn2:hover {  
+  max-width:35em;
+}
+
+textarea { vertical-align: top; }
+
+.custom-combobox {
+	position: relative !important;
+	display: inline-block;
+	width:90%;		
+}
+
+.toggle-search {
+	position: absolute !important;
+	top: 0;
+	bottom: 0;
+	margin-left: -1px;
+	padding: 0;
+}
+	
+.custom-combobox .search {
+	margin: 0;		
+}
+
+.ui-autocomplete {	
+	overflow-y: auto;    	
+	overflow-x: hidden;
+	max-height:300px;
+}
+
+.errormessages{
+	color:red;
+}
+.exp-error{
+	color:red;
+}
+
+
+
+input.multirowselect.not-multiple{
+	display:none;
+}	
+
+.div-btn.checked{
+	color:#CCAB00;
+	font-weight: bold;
+}
+
+.div-btn.disabled{
+	opacity: 0.2;
+}
+
+.div-btn.disabled:hover{
+	background:none;		
+
+}
+
+.check_box_parent.foundfield{
+	display:block;
+}
+
+.check_box_parent{
+	display:none;
+}
+
+
+.top{
+}
+
+.main{
+	float: left;
+	width: 80%;
+	overflow-x: hidden;	
+	margin-left:1%;
+	
+}
+
+.left{
+	float:left;
+	width:15%;
+	background-color:#F6F6F6;
+	margin-left:1%;
+	height:500px;
+		
+}
+
+.subsection {
+	font-size:0.8em;
+}
+
+.callout-button.back-button {
+	 background:#AD3333; /* #990000;	 */
+	 /*height:25px;*/
+	 /*line-height:0px;*/
+	 /*margin-bottom:10px;*/
+	 color:white;
+}
+
+
+.callout-button.back-button:hover{
+	background:#990000;
+	/*color:#F9BE03;*/
+	/*font-weight:bold;*/
+	cursor:pointer;
+	
+}
+
+
+.callout-button:hover{
+	cursor:pointer;
+}
+
+
+/*-- styles for draggable/droppbable--*/
+.group-div{
+	height: 10em;
+	width: 25%;
+	margin:0.1em;
+	/*padding:2em;*/
+	border: 1px solid #AAA;
+	float: left; 
+	width: 15em; 	
+	/*overflow: auto;*/
+	width: 15em;	
+	height:15em;
+	overflow:hidden;
+}
+
+
+.groups-parent{	
+	width:65%;
+	height:inherit;
+	float:left;
+}
+
+.group-div.groups{	
+	
+}
+
+.group-div.unselected{
+	/*float: left; 	
+	height:inherit;*/
+}
+
+.leftpane{
+}
+
+li.file-select-groups:hover{
+	cursor:pointer;
+	background: #FECA40;
+}
+
+.group-div ul{
+	overflow-y: auto !important;
+	overflow-x: hidden !important;
+	max-height:10em;	
+	padding: 0; 
+	margin-left:0.2em;
+	list-style-type: none; 
+}
+
+.group-div h4{
+	margin-top: 0;
+	color: white;
+	background:#4775A3;
+	padding-left:1em;
+}
+
+li h5{
+	margin: 0 0.5em;
+}
+
+li.file-select-group{
+	float:left; margin: 1px; padding: 1.0 em; height: 1.1em; width: 100%; font-size: 1em; text-align: left; 
+}
+
+.highlight-drop-div{
+	background: #E6E6E6;
+}
+
+.hover-drop-div{
+	background:#EBF0F5;
+	border: 2px solid #AAA;
+	
+}
+
+.span-button{
+	margin-left:1em;
+	color:blue;	
+	text-decoration: underline;
+	font-weight:normal;
+	font-size:0.9em;
+}
+.span-button:hover{
+	cursor:pointer;
+}
+
+.callout-button{
+	width:150px;
+	/*height:15px !important;*/
+	line-height:1em;
+}
+
+table.db-ui td{
+	padding: 0 2em;
+}
+
+table.db-ui thead{
+	font-weight:bold;
+	color:black;
+	font-size:1.1em;
+	
+}
+
+/* FOR THE DB-UI SECTION */
+.callout-button.delete-button {
+	background: #990000;	 
+	width: 20px;
+	height: 20px;
+	text-align: center;
+	/*margin-left: 0.5em !important;*/
+	margin-right: 0.5em !important;
+	padding: 3px 0px;
+	font-size: 20px;
+	line-height: 0px;
+	border-radius: 10px;
+	float:left;
+	position:relative;
+	top:-2px;
+}
+
+.custom-combobox {
+	position: relative !important;
+	display: inline-block;
+	width:90%;		
+}
+
+.toggle-search {
+	position: absolute !important;
+	top: 0;
+	bottom: 0;
+	right:99%;
+	/*margin-left: -1px;*/
+	padding: 0;
+}
+	
+.custom-combobox .search {
+	margin: 0;		
+}
+
+.ui-autocomplete {	
+	overflow-y: auto;    	
+	overflow-x: hidden;
+	max-height:300px;
+}
+
+.errormessages{
+	color:red;
+}
+.exp-error{
+	color:red;
+}
+/**/
+
+.contains_errors{
+	border-color:red;
+	border-style:solid;	
+	border-width:medium;
+	margin:0.5em;
+}
+
+</style>
+
+
+</head>
+
+<body>
+	
+	<div class='top-header'>
+		<img src="https://biotseq.ut.appsoma.com:5001/kamhonhoi_public/images/ab.png" />
+		<h1>ABSeq Annotation</h1>
+		<p>
+			Automated pipeline for annotating AB seq data
+		</p>
+	</div>
+
+	<div class='section'>					
+		<div class='select-files-and-options'>
+			<div class='step1'>
+				<h2 class='space_down_small indent1'>Select the location of the data</h2>
+				<div class='indent1'>
+					<h3>Select an option below</h3>				
+					<div class='indent1'>
+						<input type='radio' name='location' value='db-download' ><span title='Choose this option if you want to start with experiments from the database' >Download Sequences From Database</span>
+						<br>
+						<input type='radio' name='location' value='fastq'><span title='Choose this option if you want to select FASTQ files from folders in your scratch folder or upload files'>Choose FASTQ file(s) from scratch</span>		
+						<br>
+						<input type='radio' name='location' value='fasta'><span title='Choose this option if you want to select FASTA files from folders in your scratch folder or upload files'>Choose FASTA file(s) from scratch</span>		
+						<br>
+						<input type='radio' name='location' value='imgt'><span title='Choose this option if you want to select zipped or text IMGT files from folders in your scratch folder'>Choose IMGT file(s) from scratch</span>		
+						<br>
+						<span id='radio-option-error' class='exp-error hidden'>
+							Please select an option above first
+							<br>
+						</span>		
+					</div>					
+					<input type='button' id='file-type-selected' class='callout-button space_up_down' value='Continue'>				
+				</div>		
+			</div>			
+			<input type='text' id='type_of_exp' class='hidden' value=''>
+		</div>
+				
+		<div class='step2 hidden'>			
+			<div class='indent1 hidden' id='scratch-file-select'>
+				<!-- selecting experiments from scrattch -->
+				<div id='multifile-selection-ui-fastq'>
+				</div>			
+				<div id='multifile-selection-ui-fasta'>
+				</div>			
+				<div id='multifile-selection-ui-imgt'>
+				</div>			
+				<input name='go-back-home' type='button' class='callout-button back-button' value='< Go Back'>		
+				<input type='button' name='files-selected' class='callout-button space_up_down' value='Continue'>		
+			</div>
+			<div id='exp-dl-form'>
+				<!-- selecting experiments from database -->
+				<div class='left'>				
+					<div id='query-option-pane'>
+						<div id='all-exp-filters'>
+							<h2>Set Experiment Filters</h2>
+							<div style='padding-left:5px; padding-right:20px;'>
+								
+								<div class='filter-parent filter-my-exp'>
+								
+									<div class='exp-filter div-btn'>				
+										My Experiments
+										<input type='checkbox' class='filter-my-exp hidden'>
+									</div>
+								
+								</div>								
+								<div class='filter-parent filter-seq-count'>
+									
+									<div class='div-btn exp-filter'>
+										Contains NGS Data
+										<input type='checkbox' class='filter-seq-count hidden'>
+									</div>
+								</div>											
+								<div class='filter-parent filter-annotation'>
+								
+									<div class='exp-filter div-btn' name='any_annotation'>
+										Contains AB Annotated Data
+										<input type='checkbox' class='filter-annotation hidden'>
+									</div>					
+									<div align='right' class='subsection hidden space_up_down_small' >
+										<!--javascritp fucntion above populates this div-->
+									</div>					
+								</div>																
+								<div class='filter-parent filter-paired'>
+									<div class='exp-filter div-btn'>
+										VH:VL Paired
+										<input type='checkbox' class='filter-paired hidden'>					
+									</div>
+								</div>	
+								
+							</div>
+						</div>
+									
+					</div>		
+				</div>										
+				<div class="main" style="float:left;">					
+					<div class='space_down'>
+						<h2>Select experiment(s) to download</h2>
+					</div>					
+					<div id='exp-table-goes-here' class='show-experiments'>
+						<!--javascritp fucntion above populates this div-->
+					</div>
+					
+					<div class='hidden' id='no-exp-data'>	
+						<p style='color:red;'>
+							You are currently not authorized to view any experiments from the IGREP Database.<br> 
+							If you would like to be added to the User list please contact an administrator or the PI via email.<br>										
+						</p>					
+					</div>
+				</div>
+				<div style="clear:both;"></div>
+				<span class='table_error hidden space_up_down' style='color:red;'>Please select experiment(s) first<br></span>
+				<input name='go-back-home' type='button' class='callout-button back-button' value='< Go Back'>		
+				<input type='button' name='files-selected' class='callout-button space_up_down' value='Continue'>		
+			</div>
+		</div>	
+		
+		<div  class='step2z hidden indent1'>
+			<h3>Confirm IMGT Experiment Definitions </h3>			
+			<div class='indent1'>
+				<br>
+				<b>Drag together IMGT files that belong in the same experiment</b><br>
+				<br>
+			</div>
+			<div class='imgt_exp_selection'>
+				<div class='indent1' id ='reorganize-groups-imgt'>				
+					<!-- will code for an interface for moving files around across groups -->				
+					<div style='height:20em; overflow:auto;'>
+						<div class='leftpane'>
+							<div id="unselected-imgt" name='unselected' class="group-div unselected">
+								<h4 class="">Exclude files from analysis</h4>
+								<ul name="fileshere">
+								</ul>
+							</div>
+						</div>
+						<div class='groups-parent'> 
+							<!-- groups created by files will be created here -->
+						</div>
+					</div>
+					<div style="clear:both;"></div>
+					<div class='space_up_down'></div>
+					<input type='button' value='Create another experiment' id='new-file-group-imgt'>
+					<input type='button' value='Move all files into a single experiment' id='all-in-one-group-imgt'>
+					<input type='button' value='Divide all files into seperate experiments' id='all-in-sep-group-imgt'>			
+					<br>
+					<input name='go-back-to-select' type='button' class='callout-button back-button' value='< Go Back'>		
+					<input id='proceed-to-groups' class='callout-button space_up_down' value = 'Confirm Experiments'>			
+				</div>
+			</div>
+		</div>		
+		
+		<div  class='step3 hidden indent1'>
+			<div class='group_selection'>
+				<h3>Modify how experiments should be grouped in the annotation pipeline <span class='span-button hide-details hidden'>Hide</span> <span class='span-button more-info'>Show details</span> </h3>
+				<br>
+				<div class='indent1 show-details hidden'>				
+					Please define how many different annotation groups should be created <br>				
+					All files within a specific group will be annotated using the same settings<br>
+					Any post-annotation analyses such as summary files,pairing, and clonotyping will analyze all files as a single group together				
+				</div>
+				<br>
+				<div class='indent1'>
+					<br>
+					<b>Click and drag files to move them into a different group</b><br>
+					<br>
+				</div>
+				<div class='indent1' id ='reorganize-groups'>				
+					<!-- will code for an interface for moving files around across groups -->				
+					<div style='height:20em; overflow:auto;'>
+						<div class='leftpane'>
+							<div id="unselected" name='unselected' class="group-div unselected">
+								<h4 class="">Exclude experiments from analysis</h4>
+								<ul name="fileshere">
+								</ul>
+							</div>
+						</div>
+						<div class='groups-parent'> 
+							<!-- groups created by files will be created here -->
+						</div>
+					</div>
+					<div style="clear:both;"></div>
+					<div class='space_up_down'></div>
+					<input type='button' value='Create another annotation group' id='new-file-group'>
+					<input type='button' value='Move all files into a single group' id='all-in-one-group'>
+					<input type='button' value='Divide all files into individual groups' id='all-in-sep-group'>			
+					<br>
+					<input id='load-annotation-pipeline' class='callout-button space_up_down' value = 'Proceed to annotation'>			
+				</div>
+			</div>
+		</div>		
+		<div id='annotation-pipeline' class='hidden'>
+		</div>		
+		<div id='progress-messages'>
+		</div>
+		<div id='finalized-table-summary' class='space_up_down'>
+		</div>						
+		<div id='append-summary-results' class='space_up_down'>			
+		</div>
+		<div id='dbpipeline'></div>		
+	</div>
+	<div id='append-summary-results'>
+	</div>
+</body>
+
+<!-- the following divs will provide a template for poopulating anotation pipeline above this html is always hidden! -->
+
+<div id='ab-annotate-template' class='hidden'>
+	<div class='space_down'>
+		<div class='bioinformatics-setting div-btn2' name='annotate'>
+			<h3><input type='checkbox' class='pipeline-option' name='annotate' disabled checked style='margin-right:1em;'>AB Gene Annotation</h3>
+		</div>
+		<div class='indent1 settings'>
+			<span>Select Annotation Settings</span>						
+			<div class='indent1'>
+				<span>
+					<h4>
+						Annotation Program
+						<select name='annotation-program' style='margin-left:1em;'>
+							<option name='igfft'>Georgiou InHouse</option>
+							<option name='mixcr'>MixCR</option>
+							<option name='igblast'>IgBlast</option>
+						</select>
+					</h4>
+				</span>
+				<div class='mixcr_settings indent1 hidden'>
+					<br>
+					<h3>Select species</h3>
+					<div class='indent1'>
+						<select name='mixcr-species'>
+							<option name='HomoSapiens'>Homo sapiens</option>
+							<option name='MusMusculus'>Mus musculus</option>
+							<option name='NA'>N/A</option>
+						</select>
+					</div>
+					<br>
+					<h3>Select Loci</h3>
+					<div class='indent1'>
+						<div class='mixcr-locus-select space_up_down_small'>
+							<ol>
+								<li name='IGH' class='igrep-select-widget'>IGH</li>
+								<li name='IGK' class='igrep-select-widget'>IGK</li>
+								<li name='IGL' class='igrep-select-widget'>IGL</li>							
+								<li name='TRA' class='igrep-select-widget'>TRA</li>
+								<li name='TRB' class='igrep-select-widget'>TRB</li>
+								<li name='TRG' class='igrep-select-widget'>TRG</li>
+								<li name='TRD' class='igrep-select-widget'>TRD</li>
+							</ol>
+						</div>						
+					</div>
+					<div style='clear:both;'></div>
+					<span class='hidden mixcr-error-message' style='color:red;'>Please select at least one loci</span>
+				</div>				
+				<div class='igblast_igfft_settings indent1'>
+					<h3>Germline Gene Database</h3>
+					<div class='germlines-selectable-here indent1'>
+						<!-- this will be populated with a 'SELECTTABLE' DEFINING WHICH GERMLINES TO CHOOSE FROM FOR ANALYSIS --> 
+					</div>				
+					<h3>General Annotation Settings</h3>
+					<div class='indent1'>						
+						<table>
+							<tr class='just-igblast hidden'>
+								<td rowspan="2">
+									<span class="label">Antibody sequencing details</span>
+								</td>
+								<td>
+									<select name='species'>
+										<option name='human'>human</option>
+										<option name='mouse'>mouse</option>
+										<option name='rabbit'>rabbit</option>
+										<option name='rat'>rat</option>													
+									</select>
+									<select style='margin-left:15px;' name='seqtype'>
+										<option name='Ig'>Ig</option>	
+										<option name='TCR'>TCR</option>	
+									</select>
+								</td>							
+							</tr>
+							<tr class='just-igblast hidden'>
+								<td>
+									<span class='label'>Species</span>
+									<span  style='margin-left:30px;' class='label'>AB Type</span>
+								</td>
+																												
+							</tr>								
+							<tr>
+								<td>
+									<span class="label">Germline Genes to Report</span>								
+								</td>							
+								<td>
+									<table class="sub-table">
+										<tbody>																													
+											<tr>
+												<td>								
+													<input min="1" max="20" id="v-gene-num" name="vnum_hits" value="5" step="1" style="width:50px;" type="number"> 
+												</td>
+												<td>
+													<input min="1" max="20" id="d-gene-num" name="dnum_hits" value="5" step="1" style="width:50px;" type="number"> 
+												</td>
+												<td>
+													<input min="1" max="10" id="j-gene-num" name="jnum_hits" value="5" step="1" style="width:50px;" type="number">
+												</td>
+											</tr>
+											<tr>
+												<td class="label">
+													<b>V-Genes</b>
+												</td>
+												<td class="label">
+													<b>D-Genes</b>
+												</td>
+												<td class="label">
+													<b>J-Genes</b>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span class="label">Minimum alignment length to V&nbsp;Gene (0-800)
+								</span></td>
+								<td>
+									<input min="0" max="800" id="algnlen" name="algnlen" value="40" step="10" type="number">
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span class="label">Minimum alignment percent identity to V&nbsp;Gene (0.0-1.0)
+								</span></td>
+								<td>
+									<input id="algnper" name="algnper" value="0.4" min="0" step="0.01" max="1.0" type="number">
+								</td>
+							</tr>
+							
+							<tr>
+								<td>
+									<span class="label">Handling insertions and deletions detected in the V Gene alignment
+								</span></td>
+								<td>
+									<input id="mutation_0" name="mutation" value="0" checked="checked" type="radio">
+									<label for="mutation_0">Never remove insertions from the sequence</label><br>
+									<input id="mutation_1" name="mutation" value="1" type="radio">
+									<label for="mutation_1">Always remove insertions from the sequence (Similarly to IMGT correction)</label><br>
+									<input id="mutation_2" name="mutation" value="2" type="radio">
+									<label for="mutation_2">Only remove insertion if the mutation results in a stop codon</label><br>									
+								</td>
+							</tr>						
+						</table>
+					</div>
+					
+				</div>
+			</div>												
+		</div>
+	</div>	
+</div>
+
+<div id='summary-template' class='hidden'>
+	<div class='space_down'>
+		<div class='bioinformatics-setting div-btn2' name='descriptive-statistics'>
+			<h3><input class='pipeline-option' type='checkbox' name='descriptive-statistics' style='margin-right:1em;'>Generate Results Summary Files</h3>
+		</div>		
+	
+		<div class='indent1 settings'>
+			<input name='ab_aa' type='checkbox' checked>Unique AB Amino Acid File 
+			<br>
+			<input name='vgene' type='checkbox' checked>V-Gene usage
+			<br>
+			<input name='jgene' type='checkbox' checked>J-Gene usage
+			<br>
+			<input name='vjgene' type='checkbox' checked>VJ-Gene usage
+			<br>
+			<input name='cdr3' type='checkbox' disabled>Unique CDR3 counts and diversity
+			<br>			
+		</div>
+	</div>	
+</div>
+
+<div id='isotype-template' class='hidden'>
+	<div class='space_down'>
+		<div class='bioinformatics-setting div-btn2' name='isotyping'>
+			<h3><input class='pipeline-option' type='checkbox' name='isotype' style='margin-right:1em;'>Isotype Sequences</h3>
+		</div>
+		<div class='indent1 settings'>			
+			<div class='bio-settings space_down'>				
+				<div class='indent1'>
+					<div class='indent1'>
+						<div class='space_up_down_small'>
+							<h3>Input a set of barcode sequences used to identify isotype</h3>
+						</div>
+						
+						<div class='indent1 space_down'>
+							<textarea spellcheck="false" class='barcode-text' name='isotype-barcodes' title='FASTA format: >barcodename\nbarcodesequence. The Header for each sequence corresponds to the isotype name' style='width:300px;height:110px'>
+								
+							</textarea>									
+							<span title='FASTA format: >barcodename\nbarcodesequence'>
+								<br>
+								List each barcode sequence in the box above in fasta format
+							</span>
+							<br>						
+						
+							<span>
+								<br>
+								The provided barcodes are listed from 5' to 3' with respect to which strand
+								<select name='barcode-orientation'>
+									<option value=0>AB sense strand</option>
+									<option value=1>AB antisense strand</option>
+									<option value=2>Not sure/both</option>
+								</select>
+							</span>
+						</div>
+						<div class='space_up_down_small'>
+							<h3>Isotype Barcoding Settings</h3>
+							<div class='space_up_down_small'>
+								<div class='indent1'>
+									<div class='space_up_down_small'>
+										<span title='If an alignment only results in a partial coverage of the barcode, then any remaining bases not mapped are treated as mismatches. For example, alignments that do not include the last 2 bases of the barcode due to truncations will be given a mismatch score of 2'>Treat alignments that only partially map to a barcode as mismatches</span>
+										<input type='checkbox' name='penalize-truncations'>					 
+									</div>
+									<div class='space_up_down_small'>
+										<span>Select the maximum number of mismatches allowed</span>
+										<input name='maxmis' type='number' value=1 min=0>					
+									</div>
+									<div class='space_up_down_small'>
+										<span title='This is the minimum possible alignment length to any barcode'>Choose the minimum alignment length</span>
+										<input name='minlen' type='number' value=15 min=0>					
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>										
+		</div>
+	</div>	
+</div>
+
+<div id='pairing-template' class='hidden'>
+	<div class='space_down'>
+		<div class='bioinformatics-setting div-btn2' name='paring'>
+			<h3><input class='pipeline-option' type='checkbox' name='pairing' style='margin-right:1em;'>VH:VL Pairing</h3>
+		</div>
+		<div class='indent1 settings'>
+			<span>Select Pairing Settings</span>
+			<div class='indent1 space_up_down_small'>			
+				<div class='cluster-method-select space_down'>
+					<input type='radio' value='single' name='cluster-range-radio' checked><span class='space_right'>Analyze a single cutoff for VH-VL paired clustering</span>
+					<input type='radio' value='range' name='cluster-range-radio'><span class='space_right'>Analyze a range of cutoffs for VH-VL paired clustering</span>										
+					<br>
+					<br>
+					<div class='indent1 single_cutoff pairing_cluster_decision'>
+						<span>
+							Select the cluster cutoff
+							<input name='pairing_cutoff' type='number' value=0.96 min=0 max =1 step=0.01>																								
+						</span>
+					</div>
+					<div class='indent1 range_cutoff pairing_cluster_decision hidden'>
+						<span>
+							<table>	
+								<tr>
+									<td>
+										<span>Minimum cutoff</span>
+									</td>
+									<td>
+										<span>Maximum cutoff</span>
+									</td>
+									<td>
+										<span>Increase cutoff by</span>
+									</td>
+									
+								</tr>
+								<tr>
+									<td>
+										<input name='min_pairing_cutoff' type='number' value=0.8 min=0 max =1 step=0.01>																								
+									</td>
+									<td>
+										<input name='max_pairing_cutoff' type='number' value=0.98 min=0 max =1 step=0.01>																								
+									</td>
+									<td>				
+										<input name='range_pairing_cutoff' type='number' value=0.01 min=0 max=0.5 step=0.01>																								
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<br>
+										<br>
+									</td>
+							
+								</tr>
+								<tr>
+									<td colspan=3>
+										Define which cutoff should be used to store VH-VL paired results in the database (this can be modified in future analyses)
+										<br>
+										<input name='annotation_pairing_cutoff' type='number' value=0.96 min=0 max =1 step=0.01>																								
+									</td>
+								</tr>
+							</table>
+						</span>
+					</div>					
+				</div>				
+			</div>
+		</div>
+	</div>	
+</div>
+
+<!-- COMMENTED THIS OUT BECAUSE WILL BE MERGING CLONOTYPING WITH MASS SPEC FILE OPTION 
+<div id='clonotype-template' class='hidden'>
+	<div class='space_down'>
+		<div class='bioinformatics-setting div-btn2'  name='clonotyping'>
+			<h3><input class='pipeline-option' type='checkbox' name='clonotype' style='margin-right:1em;'>Clonotype sequences for Mass Spec</h3>
+		</div>
+		<div class='indent1 settings'>
+			<span>Select Clonotyping Settings</span>
+			<div class='indent1'>
+				<span>
+					Select the cluster cutoff
+				</span>
+				<input name='maxmis' type='number' value=0.9 min=0 max =1 step=0.01>										
+			</div>
+		</div>
+	</div>	
+</div>
+-->
+
+<div id='mass-spec-file-template' class='hidden'>
+	<div class='space_down'>
+		<div class='bioinformatics-setting div-btn2' name='masspec'>
+			<h3><input class='pipeline-option' type='checkbox' name='mass-spec-db' style='margin-right:1em;' disabled>Generate a database file for Mass Spec</h3>
+		</div>		
+		<div class='indent1 settings'>			
+			<span>
+				Select the cluster cutoff for clonotyping sequences
+			</span>
+			<input name='clonotyping_cutoff' type='number' name='clonotyping' value=0.9 min=0 max =1 step=0.01>										
+		</div>
+	</div>	
+</div>
+
+
+
+<div id='add-to-db-template' class='hidden'>
+	<div class='space_down'>
+		<div class='bioinformatics-setting div-btn2' name='db'>
+			<h3><input class='pipeline-option' type='checkbox' name='db-add'>Add results to database</h3>
+		</div>
+		<div class='indent1 settings'>			
+			<div name='db-settings-table-here'>
+			</div>
+		</div>
+	</div>	
+</div>
+
+
+</html>
+
+
+

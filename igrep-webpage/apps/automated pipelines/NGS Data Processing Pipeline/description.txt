@@ -1,0 +1,2 @@
+This APP should be used to process raw data generated from NGS.
+This APP offers R1-R2 stitching, quality filtering, barcode splitting, and conversion into FASTA.

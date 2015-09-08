@@ -1,0 +1,16 @@
+{
+    "automated pipelines": {
+        "SimpleDatabaseQuery": 1
+    }, 
+    "gsaf download": 1, 
+    "app2": 1, 
+    "database functions": {
+        "newsub": {
+            "newsub": 1
+        }, 
+        "SimpleDatabaseQuery": 1, 
+        "Queries": {
+            "SimpleDatabaseQuery": 1
+        }
+    }
+}

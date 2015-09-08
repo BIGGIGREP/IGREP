@@ -1,16 +1,3 @@
-nav {
-	vertical-align: middle;
-	font-weight: bold;
-	font-size: 16px;
-	font-family: "Titillium Web";
-	padding: 0px;
-	margin: 0px;
-	height: 54px;
-	white-space: nowrap;
-	overflow: hidden;
-	display: table-cell;
-	vertical-align: top;
-}
 /*Adapted from BASS.SAS on appsoma.com*/
 /*login*/
 .login{
@@ -72,50 +59,44 @@ nav {
 	margin: 0px auto 10px;
 	border-radius: 5px;
 }
-.simpletab-tabs .close-icon{
-		position: relative;
-		top: 4px;
-	}
-.simpletab-tabs .label{
-		white-space: nowrap;
-		position: relative;
-		top: -2px;
-}
-.simpletab-tabs .simpletab {
-	display: block;
-	color: black;
-	cursor: pointer;
-	margin: 0px 4px 0px 0px;
-	padding: 15px 10px 15px 25px;
-	/*//word-break: break-all;*/
-	overflow: hidden;
-	/*//height: 20px!important;*/
-	/*//&.unselected*/
-	/*//	background-color: #5F6464*/
-}
 
-.simpletab-panels .simpletab-panel {
-	padding: 10px 10px 10px 10px;
-}
+
+
+
 
 /*
 // Application header
 //-----------------------------------------------------------------------------------
 */
+nav.navbar-inverse.top-header  {	
+	height:54px;
+	font-weight: bold;
+	white-space: nowrap;
+	font-family: "Titillium Web";
+	font-size: 14px;	
+	color: #9D9D9D;
+}
+nav.navbar-inverse.top-header div{
+	/*padding: 15px 10px 15px 25px;*/
+	}
+
 #top-header {
-	position: fixed;
-	top: 0px;
-	width: 100%;
-	height: 54px;
+	display: flex; /*improtant for showing sub-divs side by side*/
+/*	position: fixed;*/
+/*	top: 0px;*/
+	/*width: 100%;*/
+	/*height: 54px;*/
 	/*// background-image: url('/images/morris.png')*/
 	/*// background-repeat: repeat-x;*/
 	/*background-color: #00404C !important;*/
 	/* background-color: #7C2900 !important;*/
-	background-color: #333 !important;
+	/*background-color: #333 !important;*/
+	/*background-color:#101010 !important;*/
 	
-	z-index: 100;
-	display: table;
+	/*z-index: 100;*/
+	/*display: table;*/
 }
+/*
 #top-header .col {
 	display: table-cell;
 	vertical-align: top;
@@ -131,7 +112,7 @@ nav {
 		padding: 0;
 		margin: 0;
 }
-
+*/
 /*#top-header a img {	
 	display: none;
 	position: absolute;
@@ -140,7 +121,7 @@ nav {
 	bottom: 0px;
 }*/
 
-#top-header .beta {
+/*#top-header .beta {
 	font-size: 17px;
 	font-weight: bold;
 	color: #c15f5f;
@@ -148,54 +129,77 @@ nav {
 	left: 110px;
 	top: 29px;
 	text-shadow: -1px 0 #411f1f, 0 1px #411f1f, 0px 0 #411f1f, 0 -1px #411f1f;
-}
+}*/
 
 #main-tabs{
-	vertical-align: middle;
-	font-weight: bold;
-	font-size: 16px;
+	
+	/*vertical-align: middle;
+	font-weight: bold;*/
+	/*font-size: 16px;*/
 	/*font-family: $heading-font-type;*/
-	padding: 0;
+	/*padding: 0;
 	margin: 0;
 	height: 54px;
 	white-space: nowrap;
-	overflow: hidden;
+	overflow: hidden;*/
 }
 
 #main-tabs .simpletab-tabs {
 	display: -ms-flexbox;
-	display: flex;
+	display: flex; /*improtant for showing side by side*/
 	-ms-flex-pack: space-around;
 	justify-content: space-around;
 }
 
 #main-tabs .simpletab-tabs .simpletab {
-	display: inline-block;
+	/*display: inline-block;
 	cursor: pointer;
 	text-transform: uppercase;
 	vertical-align: middle;	
-	border-top: 5px solid #333;
-	border-bottom: 5px solid #333;
+	border-top: 5px solid #101010;
+	border-bottom: 5px solid #101010;
 	text-align: center;
+	*/
 	/*background-color: #00404C !important; /* $menu-tab-background;*/
 	/*background-color: #7C2900 !important;*/
+	
+	/*
 	box-sizing: border-box;
 	height: 54px;
 	line-height: 49px;
 	padding: 0 4px;
 	margin: 0;
+	color:#9D9D9D;
+	*/
+	/*background-color:  #7E878C !important;*/
+	
+	
+}
+
+.simpletab-tabs .simpletab {
+	/*display: block;*/
+	/*color: black;*/
+	cursor: pointer;
+	margin: 0px 4px 0px 0px;
+	/*padding: 15px 10px 15px 25px;*/
+	/*//word-break: break-all;*/
+	/*overflow: hidden;*/
+	/*//height: 20px!important;*/
+	/*//&.unselected*/
+	/*//	background-color: #5F6464*/
 }
 
 #main-tabs .simpletab-tabs .simpletab.unselected {
-	color: #FFFFFF;
+	/*color: #9D9D9D;*/
 	text-shadow: none;
-	background-color:inherit;	
+	/*background-color:inherit;	*/
+	
 }
 
 #main-tabs .simpletab-tabs .simpletab.selected {
 	/*color: #00E5E1;*/
 	color:white;
-	padding:0px 10px;
+	/*padding:0px 10px;*/
 	border-top: 5px solid #4677BF;
 	border-bottom: 5px solid #4677BF;
 	background-color: #7E878C;
@@ -204,39 +208,87 @@ nav {
 }
 
 #main-tabs .simpletab-tabs .simpletab:hover {
-	background-color:  #7E878C !important;
-	border-top: 5px solid #7E878C;
-	border-bottom: 5px solid #7E878C;
+	/*background-color:  #7E878C !important;*/
+	/*border-top: 5px solid #7E878C;*/
+	/*border-bottom: 5px solid #7E878C;*/
 	color: white !important;	
 }
 
-#main-tabs .simpletab-tabs .simpletab a, a:hover, a:visited, a:active {
+.simpletab-tabs .simpletab a,.simpletab-tabs .simpletab a:hover,.simpletab-tabs .simpletab a:visited,.simpletab-tabs .simpletab a:active {
 	outline:none;
 	display:block;
 	color:inherit;
 	text-decoration: none;
-	padding:0px 10px;
+	/*padding:0px 10px;*/
 	background-color:  inherit;			
 }
 
 
+.navbar-toggle a,.navbar-toggle a:hover,.navbar-toggle a:visited,.navbar-toggle a:active,.navbar-toggle button {
+	outline:none;
+	display:block;
+	color:inherit;
+	text-decoration: none;
+	/*padding:0px 10px;*/
+	background-color: transparent;
+    border: 0px solid transparent;
+}
 
-#top-header .logout .username{
-	text-align: center;
-	line-height: 49px;
+nav.navbar-header li.active{
+	text-transform: uppercase;
+	font-size: 18px;
+	line-height: 20px;
+	background-color: transparent;
+    border: 1px solid transparent;
+}
+
+.collapsed-igrep-navbar-brand{
+	text-transform: uppercase;
+	font-size: 18px;
+	line-height: 20px;
+	background-color: transparent;
+	border: 1px solid transparent !important;
+	color:#fff;
+	list-style:none;
+	padding-left: 30px;
+}
+
+.collapsed-igrep-navbar-brand:hover{
+	outline:none;
+	text-decoration: none;
+	/*padding:0px 10px;*/
+	background-color:  transparent !important;			
+	cursor:default;
+	
+}
+
+
+
+
+#logout-nav ul{
+	/*content:none;*/ /*we do this to make the navbar take up one row rather than two. not sur ewhyit works*/
+}
+
+
+
+/*
+#logout-nav .logout .username{
+	text-align: center;	
 	color: white;
-}
+}*/
 
-#top-header .logout a{
+/*
+#logout-nav .logout a{
 	outline:none;
 	display:block;
 	color:inherit;
-	text-decoration: none;
-	padding:0px;
-	background-color:  inherit;			
-}
+	text-decoration: none;*/
+/*	padding:0px;*/
+/*	background-color:  inherit;			
+}*/
 
-#top-header .logout .logout-img {
+/*
+#logout-nav .logout .logout-img {
     background-image: url("/images/Turnoff.png");
     background-position: 0px 17px;
     height: 17px;
@@ -245,22 +297,61 @@ nav {
     cursor: pointer;
     vertical-align: middle;
     margin-right: 17px;
-}
+}*/
 
-#top-header .logout:hover{
+
+#logout-nav .logout:hover{
 	cursor:pointer;
 }
 
-#top-header .logout .logout-img:hover {
+/*
+#logout-nav .logout .logout-img:hover {
     background-position: 0px 0px;
 	padding:0px;
 }
 
-#top-header .logout a:hover > .logout-img{
+#logout-nav .logout a:hover > .logout-img{
 	background-position: 0px 0px;
 	padding:0px;
-}
+}*/
+
+
+
+
 /*end of bass.sass usage*/
+nav.navbar-header  li.active a{
+	cursor:default;
+	
+}
+
+.navbar-right{
+	margin-right:5px;
+}
+.navbar-toggle.navbar-options button{
+	background-color: transparent;
+	background-image: none;
+	border: 1px solid transparent;
+	border-radius: 4px;
+}
+
+#logout-nav > li.logout{
+	display:none;
+}
+#logout-nav > li.current-user{
+	display:block;
+}
+
+#logout-nav:hover > li.logout{
+	display:block;
+}
+#logout-nav:hover > li.current-user{
+	display:none;
+}
+#logout-nav li.logout a:hover{
+	color:red;
+}
+
+
 
 body {
 	background-color: white;

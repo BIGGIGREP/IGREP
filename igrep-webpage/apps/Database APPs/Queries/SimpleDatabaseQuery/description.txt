@@ -1,0 +1,3 @@
+Perform simple queries on the database. 
+You can select multiple experiments and, for each query, can define which fields you would like returned.
+You can also define the format of the output file, and whether to seperate results by their experiment name.

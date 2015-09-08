@@ -52,26 +52,29 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		#with open('test.txt','a') as f:
 		#	f.write('original path '+self.path+'\n')
 		#print('original path',self.path)
+
+		self.path=os.path.normpath(urllib.url2pathname(self.path) )
 		orig_path  =self.path
-		self.homepage_path = 'igrep-webpage'
+		self.root_path = 'igrep-webpage'
 		self.image_path = 'images'
 		self.app_path = 'apps'
 		self.scripts_path = 'scripts'
 		self.styles_path = 'styles'
+		
 		self.parent_of_proxy = os.path.dirname(os.path.dirname(os.path.abspath("__file__")))
-		self.reroute = os.path.join(self.parent_of_proxy,self.homepage_path,'assets')
-		self.reroute_apps = os.path.join(self.parent_of_proxy,self.homepage_path)
+		self.reroute = os.path.join(self.parent_of_proxy,self.root_path,'assets')
+		self.reroute_apps = os.path.join(self.parent_of_proxy,self.root_path)
 		
 		print(self.parent_of_proxy)
 		#remove the '/' or '\' from beginning of path
 		self.path = self.path.lstrip('/\\')
 		if self.path == '':
-			self.path = os.path.join(self.parent_of_proxy,self.homepage_path)
-		elif self.path == self.homepage_path:
-			self.path = os.path.join(self.parent_of_proxy,self.homepage_path)
-		elif self.path == self.homepage_path+'/' or self.path == self.homepage_path+'\\':
-			self.path = os.path.join(self.parent_of_proxy,self.homepage_path)			
-		elif re.match(self.homepage_path+'[/\\\\].',self.path):			
+			self.path = os.path.join(self.parent_of_proxy,self.root_path)
+		elif self.path == self.root_path:
+			self.path = os.path.join(self.parent_of_proxy,self.root_path)
+		elif self.path == self.root_path+'/' or self.path == self.root_path+'\\':
+			self.path = os.path.join(self.parent_of_proxy,self.root_path)			
+		elif re.match(self.root_path+'[/\\\\].',self.path):			
 			self.path = os.path.join(self.parent_of_proxy,self.path)
 		elif re.match(self.image_path+'[/\\\\].',self.path):			
 			self.path = os.path.join(self.reroute,self.path)
@@ -104,10 +107,12 @@ class HttpHandler( BaseHTTPRequestHandler ):
 					#reply_str = w.read()
 			else:
 				#self.reply_string=''
-				raise Exception('The following folder provided does not have an index.html file: '+self.path)				
+				print_string = os.path.join(os.path.sep,os.path.relpath(self.path,start=self.parent_of_proxy))
+				raise Exception('The following folder provided does not have an index.html file: '+print_string)				
 		else:
 			#self.reply_string=''
-			raise Exception('The following path does not exist: '+self.path)			
+			print_string = os.path.join(os.path.sep,os.path.relpath(self.path,start=self.parent_of_proxy))
+			raise Exception('The following folder provided does not have an index.html file: '+print_string)				
 		
 		#return reply_str
 

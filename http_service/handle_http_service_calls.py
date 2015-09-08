@@ -4,8 +4,12 @@ import os
 import json
 import subprocess
 
-sys.path.insert(0,'../common_tools/') #add scripts in this file to the proxy list
+
+parent_of_proxy = os.path.dirname(os.path.dirname(os.path.abspath("__file__")))
+sys.path.insert(0,os.path.join(parent_of_proxy,'common_tools'))# '../common_tools/') #add scripts in this file to the proxy list
+
 import immunogrep_db_query_api as query
+import immunogrep_useful_functions as useful
 
 try:	
 	from simplepam import authenticate
@@ -42,6 +46,34 @@ def load_configuration_file():
 			igrep_params = json.load(ff)
 	return igrep_params
 
+#def walklevel(some_dir, level=1,followlinks=False):
+#	some_dir = some_dir.rstrip(os.path.sep)
+#	assert os.path.isdir(some_dir)
+#	num_sep = some_dir.count(os.path.sep)
+#	for root, dirs, files in os.walk(some_dir,followlinks=followlinks):
+#		yield root, dirs, files
+#		num_sep_this = root.count(os.path.sep)
+#		if num_sep + level <= num_sep_this:
+#			del dirs[:]
+def splitall(path):
+	"""
+		take a path split it into lists: 
+		/A/B/C/d.txt => [A,B,C,d.txt]
+	"""
+	allparts = []
+	while 1:
+		parts = os.path.split(path)
+		if parts[0] == path:  # sentinel for absolute paths
+			allparts.insert(0, parts[0])
+			break
+		elif parts[1] == path: # sentinel for relative paths
+			allparts.insert(0, parts[1])
+			break
+		else:
+			path = parts[0]
+			allparts.insert(0, parts[1])
+	return allparts
+
 igrep_params = load_configuration_file()
 
 #THIS MODULE SHOULD SERVE AS A HELPER SCRIPT FOR MAKING OUR IGREP APPS
@@ -49,10 +81,16 @@ igrep_params = load_configuration_file()
 #FUNCTIONS DEFINED IN HTTPIGREPHANDLER
 
 class HtppIgrepHandler():
-	def __init__(self,fxn_name,args,kargs):
+	def __init__(self,fxn_name,args=[],kargs={}):
 		self.fxn = fxn_name
 		self.args=args
 		self.kargs=kargs
+		self.parent_of_proxy = os.path.dirname(os.path.dirname(os.path.abspath("__file__")))
+	def run(self):
+		#run function passed in by user			
+		fxn_to_eval = 'self.{0}(*{1},**{2})'.format(self.fxn,json.dumps(self.args),json.dumps(self.kargs))
+		fnx_ans = eval(fxn_to_eval)
+		return fnx_ans
 	def example(self):
 		return 'heere we go'   
 	def sum_vals(self,a,b=3):
@@ -69,6 +107,66 @@ class HtppIgrepHandler():
 
 	def get_default_mongoproxy_address(self):
 		return igrep_params['igrep_mongoproxy_path']
+
+	def get_apps_list(self):
+		"""
+			
+			Searches the 'apps' folder found in the parent. We want to return a list of possible apps 
+			that a user can run. This function will only search three levels of hierarchy of 'projects/app topics'. 
+			For each level, we will search for folders containing index.html files. Any folder with an index.html folder
+			within the apps folder will be assumed to be an APP for analysis. After the maximum levels of hierarchy, 
+			all other subfolders containing html pages will be grouped into the last hierarchy group. 
+			
+			Example:
+				/apps/gsaf download/index.html => there is an app (gsaf download) at LEVEL 1
+				/apps/database queries/queries/simple database query/index.html  => there is an app (simple database) at LEVEL 3
+				/apps/automated pipelines/ngs processing/index.html => there is an app (ngs processing) at LEVEL 2
+				/apps/annotation apps/vgene analysis/pairing/single chain pairing/index.html => in this hypothetical situation the app 'single chain pairing' is found at level 4, so this app will instead be grouped under vgene analysis and the 'pairing' hierarchy is ignored
+		
+			For each app, a file description.txt and keywords.txt can be used as a brief description for each app and keywords that can be used to search for apps
+
+		"""
+		max_hierarchy_level = 3
+		app_home = os.path.join(self.parent_of_proxy,'igrep-webpage','apps')
+		apps_found = []
+		f = []
+		d = []
+		
+		#search for all files named 'index.html' in directories within the apps folder
+		all_files = sorted([os.path.relpath(dirpath,start=app_home) for (dirpath,dirnames,filenames) in os.walk(app_home,followlinks=True) for f in filenames if f=='index.html' and dirpath!=app_home])
+		app_list = []
+		#stores the name of all directories up until the max hierarchy
+		directory_dictionary = {}			
+		for f in all_files:
+			#split the filename into a list
+			splitf = splitall(f)			
+			
+			#search all of the found apps for description files and keywords files
+			if os.path.isfile(os.path.join(app_home,f,'description.txt')):
+				with open(os.path.join(app_home,f,'description.txt')) as r:
+					desc = r.read()					
+			else:
+				desc = ''
+									
+			classes = ['-'.join(splitf[:i+1]).replace(' ','-') for i in range(max_hierarchy_level) if i<len(splitf)]
+						
+			directory_dictionary['.'.join(splitf[:max_hierarchy_level])] = 1
+										
+			kwd = [splitf[-1]]
+			if os.path.isfile(os.path.join(app_home,f,'keywords.txt')):				
+				with open(os.path.join(app_home,f,'keywords.txt')) as r:
+					for l in r.readlines():
+						l = l.strip('\r\n\t')
+						kwd.extend(l.split(','))				
+			#we hardcode this part because its for the html link 
+			html_path = '/'+os.path.basename(app_home)+'/'+'/'.join(splitf)
+			app_list.append({'path':html_path,'keywords':kwd,'description':desc,'classes':classes,'name':splitf[-1],'main-group':splitf[0]})
+			
+								
+		directory_dictionary = dict(useful.DotAccessible(directory_dictionary))
+		print('RESPONSE FOUND!')
+		print(app_list)
+		return {'directory_dictionary':directory_dictionary,'apps':app_list}
 
 	def get_metadata_on_proxy(self,proxy_path=igrep_params['igrep_mongoproxy_path']):
 		"""
@@ -127,10 +225,10 @@ class HtppIgrepHandler():
 		metadata_from_experiment_database =  []
 		for list_of_docs in exp_collection_data.get_exp_docs()._return(to_file = False,chunk_size = 1000):
 			metadata_from_experiment_database.extend(list_of_docs)						
+		with open('metadatafile.txt','w') as outme:
+			outme.write(json.dumps(metadata_from_experiment_database,indent=4)+'\n')
+			outme.write(json.dumps(users))
+			
 		return {'metadata':metadata_from_experiment_database ,'user_data':users}		
 	
-	def run(self):
-		#run function passed in by user			
-		fxn_to_eval = 'self.{0}(*{1},**{2})'.format(self.fxn,json.dumps(self.args),json.dumps(self.kargs))
-		fnx_ans = eval(fxn_to_eval)
-		return fnx_ans
+

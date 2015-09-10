@@ -316,7 +316,7 @@ pairing_settings = {
 			'raw_seq_nt':'Sequence_1',
 			'cdr3_nt':'CDR3-IMGT_3',
 			'seq_header':'Sequence ID_1',
-			'shm':'V-REGION Nb of mutations_8',			
+			'shm':'VREGION.SHM.NT_PER',			
 			'full_len_ab_aa':'PREDICTED_AB_SEQ.AA',#THIS FIELD IS NOT PRESENT IN THE IMGT FILE, BUT IT DOES GET ADDED TO THE INFORMATION WHEN READING IMGT FILES USING OUR READER CLASS			
 			'full_len_ab_nt':'PREDICTED_AB_SEQ.NT',#THIS FIELD IS NOT PRESENT IN THE IMGT FILE, BUT IT DOES GET ADDED TO THE INFORMATION WHEN READING IMGT FILES USING OUR READER CLASS			
 			'vgene_scores':'V-REGION score_1',
@@ -337,7 +337,7 @@ pairing_settings = {
 			'raw_seq_nt':'FULL_SEQ',
 			'cdr3_nt':'CDR3.NT',
 			'seq_header':'DOCUMENTHEADER',
-			'shm':'VREGION.SHM_NT',			
+			'shm':"VREGION.SHM_NT_PER",			
 			'full_len_ab_aa':'PREDICTED_AB_SEQ.AA',#optional field but preferred
 			'full_len_ab_nt':'PREDICTED_AB_SEQ.NT',			
 			'vgene_scores':"VREGION.VGENE_SCORE",
@@ -357,7 +357,7 @@ pairing_settings = {
 			'raw_seq_nt':'Sequence',
 			'cdr3_nt':'CDR3_Sequence.NT',
 			'seq_header':'Header',
-			'shm':'VRegion.SHM.NT',
+			'shm':'VRegion.SHM.Per_nt',#'VRegion.SHM.NT',
 			'full_len_ab_aa':'Full_Length_Sequence.AA',#optional field but preferred
 			'full_len_ab_nt':'Full_Length_Sequence.NT',
 			'isotype':'Isotype',
@@ -378,7 +378,7 @@ pairing_settings = {
 			'raw_seq_nt':'Sequence',
 			'cdr3_nt':'N. Seq. CDR3',
 			'seq_header':'Seqheader',
-			'shm':'VGENE: Shm.nt',
+			'shm': 'VREGION.SHM.NT_PER',#'VGENE: Shm.nt',
 			'full_len_ab_aa':'Full AA',#optional field but preferred
 			'full_len_ab_nt':'Full NT',
 			'isotype':'All C hits',
@@ -400,7 +400,7 @@ pairing_settings = {
 			'raw_seq_nt':'PREDICTED_AB_SEQ.NT',
 			'cdr3_nt':'CDR3.NT',
 			'seq_header':'SEQUENCE_HEADER',
-			'shm':'VREGION.SHM_NT',
+			'shm':'VREGION.SHM.NT_PER',
 			'full_len_ab_aa':'PREDICTED_AB_SEQ.AA',#optional field but preferred
 			'full_len_ab_nt':'PREDICTED_AB_SEQ.NT',
 			'isotype':'ISOTYPE.GENE',
@@ -842,13 +842,14 @@ def parse_sorted_paired_file(pairing_temp_file):
 		
 		if hmut_found:
 			Hmut_sum = shm_data_vdj[1]
-			Hmut_sum_sq = shm_data_vdj[2]
-			Hmut_count = shm_data_vdj[0]				
+			Hmut_sum_sq = round(shm_data_vdj[2],6)			
+			Hmut_count = shm_data_vdj[0]		
+			hsum_sq = round(pow(Hmut_sum,2)/Hmut_count,6)		
 			#average shm
 			Hmut_avg = round(Hmut_sum/Hmut_count,3)
 			#shm variance -> sum of squares formulat => sum(vals^2)-(sum(vals)^2/counts)
 			if Hmut_count>1:
-				Hmut_var = round(pow((Hmut_sum_sq-(pow(Hmut_sum,2)/Hmut_count))/(Hmut_count-1),0.5),3)
+				Hmut_var = round(pow((Hmut_sum_sq-hsum_sq)/(Hmut_count-1),0.5),3)
 			else:
 				Hmut_var = 'none'
 		else:
@@ -860,13 +861,14 @@ def parse_sorted_paired_file(pairing_temp_file):
 		
 		if lmut_found:
 			Lmut_sum = shm_data_vj[1]
-			Lmut_sum_sq = shm_data_vj[2]
-			Lmut_count = shm_data_vj[0]				
+			Lmut_sum_sq = round(shm_data_vj[2],6)
+			Lmut_count = shm_data_vj[0]		
+			lsum_sq = round(pow(Lmut_sum,2)/Lmut_count,6)		
 			#average shm
 			Lmut_avg = round(Lmut_sum/Lmut_count,3)
 			#shm variance -> sum of squares formulat => sum(vals^2)-(sum(vals)^2/counts)
 			if Lmut_count>1:
-				Lmut_var = round(pow((Lmut_sum_sq-(pow(Lmut_sum,2)/Lmut_count))/(Lmut_count-1),0.5),3)
+				Lmut_var = round(pow((Lmut_sum_sq-lsum_sq)/(Lmut_count-1),0.5),3)
 			else:
 				Lmut_var = 'none'
 		else:
@@ -1362,7 +1364,9 @@ def Compile_Clusters(clustered_dict_raw,cluster_val):
 			else:
 				Hmut_avg = 'none'			
 			if Hmut_count>1:
-				Hmut_var =  round(pow((Hmut_sum_sq-(pow(Hmut_sum,2))/Hmut_count)/(Hmut_count-1),0.5),3)
+				h1 = round(Hmut_sum_sq,6)
+				h2 = round(pow(Hmut_sum,2)/Hmut_count,6)				
+				Hmut_var =  round(pow( (h1-h2)/(Hmut_count-1),0.5),3)
 			else:
 				Hmut_var = 'none'			
 			if Lmut_count>0:
@@ -1371,7 +1375,9 @@ def Compile_Clusters(clustered_dict_raw,cluster_val):
 				Lmut_avg = 'none'				
 			#shm variance -> sum of squares formulat => sum(vals^2)-(sum(vals)^2)/counts)
 			if Lmut_count>1:
-				Lmut_var = round(pow((Lmut_sum_sq-(pow(Lmut_sum,2))/Lmut_count)/(Lmut_count-1),0.5),3)
+				l1 = round(Lmut_sum_sq,6)
+				l2 = round(pow(Lmut_sum,2)/Lmut_count,6)				
+				Lmut_var =  round(pow( (l1-l2)/(Lmut_count-1),0.5),3)				
 			else:
 				Lmut_var = 'none'			
 		else:				

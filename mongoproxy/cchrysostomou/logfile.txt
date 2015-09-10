@@ -406,3 +406,11 @@ Successfully executed function at time: 2015-09-07 23:31:47.326000.
 User cchrysostomou has logged on to proxy at time: 2015-09-07 23:31:48.949000.
 Successfully executed function at time: 2015-09-07 23:31:50.511000.
 #################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-07 23:56:39.963000.
+Successfully executed function at time: 2015-09-07 23:56:41.318000.
+#################################
+####################
+User cchrysostomou has logged on to proxy at time: 2015-09-07 23:56:42.956000.
+Successfully executed function at time: 2015-09-07 23:56:44.566000.
+#################################

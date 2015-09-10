@@ -1225,7 +1225,7 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 			   	
 				mutations = int(query_results['VGENE: Total_Mismatches']) +  query_results['VREGION.NUM_GAPS'] - numDel
 				query_results['VRegion.SHM.NT'] = str(mutations) #adjust the number of gaps to reflect the removed insertions (numDel)
-				query_results['VRegion.SHM.Per_nt'] = mutations/float(algnLenV)
+				query_results['VRegion.SHM.Per_nt'] = round(100*mutations/float(algnLenV),2)
 																	 
 			
 			else:									
@@ -1242,7 +1242,7 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 			if jpresent:
 				jmutations = int(query_results['JGENE: Total_Mismatches']) +  int(query_results['JGENE: Total_Mismatches'])
 				query_results['JRegion.SHM.NT'] = str(jmutations) #adjust the number of gaps to reflect the removed insertions (numDel)
-				query_results['JRegion.SHM.Per_nt'] = jmutations/float(algnLenJ)
+				query_results['JRegion.SHM.Per_nt'] = round(100*jmutations/float(algnLenJ),2)
 			
 			#attempt to guess the isotype 
 			if (vpresent or jpresent) and identifyIsotype:
@@ -1419,7 +1419,7 @@ def TABFileHeader():
 				'FR2_Sequence.AA.Gapped',
 				'CDR2_Sequence.AA.Gapped',
 				'FR3_Sequence.AA.Gapped',
-				'VRegion.SHM.NT',
+				'VRegion..NT',
 				'VRegion.SHM.Per_nt',
 				"Reading_Frames: FR1,CDR1,FR2,CDR2,FR3,CDR3,FR4",
 				"VGENE: Total_Matches", 

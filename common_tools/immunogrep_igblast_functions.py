@@ -1479,10 +1479,10 @@ def Parse_IgBlast_File(inputFile,igBlastFile,outfile=None,commandVal = {},numSeq
 											
 				if seq_type == 'AA':
 					seqDic[var_type+'VREGION.SHM_AA'] = str(algnNumMut) if seq_type == 'AA' else ''
-					seqDic[var_type+'VREGION.SHM_AA_PER'] = algnNumMut/float(algnLen)
+					seqDic[var_type+'VREGION.SHM_AA_PER'] = round(100*algnNumMut/float(algnLen),2)
 				else:
 					seqDic[var_type+'VREGION.SHM_NT'] =  str(algnNumMut) if seq_type != 'AA' else ''				
-					seqDic[var_type+'VREGION.SHM_NT_PER'] = algnNumMut/float(algnLen) 
+					seqDic[var_type+'VREGION.SHM_NT_PER'] = round(100*algnNumMut/float(algnLen),2)
 				
 				seqDic[var_type+'VREGION.NUM_GAPS'] = numGaps
 				

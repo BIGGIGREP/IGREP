@@ -80,6 +80,27 @@ nav.navbar-inverse.top-header div{
 	/*padding: 15px 10px 15px 25px;*/
 	}
 
+nav.igrep-app-header {
+	/*position:relative;
+	  top:20px*/
+	/*padding: 20px 15px;*/
+	background-color:#d6730e;
+	height:100px;	
+}
+
+nav.igrep-app-header img.abimg{
+	/*position:relative;
+	  top:20px*/
+	padding: 20px 15px;
+}
+
+nav.igrep-app-header h1{
+	/*position:relative;
+	  top:20px*/
+	color: white; /*#d6730e;*/
+}
+
+		
 #top-header {
 	display: flex; /*improtant for showing sub-divs side by side*/
 /*	position: fixed;*/
@@ -172,8 +193,6 @@ nav.navbar-inverse.top-header div{
 	color:#9D9D9D;
 	*/
 	/*background-color:  #7E878C !important;*/
-	
-	
 }
 
 .simpletab-tabs .simpletab {
@@ -258,12 +277,8 @@ nav.navbar-header li.active{
 	text-decoration: none;
 	/*padding:0px 10px;*/
 	background-color:  transparent !important;			
-	cursor:default;
-	
+	cursor:default;	
 }
-
-
-
 
 #logout-nav ul{
 	/*content:none;*/ /*we do this to make the navbar take up one row rather than two. not sur ewhyit works*/

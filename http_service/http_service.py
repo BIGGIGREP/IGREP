@@ -68,28 +68,29 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		self.reroute_apps = os.path.join(self.parent_of_proxy,self.root_path)
 				
 		#remove the '/' or '\' from beginning of path
-		self.path = self.path.lstrip('/\\')
+		self.path = self.path.strip(os.sep)
+		split_path = self.path.split(os.sep)
 		if self.path == '':
 			self.path = os.path.join(self.parent_of_proxy,self.root_path)
-		elif self.path == self.root_path:
+		elif self.path == self.root_path.rstrip('/\\').rstrip(os.sep):
 			self.path = os.path.join(self.parent_of_proxy,self.root_path)
-		elif self.path == self.root_path+'/' or self.path == self.root_path+'\\':
-			self.path = os.path.join(self.parent_of_proxy,self.root_path)			
-		elif re.match(self.root_path+'[/\\\\].',self.path):			
+		elif self.root_path == split_path[0]:# re.match(os.path.join(self.root_path+"\\",'.'),self.path):			
 			self.path = os.path.join(self.parent_of_proxy,self.path)
-		elif re.match(self.image_path+'[/\\\\].',self.path):			
+		elif self.image_path == split_path[0]:# re.match(self.image_path+'['+os.sep+'].',self.path):			
 			self.path = os.path.join(self.reroute,self.path)
-		elif re.match(self.scripts_path+'[/\\\\].',self.path):						
+		elif self.scripts_path == split_path[0]:# re.match(self.scripts_path+'['+os.sep+'].',self.path):						
 			self.path = os.path.join(self.reroute,self.path)
-		elif re.match(self.styles_path+'[/\\\\].',self.path):
-			self.path=self.path.lstrip('/\\\\')
+		elif self.styles_path == split_path[0]:# re.match(self.styles_path+'['+os.sep+'].',self.path):
+			self.path=self.path.lstrip('/\\\\').lstrip(os.sep)
 			self.path = os.path.join(self.reroute,self.path)
-		elif re.match(self.app_path+'[/\\\\].',self.path):
-			self.path=self.path.lstrip('/\\\\')
+		elif self.app_path == split_path[0]:# re.match(self.app_path+'[/\\\\].',self.path):
+			self.path=self.path.lstrip('/\\\\').lstrip(os.sep)
 			self.path = os.path.join(self.reroute_apps,self.path)
-		elif self.path.strip('/\\')=='igrep':
+		elif self.path.strip('/\\').strip(os.sep)=='igrep':
 			self.reply_string = "it2sasstart"	
 			return
+		else:
+			self.path = os.path.join(self.parent_of_proxy,self.path).lstrip(os.sep)
 			#return reply_str		
 		# Someday you might have other routes				
 		#print('newpath',self.path)

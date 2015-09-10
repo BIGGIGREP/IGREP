@@ -488,3 +488,35 @@ NameError: global name 'RemoveObjId' is not defined
 ########################################
 
 
+###ERROR AT: 2015-09-08 00:12:01.844000
+Username: cchrysostomou
+Proxy Request: {
+    "connection_type": "reader",
+    "modify_query_values": true,
+    "query_object_id": "20150908001200815000",
+    "file_prefix": null,
+    "authkey": "",
+    "command": [
+        {
+            "args": [],
+            "command": "get_user_access_info",
+            "kwargs": {}
+        }
+    ],
+    "redirect_query_fields": true,
+    "to_file": false,
+    "db_action": "query"
+}
+ERROR Message: Traceback (most recent call last):
+  File "D:\OneDrive\Appsoma Database\GitHub\IGREP\mongoproxy\immunogrep_handle_proxy.py", line 52, in handle_POST
+    [db_reader,_ig_]= igdbconnect.connectToIgDatabase('reader',password_dict['reader'])
+  File "../common_tools/immunogrep_igdbtools.py", line 60, in connectToIgDatabase
+    [db,connection] = ig_DB_PATH()
+  File "../common_tools/immunogrep_igdbtools.py", line 31, in ig_DB_PATH
+    connection = pymongo.MongoClient(host=whichserver,port=port)
+  File "C:\Users\constantine\Anaconda\lib\site-packages\pymongo\mongo_client.py", line 377, in __init__
+    raise ConnectionFailure(str(e))
+ConnectionFailure: [Errno 11001] getaddrinfo failed
+########################################
+
+

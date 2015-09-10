@@ -250,24 +250,20 @@ def flatten_dictionary(d,val={},p='',start=True):
 			d						A nested dictionary of key:values
 			=====================   =====================
 
-		:See example below:
+		See example below::
 
 			Imagine a dictionary is passed as such
 				d = {
 					'a':{'hello':5,
 						'world':10}
-
 					'ok':10
-
 				}
 			Running flatten_dictionary on this function will produce the following
-				d = {
-					'a.hello':5,
-					'a.world':10,
-					'ok':10,
-
-				}
-
+			d = {
+				'a.hello':5,
+				'a.world':10,
+				'ok':10,
+			}
 			So rather than accesssing d['a']['hello'], We access d['a.hello']
 
 		.. important:: Please refer to the function,DotAccessible, to perform the opposite of this function: Convert a flattened dictionary into a nested dictionary

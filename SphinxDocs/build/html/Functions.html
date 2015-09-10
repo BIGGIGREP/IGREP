@@ -320,41 +320,22 @@ This is very useful for moving all keys in a dictionary to the top level rather 
 </tbody>
 </table>
 </div></blockquote>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">See example below:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><dl class="first docutils">
-<dt>Imagine a dictionary is passed as such</dt>
-<dd><dl class="first docutils">
-<dt>d = {</dt>
-<dd><dl class="first docutils">
-<dt>&#8216;a&#8217;:{&#8216;hello&#8217;:5,</dt>
-<dd><p class="first last">&#8216;world&#8217;:10}</p>
-</dd>
-</dl>
-<p class="last">&#8216;ok&#8217;:10</p>
-</dd>
-</dl>
-<p class="last">}</p>
-</dd>
-<dt>Running flatten_dictionary on this function will produce the following</dt>
-<dd><dl class="first docutils">
-<dt>d = {</dt>
-<dd><p class="first last">&#8216;a.hello&#8217;:5,
-&#8216;a.world&#8217;:10,
-&#8216;ok&#8217;:10,</p>
-</dd>
-</dl>
-<p class="last">}</p>
-</dd>
-</dl>
-<p class="last">So rather than accesssing d[&#8216;a&#8217;][&#8216;hello&#8217;], We access d[&#8216;a.hello&#8217;]</p>
-</td>
-</tr>
-</tbody>
-</table>
+<p>See example below:</p>
+<div class="highlight-python"><div class="highlight"><pre>Imagine a dictionary is passed as such
+        d = {
+                &#39;a&#39;:{&#39;hello&#39;:5,
+                        &#39;world&#39;:10}
+                &#39;ok&#39;:10
+        }
+Running flatten_dictionary on this function will produce the following
+d = {
+        &#39;a.hello&#39;:5,
+        &#39;a.world&#39;:10,
+        &#39;ok&#39;:10,
+}
+So rather than accesssing d[&#39;a&#39;][&#39;hello&#39;], We access d[&#39;a.hello&#39;]
+</pre></div>
+</div>
 <div class="admonition important">
 <p class="first admonition-title">Important</p>
 <p class="last">Please refer to the function,DotAccessible, to perform the opposite of this function: Convert a flattened dictionary into a nested dictionary</p>

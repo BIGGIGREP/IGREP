@@ -10,7 +10,7 @@ from immunogrep_global_variables import seqRawData
 from immunogrep_global_variables import idIdentifier
 from immunogrep_global_variables import expIdentifier
 import immunogrep_database_schema as schema
-import immunogrep_useful_immunogrep_functions as useful 
+import immunogrep_useful_functions as useful 
 import copy
 
 from cchrysostomou_igdbtools_proxy import connectToIgDatabase as connect_to_ig_database
@@ -67,7 +67,7 @@ def delete_entire_experiment(experiment_id_list):
 	[db,connection_data] = connect_to_ig_database()
 	
 	try:
-		import appsoma_api
+		#import appsoma_api
 		username = appsoma_api.environment_get_username()
 		temp_user_info = defaultdict(str,db.users.find_one({'user':username}))
 	except:
@@ -97,8 +97,7 @@ def delete_sequences_from_experiment(experiment_id_list):
 	
 	[db,connection_data] = connect_to_ig_database()
 	
-	try:
-		import appsoma_api
+	try:		
 		username = appsoma_api.environment_get_username()
 		temp_user_info = defaultdict(str,db.users.find_one({'user':username}))
 	except:
@@ -130,8 +129,7 @@ def delete_analyses_from_experiment(experiment_id_list,analysis_types=[],recombi
 	
 	[db,connection_data] = connect_to_ig_database()
 	
-	try:
-		import appsoma_api
+	try:	
 		username = appsoma_api.environment_get_username()
 		temp_user_info = defaultdict(str,db.users.find_one({'user':username}))
 	except:
@@ -668,8 +666,7 @@ def benni_update_seqs_from_file_real(filename,bulk_seqs = 50000,update_replace=F
 	
 	[db,connection_data] = connect_to_ig_database()
 	
-	try:
-		import appsoma_api
+	try:		
 		username = appsoma_api.environment_get_username()
 		temp_user_info = defaultdict(str,db.users.find_one({'user':username}))
 	except:

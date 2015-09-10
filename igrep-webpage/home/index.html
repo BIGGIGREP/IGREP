@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        
+    <title>BIGG Data Analysis</title>
+	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>	
+	<link rel="stylesheet" type="text/css" href="/styles/bootstrap/css/bootstrap.min.css">	 
+    <link rel="stylesheet" type="text/css" href="/styles/dashboard.css">	
+	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">	
+	<script type="text/javascript" src="/styles/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/scripts/igrep.script.tools.js"></script>		
+		
+	<style>		
+		/*app section*/
+		#app-section{
+			/*margin-top: 10px;*/
+			margin-bottom: 20px;
+			padding-top:10px;
+		}
+    
+		#app-section h2{
+			line-height:0px;
+		}
+		
+		#app-section .page-header{
+			margin: 20px 0px;
+		}
+		
+		#app-section .panel a.btn:hover{
+			display:inline-block;
+			border:1px solid transparent;
+			
+		}
+		#app-section .panel pre{
+			word-break:normal;
+			white-space:pre-wrap;
+		}
+				
+		/* sidebar */
+		.bs-docs-sidebar {
+			/*padding-left: 10px;
+			/*margin-bottom: 20px;*/
+			padding-top: 50px;
+			background-color:#f5f5f5;			
+			position: fixed; /* we make it fixed and a z-index of 1000 to make the pane last the entire vertical page*/
+			top: 51px;
+			bottom: 0;
+			left: 0;
+			z-index: 1000;
+			display: block;
+			overflow:auto;			
+		}
+		
+		
+		
+		/* all links */
+		.bs-docs-sidebar .nav>li>a {
+			text-transform:none;
+			color:#767676;			
+		}
+		/*parent links*/
+		.bs-docs-sidebar>.nav>li>a{
+			text-transform:uppercase;
+			color: black;
+			padding:10px 5px;
+			font-size:14px;
+		}
+		
+		/*.bs-docs-sidebar */
+		/* nested links */
+		.bs-docs-sidebar ul ul>li>a{
+			position:relative;
+			padding-left:15px;
+			/*padding-right:5px;*/
+			padding-top:1px;
+			padding-bottom:1px;
+			font-size:13px;
+		}
+		/* nested links */
+		.bs-docs-sidebar ul ul ul>li>a{
+			position:relative;
+			/*padding-right:5px;*/
+			padding-left:30px;
+			padding-top:1px;
+			padding-bottom:1px;
+			font-size:12px;
+		}
+		/* all links */
+		.bs-docs-sidebar .nav>li>a {
+			/*add trasnparent border */
+			border-left: 2px solid transparent;
+		}
+		/* active & hover links */
+		.bs-docs-sidebar .nav>.active>a, 
+		.bs-docs-sidebar .nav>li>a:hover, 
+		.bs-docs-sidebar .nav>li>a:focus {
+			color: #563d7c;                 
+			text-decoration: none;          
+			background-color: transparent;  
+			border-left: 2px solid #563d7c; 
+		}
+
+		.bs-docs-sidebar .nav>li>a.active{
+			color: #563d7c;
+			font-weight:bold;
+			text-decoration: none;          
+			background-color: transparent;  
+			border-left: 3px solid #563d7c; 
+		}
+		/* hide all (inactive) nested list */
+		.bs-docs-sidebar .nav ul.nav {
+			display: none;           
+		}
+		/* show active nested list */
+		.bs-docs-sidebar .nav ul.active{
+			display: block;           
+		}
+	</style>
+	<script>
+	function MakeAppSidebar(app_dictionary, preferred_name_order,previous_class) {
+			if (previous_class == undefined)
+				previous_class = ""
+
+			var names = Object.keys(app_dictionary)
+			var list_order = preferred_name_order
+			var new_names = []
+
+			for (var i = 0; i < names.length; i++) {
+				if(list_order.indexOf(names[i])==-1)
+					new_names.push(names[i])
+			}	
+			list_order = list_order.concat(new_names.sort())
+			if (previous_class == ""){
+				var html_element = "<ul class='nav nav-stacked fixed'>"				
+			}
+			else{
+				var html_element = "<ul class='nav nav-stacked'>"				
+			}
+			for (var i = 0; i < list_order.length; i++) {
+				if (previous_class == ""){
+					var class_var=list_order[i].split(' ').join('-')
+					var more_data = "main-node "
+				}
+				else{
+					var class_var = (previous_class+'-'+list_order[i]).split(' ').join('-')
+					var more_data = ""
+				}
+				html_element += "<li name='"+class_var+"' class='"+more_data+class_var+"'><a>"+list_order[i]+"</a>"
+				if(app_dictionary.hasOwnProperty(list_order[i])){
+					if (app_dictionary[list_order[i]] != null && typeof app_dictionary[list_order[i]] == 'object') {
+						//run recursive function
+						html_element += MakeAppSidebar(app_dictionary[list_order[i]], [], class_var)
+					}
+				}
+				html_element += "</li>"
+			}
+			html_element += "</ul>"
+			return html_element
+		}
+		function PopulateAppLists(app_list,preferred_name_order){
+			//bootstrap_panel_colors = ["#337ab7","#ddd","#d6e9c6","#bce8f1","#faebcc"]
+			//more_panel_colors = ["#D4D8D1","#A8A8A1","#AA9A66","#B74934","#577492","#67655D","#332C2F",]
+			bootstrap_panel_classes = ['panel-default','panel-primary','panel-success','panel-info','panel-warning','panel-danger']
+			custom_panel_classes = []
+			/*<!--.panel-default, .panel-primary, .panel-success, .panel-info, .panel-warning, or .panel-danger-->
+						<!-- .panel > .panel-heading {
+							background-image: none;
+							background-color: red;
+							color: white;
+
+						}-->
+			*/
+			panel_classes = bootstrap_panel_classes.concat(custom_panel_classes)			
+			
+			//app_list is a list of all programs found in folder. 
+			//Each element of list is object with following keys: 'classes', 'keywords','description','name','path','main-group'
+			//First sort elements by their main-group
+			
+			var list_order = preferred_name_order
+			var app_list_index = {}
+			var app_lists = []
+			for (var i = 0; i<list_order.length; i++){
+				app_list_index[list_order[i]] = i
+				app_lists.push({'apps':[],'name':list_order[i]})
+			}
+			
+			for (var i = 0; i <app_list.length; i++) {
+				if (app_list_index.hasOwnProperty(app_list[i]['main-group'])){
+					app_lists[app_list_index[app_list[i]['main-group']]]['apps'].push(app_list[i])
+				}
+				else{				
+					app_list_index[app_list[i]['main-group']] = app_lists.length
+					app_lists.push({'apps':[app_list[i]],'name':app_list[i]['main-group']})
+				}
+			}
+						
+			app_html = "<div class='row'"
+			panel_id_nums=0;
+			for (var i = 0;i<app_lists.length;i++){
+				if(app_lists[i]['apps'].length==0)
+					continue;
+				//Now create HTML for loading the apps 
+				app_html+="<div class='row'>"+
+							"<div class='page-header'>"+
+								app_lists[i]['name']+
+							"</div>"+
+							"<div class='row'>"
+							
+							
+				for(var j = 0; j<app_lists[i]['apps'].length;j++){
+					var sub_app = app_lists[i]['apps'][j]					
+					p = panel_classes[Math.floor((Math.random() * panel_classes.length))]
+					app_classes = 'All-apps '+sub_app['classes'].join(' ')
+					id='app_panel_'+String(panel_id_nums)
+					app_html+="<div class = 'col-sm-4'>"+
+								"<div class='panel "+p+" "+app_classes+"'>"+
+									"<div class='panel-heading '>"+
+										"<h3 class='panel-title'>"+
+											sub_app['name']+
+										"</h3>"+
+									"</div>"+
+									"<div class='panel-body'>"+
+										"<p>"+
+											"<a type='button' class='btn btn-primary' target='_blank' href='"+sub_app['path']+"' >LAUNCH</a>"+
+											"<a class='btn view-descp' data-toggle='collapse' data-target='#"+id+"'>View description »</a>"+
+										"</p>"+								
+										"<pre id='"+id+"' class='panel-descr collapse'>"+
+										sub_app['description']+
+										"</pre>"+
+									"</div>"+
+								"</div>"+
+							"</div>"
+					panel_id_nums+=1;
+				}
+				app_html+="</div></div>"
+			}
+			app_html+="</div>"
+			$('#apps-go-here').html(app_html)
+		}
+		function InitializePage(res){
+			app_structure = res['directory_dictionary']
+			app_list = res['apps']
+			
+			side_bar_text = MakeAppSidebar(app_structure,['All apps','Automated Pipelines','GSAF Download'],'')
+			app_section_text = PopulateAppLists(app_list,['All apps','Automated Pipelines','GSAF Download'])
+			$('#app-navigation-pane').html(side_bar_text)
+			var c = $('.bs-docs-sidebar ul li.main-node').first()
+			c.find('a').first().addClass('active')
+			$('.bs-docs-sidebar ul').first().addClass('active')			
+			
+		}
+		function ClearPage(){
+		
+			$('#main-app-page').html('<div class="alert alert-danger" role="alert">Oops! There was an error processing the app request</div>')
+		
+		}
+		function GetApps(){
+			params = {
+				'module':'get_apps_list',
+				'args':[]
+			}
+			opts = get_ajax_params(params)
+			opts.success = function (res) {
+				InitializePage(res)
+			}
+			opts.complete = function(){
+			}				
+			opts.error = function (jqXHR, textStatus, errorThrown) {
+				alert(jqXHR.responseText);
+				ClearPage();
+			}		
+			xhr = $.ajax(opts);
+		}
+		$(document).ready(function(){
+			/*folder = {
+				"Automated Pipelines": {
+					"SimpleDatabaseQuery": 1
+				}, 
+				"GSAF Download": 1, 
+				"app2": 1, 
+				"database functions": {
+					"newsub": {
+						"newsub": 1
+					}, 
+					"SimpleDatabaseQuery": 1, 
+					"Queries": {
+						"SimpleDatabaseQuery": 1
+					}
+				}
+			}*/
+			/*function only_show_active(){
+				$('.bs-docs-sidebar').find('ul ul').children('li').hide()												
+				var c = $('.bs-docs-sidebar').find('a.active')
+				c.closest('li.main-node').find('li').show()
+			}*/
+			GetApps()
+						
+			//only_show_active()
+			
+			
+			
+			$('.bs-docs-sidebar').on('click','li a',function(){
+				$(this).closest('.bs-docs-sidebar').find('.active').removeClass('active');				
+				$(this).addClass('active')
+				$(this).parentsUntil('.bs-docs-sidebar','ul').addClass('active')
+				$(this).siblings('ul').addClass('active')
+				$('#apps-go-here').find('.page-header').hide()
+				$('#apps-go-here').find('.panel').hide()
+				class_search = "."+$(this).closest('li').attr("name")
+				$('#apps-go-here').find(class_search).each(function(){
+					$(this).show()
+					$(this).closest('div.row').prev('.page-header').show()
+				}) 				
+				//only_show_active()
+			});
+		})
+		
+	</script>
+</head>
+<body>
+	<!-- Navigation toolbar -->
+	<nav class="navbar-inverse navbar-fixed-top navbar-header" role="navigation">
+		<div class='container-fluid'>			
+			<div class='navbar-header'>
+				<!-- creates a toggle menu/button on the right side when screen is minimized-->
+				<div class="navbar-toggle navbar-igrep-options" data-toggle="collapse" >
+					<div class="dropdown">
+						<button id='navbar-modal-options' type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" >
+							<span class="icon-bar"></span>
+							<span class="icon-bar"></span>
+							<span class="icon-bar"></span>
+						</button>    				
+						<ul class="dropdown-menu pull-right" aria-labelledby="navbar-modal-options">
+							<li><a href="#">Running Jobs</a></li>
+							<li><a href="#">Completed Jobs</a></li>
+							<li><a href="#">Data</a></li>
+							<li><a href="#">Env</a></li>
+							<li><a href="#">Logout</a></li>
+						</ul>
+					</div>
+				</div>
+				<!-- this will only show up when window is minimzed (data-toggle) -->
+				<span class="collapsed-igrep-navbar-brand navbar-toggle pull-left" data-toggle="collapse">APPS</span>
+			</div>
+			
+			<div class="navbar-collapse collapse">
+				<ul class="nav navbar-nav navbar-left">
+					<li class="active"><a>Apps</a></li>
+					<li class=""><a href="#">Running Jobs</a></li>
+					<li><a href="#">Completed Jobs</a></li>
+					<li><a href="#">Data</a></li>
+					<li><a href="#">Env</a></li>
+				</ul>
+				
+				<ul id='logout-nav' class="nav navbar-nav navbar-right">					
+					<li class='current-user' title='logout'><a href="#"><span class="username glyphicon glyphicon-user"></span> test</a></li>													
+					<li class='logout' title='logout'><a href="#"><span class="username glyphicon glyphicon-log-out"></span> test</a></li>													
+					<!--<li title='logout' class='logout'>
+						
+						<a href="/igrep-webpage/login">
+							<span class="logout-img"></span>														
+						</a>
+					</li>-->
+				</ul>
+			</div>
+		</div>
+	</nav>
+	<!-- END OF NAVIATION TOOLBAR -->
+	
+	<!-- create a side bar to show all current APPS -->
+	<div id='main-app-page' class="container-fluid">
+		<div class="row">
+			<!--Nav Bar -->
+			<nav id='app-navigation-pane' class="col-xs-4 cols-sm-4 col-md-2 bs-docs-sidebar fixed">
+				<!-- populated by javascript function -->
+			</nav>
+			<!--Main Content -->
+			<div id='app-section' class="col-xs-8 main col-sm-8 col-md-10 col-xs-offset-4 col-sm-offset-4 col-md-offset-2 main">
+				<h2>Available APPS</h2>
+				<div id='apps-go-here'>
+				</div>				
+		</div>
+	</div>
+
+</body>
+</html>
+
+

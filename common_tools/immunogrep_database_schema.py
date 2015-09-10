@@ -2,7 +2,7 @@
 #import immunogrep_igdbtools as igdbtools
 from datetime import datetime
 import json
-import immunogrep_useful_immunogrep_functions as useful_functions
+import immunogrep_useful_functions as useful_functions
 from immunogrep_global_variables import fasta_file_delimiter
 from immunogrep_global_variables import idIdentifier
 from bson.objectid import ObjectId
@@ -519,6 +519,13 @@ schema_fields_and_data_types = defaultdict(lambda:{'to_db':default_fields_data_t
 	'ISOTYPE.PER_ID':{
 		'to_db':lambda x:ConvertToList(x,float,',')
 	},
+	'PAIRING.CONFIDENCE':{
+		'to_db':lambda x:ConvertTo(x,float)
+	},
+	'PAIRING.DOMINANCE':{
+		'to_db':lambda x:ConvertTo(x,float)
+	},
+	
 	'FILENAME':{
 		'to_db':lambda x:str(x),#just dont do anything to field
 		'to_file':lambda x:str(x)

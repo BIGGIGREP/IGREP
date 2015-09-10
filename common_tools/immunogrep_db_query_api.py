@@ -19,7 +19,7 @@ import copy
 
 import os
 import time
-import immunogrep_useful_immunogrep_functions as useful_functions
+import immunogrep_useful_functions as useful_functions
 from immunogrep_global_variables import idIdentifier
 from immunogrep_global_variables import expIdentifier
 from immunogrep_global_variables import seqRawData
@@ -38,6 +38,7 @@ import sets
 from collections import namedtuple
 
 import immunogrep_proxy_tools
+import shutil
 
 
 fields_above_data_key = ['_id','ANALYSIS_NAME','EXP_ID','RECOMBINATION_TYPE','SEQ_ID','DATE_UPDATED','SETTINGS']
@@ -51,23 +52,26 @@ chunk_size = 1
 
 oid_type=type(ObjectId())
 test2=type({})
-try:
-	import appsoma_api
-	appsoma_api.resource_pull("https://biotseq.ut.appsoma.com:5001/kamhonhoi_public/Programs/immunogrep_cython_db_tools.so","immunogrep_cython_db_tools.so")
-except:
-	pass
-
-
+#try:
+#	import appsoma_api
+#	appsoma_api.resource_pull("https://biotseq.ut.appsoma.com:5001/kamhonhoi_public/Programs/immunogrep_cython_db_tools.so","immunogrep_cython_db_tools.so")
+#except:
+#	pass
 
 try:
 	#cython code defining useful_functions	
-	from immunogrep_cython_db_tools import flatten_dictionary
-	from immunogrep_cython_db_tools import RemoveObjId		
+	#from immunogrep_cython_db_tools import flatten_dictionary
+	#from immunogrep_cython_db_tools import RemoveObjId				
+	print('aaahhh im commented out!!!! visual studio jazz!!!')
+	from immunogrep_useful_functions import flatten_dictionary 
+	from immunogrep_useful_functions import RemoveObjId
 except:
 	#it wont work if there is no cython module (currently immunogrep_cython_db_tools). when dit doesnt work, import non cyhton version
-	from immunogrep_useful_immunogrep_functions import flatten_dictionary 
-	from immunogrep_useful_immunogrep_functions import RemoveObjId
-	print 'Not using cython'
+	from immunogrep_useful_functions import flatten_dictionary 
+	from immunogrep_useful_functions import RemoveObjId
+	print('Not using cython for flatten dictionary')
+
+
 global_time =0
 gt1=0
 gt2=0
@@ -176,10 +180,6 @@ default_sorting_order = [
 	'FILENAME',
 	'SETINGS'
 ]
-	
-									
-								
-
 
 keys_with_object_id = ['_id','SEQ_ID','EXP_ID']
 
@@ -199,13 +199,14 @@ def split_file_to_multiple_files(inputfile,default_filename = '',ext='query',max
 	dir_path = os.path.dirname(inputfile)
 	if not default_filename:		
 		tempname = inputfile+'.temp'
-		os.system("cp '{0}' '{1}'".format(inputfile,tempname))
+		#os.system("cp '{0}' '{1}'".format(inputfile,tempname))
+		shutil.copyfile(inputfile,tempname)
 		default_filename = os.path.basename(inputfile)
 		inputfile = tempname
 	time_now = str(datetime.now()).replace(' ','').replace(':','')
 	location_of_files_created = "query_files_created_"+time_now+str(random.randint(1, 100))+".txt"
 	
-	awk_command = '''awk 'BEGIN{{FS="{0}";OFS="";limitseq=({5}>0);num_header=0;check_for_header=1}}						   
+	awk_command = '''gawk 'BEGIN{{FS="{0}";OFS="";limitseq=({5}>0);num_header=0;check_for_header=1}}						   
 					   check_for_header && $1=="HeaderDescription"{{header_lines[num_header]=$2;num_header+=1;next}}					   
 					   check_for_header{{check_for_header=0}}
 					   {{											
@@ -238,7 +239,8 @@ def split_file_to_multiple_files(inputfile,default_filename = '',ext='query',max
 							}}' '{2}' '''.format(file_def_seperator,dir_path,inputfile,default_filename,location_of_files_created,max_lines_per_file,ext)			
 
 	os.system(awk_command)
-	os.system("rm '{0}'".format(inputfile))
+	#os.system("rm '{0}'".format(inputfile))
+	os.remove(inputfile)
 	
 	if os.path.isfile(dir_path+'/'+location_of_files_created):				
 		with open(dir_path+'/'+location_of_files_created) as f:		
@@ -247,7 +249,8 @@ def split_file_to_multiple_files(inputfile,default_filename = '',ext='query',max
 				file = file.split('\t')
 				if file[0]:
 					files_created.append({'filename':dir_path+'/'+file[0],'linecount':int(file[1])})					
-		os.system("rm '{0}'".format(dir_path+'/'+location_of_files_created))
+		#os.system("rm '{0}'".format(dir_path+'/'+location_of_files_created))
+		os.remove(dir_path+'/'+location_of_files_created)
 		return files_created
 		
 	else:		
@@ -270,7 +273,8 @@ def pass_query_results(filepath,chunk_size=1000):
 			if counter%chunk_size == 0:
 				yield list
 				list = []		
-	os.system("rm '{0}'".format(filepath))
+	#os.system("rm '{0}'".format(filepath))
+	os.remove(filepath)
 	if list:				
 		yield list		
 	if counter == 0:
@@ -278,13 +282,11 @@ def pass_query_results(filepath,chunk_size=1000):
 		yield []
 				
 			
-			
 def post_to_proxy(query_class=None, path="http://biotseq.ut.appsoma.com:5998",chunk_size=1,filename_suffix='query',max_doc_per_file=0):				
 	
 	query_to_file = query_class.to_file			
 	temp_file_name_path = 'IGREP_Query_'+str(datetime.now()).replace(':','').replace('_','').replace('-','').replace(' ','').replace('.','')			
-	
-		
+			
 	if query_to_file:	
 		if query_class.file_prefix == None:#user did not pass in path, so we will maek a temp name 
 			query_class.file_prefix = temp_file_name_path								
@@ -307,7 +309,7 @@ def post_to_proxy(query_class=None, path="http://biotseq.ut.appsoma.com:5998",ch
 		
 	else:
 		file_prefix = None
-		to_temp_filename='scratch/IGREP_Query_'+str(datetime.now()).replace(':','').replace('_','').replace('-','').replace(' ','').replace('.','')+'.temp'		
+		to_temp_filename='IGREP_Query_'+str(datetime.now()).replace(':','').replace('_','').replace('-','').replace(' ','').replace('.','')+'.temp'		
 	
 	class_attibutes = {
 		'to_file':query_to_file,		
@@ -316,18 +318,18 @@ def post_to_proxy(query_class=None, path="http://biotseq.ut.appsoma.com:5998",ch
 		'file_prefix':file_prefix,
 	}
 			
-		
+	print('FIX THE AUTHENTICATION METHODS!!')
 	#data to send to http command 
 	data = {
 		'db_action': 'query',
 		'command': query_class.query_command_list, #list of functions to run on proxy
-		'authkey':appsoma_api.environment_get_authkey(), #identification of username running in appsoma
+		'authkey':'',#appsoma_api.environment_get_authkey(), #identification of username running in appsoma
 		'query_object_id':query_class.name,
 		'connection_type':query_class.db_method, #how are we conneting to database (read access or write access, or better yet -> username to mongo connect)		
 	}			
 	data.update(class_attibutes)
-		
-	
+			
+	print 'trying here'
 	query_string =  immunogrep_proxy_tools.http(
 		path,
 		data=bson_dumps(data),
@@ -336,6 +338,7 @@ def post_to_proxy(query_class=None, path="http://biotseq.ut.appsoma.com:5998",ch
 		toFilename=to_temp_filename# always output data to file ,
 		#progressCallback=progress		
 	)	
+	print 'endinghere'
 	
 	if query_to_file:
 		#just save the results from the file. run split_file_to_multiple_files function so that it will seperate documents in the file use a simple awk command
@@ -1206,16 +1209,17 @@ def Process_Cursor_For_Output_File(document,schema_output_fnc = schema_fields_to
 
 
 #Creating an instance of the class
-#db_connect_data=>tuple defining authentication for database => three element tuple: database path, database user, database password
+#db_connect_data=>tuple defining authentication for database => four element tuple: database path, database user, database password, immunogrep user name
 #modify_query_values_to_follow_db_schema=>modify the query passed in by user. it will properly format query values to match those in original schema 
 #redirect_fields_for_improved_queries=>modify the query to change which fields are queried.
 #to_file => whether or not results will be saved to a file a the end (as opposed to saving results as json documents and automatically loading them in memory at the end of query)
 #file_prefix => if to_file = True, then all generated files will have this prefix
 #proxy_path 
 class RunQuery(object):
-	def __init__(self,db_connect_data=None,db_user_name='',modify_query_values_to_follow_db_schema=True,redirect_fields_for_improved_queries=True,to_file=True,file_prefix=None,proxy_path = ''):									
-		self.to_file = to_file		
-				
+	def __init__(self,db_connect_data=None,modify_query_values_to_follow_db_schema=True,redirect_fields_for_improved_queries=True,to_file=True,file_prefix=None,proxy_path = ''):									
+		self.to_file = to_file
+		db_user_name='' #we use this variable to authenticate the person coming into the proxy 
+		
 		if self.to_file == False:						
 			self.file_prefix = ''						
 		else:
@@ -1243,9 +1247,15 @@ class RunQuery(object):
 		#END of potentially unncecessary variables
 				
 		#if proxy_path is None then we want to actually run database queries and have passed in correct database information using the db_connect_data 
-		if proxy_path == None:						
+		if proxy_path == None:				
+			if(len(db_connect_data)>4 or len(db_connect_data)<3):
+				raise Exception('db_connect_data must be a tuple of either 3 or 4 elements')
+			if len(db_connect_data)==4:		
+				db_user_name = db_connect_data[3]		
+			else:
+				db_user_name = ''		
 			self.proxy_path = None			
-			
+			self.name=None # we use self.name as a method for 'reconnecting' to the same varialbe via proxy. this is not implemented however
 			#connect to database
 			[self.db_path,self.mongo_connect]= connectToIgDatabase(db_connect_data[0],db_connect_data[1],db_connect_data[2]) #igdbconnect						
 			#get user permissions
@@ -1272,10 +1282,10 @@ class RunQuery(object):
 			self.name=None
 		
 		#IN THE FOLLOWING CASES: WE WANT TO RUN THE FUNCTIONS VIA A PROXY THAT HAS ACCESS TO A DATABASE FROM ANOTHER ADDRESS/SOURCE
-		elif proxy_path == '':
+		elif proxy_path == '':			
 			self.proxy_path = "http://biotseq.ut.appsoma.com:5998"									
 			self.location = 'appsoma'			
-			self.name = str(datetime.now())
+			self.name = str(datetime.now()) # we use self.name as a method for 'reconnecting' to the same varialbe via proxy. this is not implemented however
 			for bad_char in [':','-',' ','.']:
 				self.name = self.name.replace(bad_char,'')												
 			#we want to run these functions using the proxy defined by proxy path. 
@@ -1286,15 +1296,17 @@ class RunQuery(object):
 				setattr(RunQuery, method.__name__, _modify_function(method))										
 		else:
 			self.proxy_path = proxy_path
+			self.location = 'appsoma'			
+			self.name = str(datetime.now()) # we use self.name as a method for 'reconnecting' to the same varialbe via proxy. this is not implemented however
+			for bad_char in [':','-',' ','.']:
+				self.name = self.name.replace(bad_char,'')												
 			#we want to run these functions using the proxy defined by proxy path. 
 			#so run the MODIFY_FUNCTION (see def modify_fucntion below) on all the function names in this file 
 			#rather than running any functions defined for the class, it will instead generate a list of functions and parameters to run on the proxy 
 			class_methods_to_modify = [obj for name, obj in inspect.getmembers(RunQuery) if inspect.ismethod(obj) and not (name.startswith('_') or name.startswith('wraps'))] 		
 			for method in class_methods_to_modify:
-				setattr(RunQuery, method.__name__, _modify_function(method))										
-									
-			
-	
+				setattr(RunQuery, method.__name__, _modify_function(method))																			
+				
 	def __delete_query_object__(self): #delete object on proxy
 		if self.location == 'proxy': 
 			query_objects.pop(self.name,None)				

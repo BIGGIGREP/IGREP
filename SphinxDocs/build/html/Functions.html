@@ -140,7 +140,7 @@
 <li><a class="reference internal" href="#immunogrep_useful_functions.flatten_dictionary" title="immunogrep_useful_functions.flatten_dictionary"><code class="xref py py-func docutils literal"><span class="pre">flatten_dictionary()</span></code></a></li>
 <li><a class="reference internal" href="#immunogrep_useful_functions.get_stdout" title="immunogrep_useful_functions.get_stdout"><code class="xref py py-func docutils literal"><span class="pre">get_stdout()</span></code></a></li>
 <li><a class="reference internal" href="#immunogrep_useful_functions.merge_multiple_files" title="immunogrep_useful_functions.merge_multiple_files"><code class="xref py py-func docutils literal"><span class="pre">merge_multiple_files()</span></code></a></li>
-<li><a class="reference internal" href="#immunogrep_useful_functions.print_error" title="immunogrep_useful_functions.print_error"><code class="xref py py-func docutils literal"><span class="pre">print_error()</span></code></a></li>
+<li><code class="xref py py-func docutils literal"><span class="pre">print_error()</span></code></li>
 <li><a class="reference internal" href="#immunogrep_useful_functions.removeEmptyVals" title="immunogrep_useful_functions.removeEmptyVals"><code class="xref py py-func docutils literal"><span class="pre">removeEmptyVals()</span></code></a></li>
 <li><a class="reference internal" href="#immunogrep_useful_functions.removeFileExtension" title="immunogrep_useful_functions.removeFileExtension"><code class="xref py py-func docutils literal"><span class="pre">removeFileExtension()</span></code></a></li>
 <li><a class="reference internal" href="#immunogrep_useful_functions.removeNoneVals" title="immunogrep_useful_functions.removeNoneVals"><code class="xref py py-func docutils literal"><span class="pre">removeNoneVals()</span></code></a></li>
@@ -153,7 +153,16 @@
 </div>
 <div class="section" id="insidefunc">
 <span id="id1"></span><h2>Functions<a class="headerlink" href="#insidefunc" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-immunogrep_useful_functions"></span><dl class="function">
+<span class="target" id="module-immunogrep_useful_functions"></span><dl class="class">
+<dt id="immunogrep_useful_functions.DotAccessible">
+<em class="property">class </em><code class="descclassname">immunogrep_useful_functions.</code><code class="descname">DotAccessible</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_useful_functions.html#DotAccessible"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.DotAccessible" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dictionary that allows dot notation for accessing nested subdictionaries. Code [inspired-by/copied-from]:
+<a class="reference external" href="http://www.velvetcache.org/2012/03/13/addressing-nested-dictionaries-in-python">http://www.velvetcache.org/2012/03/13/addressing-nested-dictionaries-in-python</a>
+<a class="reference external" href="http://stackoverflow.com/questions/3387691/python-how-to-perfectly-override-a-dict">http://stackoverflow.com/questions/3387691/python-how-to-perfectly-override-a-dict</a>
+<a class="reference external" href="http://docs.python.org/2/library/collections.html#collections-abstract-base-classes">http://docs.python.org/2/library/collections.html#collections-abstract-base-classes</a></p>
+</dd></dl>
+
+<dl class="function">
 <dt id="immunogrep_useful_functions.LoopStatus">
 <code class="descclassname">immunogrep_useful_functions.</code><code class="descname">LoopStatus</code><span class="sig-paren">(</span><em>counter</em>, <em>totalSeq</em>, <em>perIndicate</em>, <em>startPer</em>, <em>div=''</em>, <em>addedInfo=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_useful_functions.html#LoopStatus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.LoopStatus" title="Permalink to this definition">¶</a></dt>
 <dd><p>counter of the current status of a process. (i.e. percent done)</p>
@@ -376,11 +385,6 @@ Returns the output from command</p>
 </table>
 </div></blockquote>
 </dd></dl>
-
-<dl class="function">
-<dt id="immunogrep_useful_functions.print_error">
-<code class="descclassname">immunogrep_useful_functions.</code><code class="descname">print_error</code><span class="sig-paren">(</span><em>e=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/immunogrep_useful_functions.html#print_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.print_error" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="function">
 <dt id="immunogrep_useful_functions.print_error_string">

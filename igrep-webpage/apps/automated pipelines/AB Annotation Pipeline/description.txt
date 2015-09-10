@@ -1,0 +1,3 @@
+This APP is the automated pipeline for annotating NGS data in the BIGG lab.
+It accepts IMGT files as an input, or it allows for annotation of FASTQ files using either IGFFT,MIXCR,or IGBLAST.
+It also includes support for the in-house isotyping program, descriptive statistics, and the in-house pairing program.

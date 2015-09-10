@@ -1,0 +1,1513 @@
+@import "root"
+
+// Standard tags
+//-----------------------------------------------------------------------------------
+
+body
+	font: normal $default-font-size $default-font-type
+	margin: 0 0 0 0
+	visibility: hidden
+	color: $default-color
+	-webkit-font-smoothing: antialiased
+
+	&.main-body
+		background-color: $default-body-background-color
+
+table
+	font: normal $default-font-size $default-font-type
+
+a
+	text-decoration: none
+	cursor: pointer
+	color: $h2-color
+
+//	&:visited
+//		color: adjust-hue( $h2-color, 60 )
+
+	&:hover
+		text-decoration: underline
+
+textarea:disabled
+	background-color: $default-background-color-disabled
+
+input:disabled
+	background-color: $default-background-color-disabled
+
+input::-ms-clear
+	display: none
+
+textarea
+	overflow: auto
+
+ul
+	margin: 0px 0px 5px 0px
+
+.vertical-align-top
+	vertical-align: top
+
+.inline
+	display: inline-block
+	vertical-align: top
+
+.errors
+	color: red
+
+.ui-dialog
+	box-shadow: 1px 2px 10px black
+
+.clear:before, .clear:after
+	content: "\0020"
+	display: block
+	height: 0
+	overflow: hidden
+
+.clear:after
+	clear: both
+
+.label
+	font-weight: bold
+.inline-label
+	padding-right: .5em
+
+.toggle-control
+	width: 1em
+	display: inline-block
+	&:before
+		content: "\25B8 \A0 "
+	&.selected:before
+		content: "\25BE \A0 "
+	&:hover
+		cursor: pointer
+
+
+// simple-tabs
+//-----------------------------------------------------------------------------------
+
+.simpletab-tabs
+
+	.close-icon
+		position: relative
+		top: 4px
+
+	.label
+		white-space: nowrap
+		position: relative
+		top: -2px
+
+	.simpletab
+		display: block
+		color: black
+		cursor: pointer
+		margin: 0px 4px 0px 0px
+		padding: 15px 10px 15px 25px
+		//word-break: break-all
+		overflow: hidden
+		//height: 20px!important
+
+		//&.unselected
+		//	background-color: #5F6464
+
+		&.selected
+			background-color: #7E878C
+			color: white
+
+.simpletab-panels
+	.simpletab-panel
+		padding: 10px 10px 10px 10px
+
+
+// Application header
+//-----------------------------------------------------------------------------------
+
+#top-header
+	position: fixed
+	top: 0px
+	width: 100%
+	height: 54px
+	//	background-image: url('/images/morris.png')
+	//	background-repeat: repeat-x
+	background-color: $menu-tab-background
+	z-index: 100
+	display: table
+
+	> .col
+		display: table-cell
+		vertical-align: top
+	> .col.hidden
+		display: none
+
+	table
+		border: none
+		border-spacing: 0px
+		padding: 0
+		margin: 0
+
+	.logo-appsoma
+		padding-top: 9px
+		width: 40px
+		img
+			border: none
+	.logo-utexas
+		position: relative
+		width: 157px
+
+		.longhorn
+			padding-top: 3px
+			padding-left: 3px
+
+		a img
+			display: none
+			position: absolute
+			width: 70px
+			left: 72px
+			bottom: 0px
+
+	.beta
+		font-size: 17px
+		font-weight: bold
+		color: #c15f5f
+		position: absolute
+		left: 110px
+		top: 29px
+		text-shadow: -1px 0 #411f1f, 0 1px #411f1f, 0px 0 #411f1f, 0 -1px #411f1f
+
+#main-tabs
+	vertical-align: middle
+	font-weight: bold
+	font-size: 16px
+	font-family: $heading-font-type
+	padding: 0
+	margin: 0
+	height: 54px
+	white-space: nowrap
+	overflow: hidden
+
+	.simpletab-tabs
+		display: -ms-flexbox
+		display: flex
+		-ms-flex-pack: space-around
+		justify-content: space-around
+
+		#tab-0, #tab-7, #tab-8
+			display: none !important
+
+		.simpletab
+			display: inline-block
+			cursor: pointer
+			text-transform: uppercase
+			vertical-align: middle
+			border-top-left-radius: 0px 0px
+			border-top-right-radius: 0px 0px
+			text-align: center
+			background-color: $menu-tab-background
+			box-sizing: border-box
+			height: 54px
+			line-height: 49px
+			padding: 0 4px
+			margin: 0
+
+			@media (min-width: 900px)
+				padding: 0 8px
+
+			@media (min-width: 1100px)
+				padding: 0 16px
+
+			&.unselected
+				color: #FFFFFF
+				text-shadow: none
+				border-top: 5px solid $menu-tab-background
+
+			&.selected
+				color: #00E5E1
+				border-top: 5px solid #00DCFF
+				background-color: #00404C !important
+
+			&:hover
+				background-color: #3c3e40 !important
+				color: white !important
+				border-top: 5px solid #3c3e40
+
+.current-project
+	font-size: 10pt
+	font-weight: bold
+	font-family: $h1-font-type
+	font-weight: lighter
+	width: 1px
+	max-width: 90px
+	padding: 8px 10px 0
+	line-height: 18px
+	a
+		text-overflow: ellipsis
+		overflow: hidden
+		width: 100%
+		white-space: nowrap
+		display: inline-block
+	span
+		cursor: pointer
+
+.login-header
+	width: 1px
+	color: white
+	background-color: #2D2F30
+	height: 54px
+	white-space: nowrap
+
+	.version-label
+		display: inline-block
+		vertical-align: middle
+		font-size: 8pt
+		font-family: $h1-font-type
+		font-weight: lighter
+		min-height: 40px
+		max-height: 40px
+		div
+			padding: 4px 0 0 0
+
+	.login-info
+		display: inline-block
+		text-align: left
+		vertical-align: top
+
+		.login-user-info
+			display: inline-block
+			height: 54px
+			padding-left: 5px
+			margin-right: 5px
+			&:hover
+				background-color: #3c3e40
+
+		.user-image
+			max-height: 36px
+			max-width: 36px
+			border-radius: 50px
+			vertical-align: middle
+			margin-right: 5px
+			cursor: pointer
+
+		.username
+			padding: 5px
+			font-size: 12pt
+			font-weight: bold
+			//text-transform: capitalize
+			// ZBS 19 Mar 2014 Removed capitalize because it was confusing people
+			// who were trying to add capitalized versions of their names to permissions
+			// You're user name is ALWAYS lower case and is used that way in several circumstances.
+
+			vertical-align: middle
+			line-height: 54px
+			margin-right: 15px
+			cursor: pointer
+
+		.login
+			color: #ffffff
+			text-align: center
+			padding: 20px 21px 19px 15px
+			margin: 0
+			font-size: 14px
+			line-height: 54px
+			&:hover
+				background-color: #414345
+
+		.createaccount
+			color: #ffffff
+			text-align: center
+			padding: 20px 18px 19px 24px
+			margin: 0
+			font-size: 14px
+			line-height: 54px
+			&:hover
+				background-color: #414345
+
+// Buttons
+//-----------------------------------------------------------------------------------
+
+button, .button
+	cursor: pointer
+	font-size: 12px
+	color: #050505
+	padding: 2px 6px
+	background: -moz-linear-gradient(top,#ffffff 0%,#ebebeb 50%,#dbdbdb 87%,#b5b5b5)
+	background: -webkit-gradient(linear, left top, left bottom,from(#ffffff),color-stop(0.50, #ebebeb),color-stop(0.87, #dbdbdb),to(#b5b5b5))
+	background: linear-gradient(to bottom,#ffffff 0%,#ebebeb 50%,#dbdbdb 87%,#b5b5b5)
+	border-radius: 3px
+	-moz-border-radius: 3px
+	-webkit-border-radius: 3px
+	border: 1px solid #666666
+	-moz-box-shadow: 0px 1px 8px rgba(000,000,000,0), inset 0px 0px 2px rgba(255,255,255,0)
+	-webkit-box-shadow: 0px 1px 8px rgba(000,000,000,0), inset 0px 0px 2px rgba(255,255,255,0)
+	text-shadow: 0px -1px 0px rgba(000,000,000,0), 0px 1px 0px rgba(255,255,255,0)
+
+	&:disabled
+		color: #999
+
+	&:active
+		background: -moz-linear-gradient(top,#b5b5b5 0%,#dbdbdb 50%,#ebebeb 87%,#ffffff)
+		background: -webkit-gradient(linear, left top, left bottom,from(#b5b5b5),color-stop(0.50, #dbdbdb),color-stop(0.87, #ebebeb),to(#ffffff))
+
+	&.attract
+		font-size: 14px
+		font-weight: bold
+		color: white
+		padding: 10px 20px
+		background: -moz-linear-gradient(top,#7ecbde 0%,#446f78)
+		background: -webkit-gradient(linear, left top, left bottom,from(#7ecbde),to(#446f78))
+		background: linear-gradient(to bottom,#7ecbde 0%,#446f78)
+		border-radius: 10px
+		-moz-border-radius: 10px
+		-webkit-border-radius: 10px
+		border: 2px solid #075385
+		-moz-box-shadow: 0px 1px 3px rgba(000,000,000,0.5), inset 0px 1px 1px rgba(255,255,255,1)
+		-webkit-box-shadow: 0px 1px 3px rgba(000,000,000,0.5), inset 0px 1px 1px rgba(255,255,255,1)
+		text-shadow: 0px -1px 0px rgba(000,000,000,0.2), 0px 0px 0px
+
+		&:active
+			background: -moz-linear-gradient(top,#003366 0%,#7eb0d6)
+			background: -webkit-gradient( linear, left top, left bottom, from(#003366), to(#7eb0d6))
+
+	&.danger
+		color: white
+		background: -moz-linear-gradient(top,#eba2a2 0%,#b83030 50%,#b83833)
+		background: -webkit-gradient(linear, left top, left bottom,from(#eba2a2),color-stop(0.50, #b83030),to(#b83833))
+
+		&:active
+			color: white
+			background: -moz-linear-gradient(top,#b83833 0%,#b83030 50%,#eba2a2)
+			background: -webkit-gradient(linear, left top, left bottom,from(#b83833),color-stop(0.50, #b83030),to(#eba2a2))
+
+	&.start
+		font-size: 16px
+		color: #444
+		background: -moz-linear-gradient(top,#a2eba2 0%,#30b830 50%,#38b833)
+		background: -webkit-gradient(linear, left top, left bottom,from(#a2eba2),color-stop(0.50, #30b830),to(#38b833))
+
+// Data tables
+//-----------------------------------------------------------------------------------
+
+
+.tooltip
+	display: none
+
+.ui-widget-header
+	background: #13cfda !important
+
+// List tables
+//-----------------------------------------------------------------------------------
+
+.list-table
+	th
+		text-align: left
+		padding: 10px 10px 10px 0
+		color: #9da2a6
+		font-size: 11pt
+		font-weight: normal
+		border-bottom: 2px solid #00cbcf
+		&:last-child
+			text-align: right
+
+	td
+		vertical-align: top
+		text-align: left
+		padding: 10px 10px 10px 0
+		font-size: 10pt
+		font-weight: normal
+		text-align: right
+		&:first-child
+			color: #888b8f
+			text-align: left
+		&:last-child
+			width: 15%
+
+		b
+			font-size: 10pt !important
+			text-align: left
+
+
+// Flag classes
+//-----------------------------------------------------------------------------------
+
+.hidden
+	display: none
+
+.invisible
+	visibility: hidden
+
+.inline-block
+	display: inline-block
+
+
+// Main Document
+//-----------------------------------------------------------------------------------
+
+#main-document-div
+	padding: 0px 0px 0px 0px !important
+	height: 100%
+
+
+// Sub panel & Page contrainer
+//-----------------------------------------------------------------------------------
+
+//.page-container
+//	background-color: #eef0f2
+//	padding: 10px 10px 10px 10px
+
+.sub-panel
+	padding: 10px
+	background: #ffffff
+	.h1
+		font-weight: bold
+		color: #909699
+		padding: 25px 0px 0px 5px
+		text-shadow: none
+		font-size: 16px
+		text-transform: uppercase
+
+	.h2
+		font-size: 14px
+		font-weight: bold
+		padding: 10px 0px 0px 5px
+		color: white
+		text-shadow: 1px 1px 2px #222
+
+	.indent
+		padding: 5px 0px 0px 20px
+
+	table td
+		vertical-align: top
+
+	.grouping
+		margin: 10px 0px 0px 0px
+
+
+// Control panel
+//-----------------------------------------------------------------------------------
+
+#search-panel
+	display: inline-block
+	vertical-align: text-bottom
+	padding: 5px 10px 0 0
+
+	#search-button
+		background: none
+		border: none
+		outline: none
+		color: #ffffff
+		position: relative
+		left: 40px
+		top: 3px
+		img
+			background-image: url('/images/search-new.png')
+			background-position: center 0
+			background-repeat: no-repeat
+
+	#search-box
+		background-color: #63cfc1
+		border: none
+		outline: none
+		vertical-align: baseline
+		border-radius: 50px
+		padding: 10px 40px 10px 40px
+		color: #ffffff
+		&:hover
+			background-color: #75dfd1
+		&:active
+			background-color: #ffffff
+			color: #262728
+			> #search-button
+				img
+					background-postition: center -16px
+		&:focus
+			background-color: #ffffff
+			color: #262728
+
+		&:-ms-input-placeholde
+			color: #ffffff
+			opacity: 1 !important
+		&::-moz-placeholder
+			color: #ffffff
+			opacity: 1 !important
+		&:-moz-placeholder
+			color: #ffffff
+			opacity: 1 !important
+		&::-webkit-input-placeholder
+			color: #ffffff
+			opacity: 1 !important
+
+.control-panel
+	padding: 29px 40px 0px 40px
+	text-align: left
+	height: 76px
+	margin-top: 54px
+	white-space: nowrap
+
+	td
+		vertical-align: top
+
+	.h1
+		color: white
+		font-weight: normal
+	ul
+		display: inline-block
+		left: 100px
+		position: relative
+		list-style: none
+		vertical-align: super
+
+		li
+			display: inline
+			padding: 10px
+	.v2-btn
+		vertical-align: text-bottom
+
+// CodeMirror
+//-----------------------------------------------------------------------------------
+
+.CodeMirror
+	background-color: #F2EFE4 !important
+	color: black
+
+.CodeMirror-gutter
+	background-color: #E8E8E8 !important
+
+.CodeMirror-focused div.CodeMirror-selected
+	background: #8080FF !important
+
+
+
+// Menu
+//-----------------------------------------------------------------------------------
+
+.menu
+	background-color: #eef0f2
+	padding: 10px 10px 10px 10px
+	border-top-left-radius: 0px
+	border-top-right-radius: 5px
+	border-bottom-left-radius: 5px
+	border-bottom-right-radius: 5px
+	border: 1px solid #dddddd
+	box-shadow: 0px 1px 5px 0px rgba( 20, 34, 47, 0.35 )
+	margin-top: 16px
+
+
+	.menu-line
+		position: relative
+		top: -4px
+
+
+	.heading
+		font-weight: bold
+
+
+	.menu-item
+		padding: 3px 3px 3px 3px
+
+
+	.menu-item-selected
+		background-color: #31363A
+		cursor: pointer
+		color: white
+
+
+.control-panel .menu
+	.menuLine
+		vertical-align: top
+		cursor: pointer
+
+	.menuIcon
+		height: 22px
+		vertical-align: middle
+
+
+// Edit-box
+//-----------------------------------------------------------------------------------
+
+.edit-container
+	color: black
+	padding: 10px 10px 10px 10px
+
+	table
+		color: black
+
+	.timeout
+		color: darken( $h2-color, 30% )
+		padding-bottom: 10px
+
+
+.edit-box
+	color: black
+	background-color: #CCC
+	padding: 10px 0px 10px 20px
+	margin-left: auto
+	margin-right: auto
+	border-radius: 8px
+	box-shadow: 2px 2px 8px #222
+
+	a
+		color: darken( $h2-color, 30% )
+
+	.h1
+		font-size: 16px
+		font-weight: bold
+		text-align: center
+
+
+	label
+		font-weight: bold
+
+.connection-status
+	float: left
+	border-radius: 50%
+	background-color: gray
+	margin-right: 3px
+	position: relative
+	top: 4px
+
+	> .fa
+		font-size: 11px
+		margin-left: 3px
+		vertical-align: 1px
+		display: none
+
+[nodecomm-status=connecting] .connection-status > .fa
+	display: inline-block
+
+.connection-status-small
+	width: 12px
+	height: 12px
+	position: relative
+	top: +1px
+	&.connection-color-gray,&.connection-color-undefined
+		background-image: url('/images/spinnerLarge.gif')
+		width: 16px
+		height: 16px
+		background-repeat: no-repeat
+		background-position: center center
+		border-radius: 0% !important
+		background-color: transparent !important
+
+.connection-status-large
+	width: 16px
+	height: 16px
+
+	&.connection-color-gray
+		background-image: url('/images/spinnerLarge.gif')
+		width: 20px
+		height: 20px
+		background-repeat: no-repeat
+		background-position: center center
+		border-radius: 0% !important
+		background-color: transparent !important
+
+
+
+
+.connection-color-firewall-green
+	background: url(/images/behind_firewall_green.png)
+
+.connection-color-firewall-red
+	background: url(/images/behind_firewall_red.png)
+
+.connection-color-firewall-green,.connection-color-firewall-red
+	background-size: cover
+	width: 20px
+	height: 20px
+	border-radius: 0!important
+
+.connection-color-green
+	background: #7b8a8c
+	background: -moz-linear-gradient(top,  #7b8a8c 1%, #8fba5e 3%, #24de14 100%)
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(1%,#7b8a8c), color-stop(3%,#8fba5e), color-stop(100%,#24de14))
+	background: -webkit-linear-gradient(top,  #7b8a8c 1%,#8fba5e 3%,#24de14 100%)
+	background: -o-linear-gradient(top,  #7b8a8c 1%,#8fba5e 3%,#24de14 100%)
+	background: -ms-linear-gradient(top,  #7b8a8c 1%,#8fba5e 3%,#24de14 100%)
+	background: linear-gradient(to bottom,  #7b8a8c 1%,#8fba5e 3%,#24de14 100%)
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#7b8a8c', endColorstr='#24de14',GradientType=0 )
+
+.connection-color-yellow
+	background-color: yellow
+
+.connection-color-blue
+	background-color: blue
+
+.connection-color-orange
+	background-color: orange
+
+.connection-color-red
+	background-color: red
+
+.connection-color-black
+	background-color: black
+
+.connection-color-gray
+	background-color: gray
+
+.connection-color-green.status-container
+	background: url(/images/docker_available.png)
+	width: 24px
+	height: 24px
+.connection-color-orange.status-container
+	background: url(/images/docker_unavailable.png)
+	width: 24px
+	height: 24px
+.connection-color-red.status-container
+	background: url(/images/docker_unavailable.png)
+	width: 24px
+	height: 24px
+// Processes dialog
+//-----------------------------------------------------------------------------------
+
+.processes-header
+	margin-top: 10px
+	font-size: 15px
+	font-weight: bold
+
+#processes-table
+	border: 1px solid black
+
+	th
+		font-weight: bold
+		padding-right: 5px
+		padding-left: 5px
+		border-right: 1px solid gray
+		border-bottom: 1px solid black
+
+	td
+		padding-right: 5px
+		padding-left: 5px
+		border-right: 1px solid gray
+
+.errorReport
+	background-color: black
+	text-align: left
+	color: White
+	z-index: 2500
+	padding: 4px
+	border: 1px
+	overflow: scroll
+	overflow-x: scroll
+
+// Custom qTip style
+//-----------------------------------------------------------------------------------
+
+.appsoma-qtip
+	.qtip-content
+		font-size: 14px
+		text-align: center
+
+#account-panel
+	height: 100%
+
+#account-page
+	height: 100%
+	.sub-panel
+		.h1
+			color: #ffffff
+
+		.indent
+			color: #262728
+
+			a
+				color: #0050Ef
+
+		#server-selection
+			background-color: #ffffff
+			padding: 2px 6px
+
+		#add-new-user-group-button
+			background: none !important
+			color: #2ec1d8 !important
+			font-size: 14px
+			font-weight: bold
+			vertical-align: middle !important
+
+			img
+				vertical-align: middle
+				position: relative
+				top: -1px
+				left: 1px
+				margin-right: 3px
+
+		#add-new-collaborator-button
+			background: none !important
+			color: #2ec1d8 !important
+			font-size: 14px
+			font-weight: bold
+			vertical-align: middle !important
+
+			img
+				vertical-align: middle
+				position: relative
+				top: -1px
+				left: 1px
+				margin-right: 3px
+
+	button
+		vertical-align: top
+		border: none
+		padding: 4px 8px
+		border-radius: 50px
+		background: rgba(255,255,255,0.85)
+		font-size: 14px
+		text-shadow: none
+		outline: none
+		color: rgba(26,27,28, 0.65)
+
+		&:hover
+			background-color: #ffffff
+			color: rgb(26,27,28)
+
+		&:focus
+			border: none
+
+.edit-dialog
+	label
+		width: 12em
+		display: inline-block
+		vertical-align: top
+
+.logout-img
+	background-image: url('/images/Turnoff.png')
+	background-position: 0 17px
+	height: 17px
+	width: 16px
+	display: inline-block
+	cursor: pointer
+	vertical-align: middle
+	margin-right: 17px
+
+	&:hover
+		background-position: 0 0
+
+.help-menu
+	text-align: right
+	padding: 17px 36px 0px 10px
+	width: 66px
+	box-sizing: border-box
+	a
+		background-image: url('/images/question-icon.png')
+		background-position: 0 0
+		height: 16px
+		width: 16px
+		display: inline-block
+		cursor: pointer
+		vertical-align: middle
+		margin-right: 4px
+		&:hover
+			background-position: 0 16px
+
+		span
+			color: #00cbeb
+			padding-left: 24px
+			font-size: 10pt
+			font-weight: bold
+			&:hover
+				color: #00fcff
+
+.placeholder, placeholder
+	color: #ffffff
+
+#home-panel, #data-panel
+	background: $default-header-background-moz
+	background: $default-header-background-webkit
+	background: $default-header-background-ms
+	background: $default-header-background-o
+	background: $default-header-background-linear
+
+/* -------------------------------------- Account Panel CSS -------------------------------------- */
+.acc-control-panel
+	background-image: $default-header-background-moz
+	background-image: $default-header-background-webkit
+	background-image: $default-header-background-ms
+
+	.acc-separator
+		background-color: rgba(255,255,255,0.15)
+		display: inline-block
+		//	min-width: 30.7%
+		min-width: 480px
+		max-width: 480px
+		width: 480px
+
+		.profile-detail
+			padding: 30px 15px
+			display: inline-block
+			vertical-align: middle
+			h1
+				font-family: $h1-font-type
+				text-transform: capitalize
+				color: #ffffff
+				display: block
+				font-size: 30pt
+				font-weight: lighter
+				margin: 0
+				vertical-align: top
+			span
+				display: block
+				font-size: 11pt
+				font-weight: bold
+				color: #5dffd7
+
+		.profile-avtar
+			width: 64px
+			height: 64px
+			border-radius: 50%
+			margin: 30px 15px
+			display: inline-block
+			vertical-align: middle
+
+.acc-project-detail
+	padding-left: 20px
+	display: inline-block
+	color: #ffffff
+	vertical-align: middle
+
+	.count
+		font-size: 18pt
+
+	.label
+		font-size: 11pt
+		font-weight: bold
+		margin-right: 20px
+
+.content-pane
+	padding: 5px 20px
+
+#account-page, #projects-page
+	background-color: #eef0f2
+	display: table
+	width: 100%
+	min-width: 100%
+
+	.content-pane
+		padding: 5px 25px
+	.up-for
+		text-transform: none
+	.left-pane
+		vertical-align: top
+		background-color: #ffffff
+		display: table-cell
+		//min-width: 35%
+		//max-width: 35%
+		min-width: 420px
+		max-width: 420px
+		width: 420px
+
+		h2
+			font-family: $h1-font-type
+			font-size: 18pt
+			font-weight: lighter
+			padding-bottom: 10px
+			border-bottom: 2px solid #00cbcf
+
+		b
+			font-size: 22pt
+			font-weight: normal
+			color: #262728
+			span
+				font-size: 14pt
+
+		select
+			background-color: #ffffff
+			border: 1px solid #dddddd
+			border-radius: 3px
+			padding: 5px
+			-webkit-appearance: none
+			-moz-appearance: none
+			appearance: none
+			text-overflow: ''
+			text-indent: 0.01px
+			background-image: url(/images/dropdown-arrow.png)
+			background-repeat: no-repeat
+			background-position: 97% center
+
+		.sub-panel
+			padding: 0
+
+			.indent
+				padding: 0
+
+		.affiliation-detail
+			table
+				label
+					color: #9da2a6
+					font-size: 13pt
+					font-weight: normal
+
+				span
+					&.name,&#user-email
+						color: #262728
+						font-size: 13pt
+						font-weight: normal
+						text-transform: capitalize
+				.server-selection-listing-panel
+					.name
+						color: #777777
+				a
+					font-size: 13pt
+					font-weight: normal
+
+				#server-selection
+					padding: 5px 10px
+					border: 1px solid #dddddd
+					&:hover
+						border: 1px solid #dddddd
+					&:active
+						border: 1px solid #dddddd
+					.item
+						.connection-status
+							margin: -2px 10px 0 3px !important
+						.job-row2
+							padding-left: 30px
+
+				td
+					&:first-child
+						text-align: right
+						padding: 7px 10px 7px 0
+
+					&:last-child
+						text-align: left
+						padding: 7px 0 7px 10px
+
+
+	.right-pane
+		display: table-cell
+		vertical-align: top
+		width: 64.5%
+
+		.sub-panel
+			padding: 0 10px 10px 10px
+
+		h2
+			font-family: $h1-font-type
+			font-size: 18pt
+			font-weight: lighter
+			vertical-align: bottom
+
+		#user-group-page
+			.indent
+				padding: 0
+
+				table
+					width: 100%
+					max-width: 1024px
+
+					td
+						vertical-align: middle
+						text-transform: capitalize
+					.user-image
+						max-height: 36px
+						max-width: 36px
+						border-radius: 50px
+						vertical-align: middle
+						cursor: pointer
+
+					.modifiable
+						span
+							margin-right: 15px
+						img
+							margin-left: 10px
+
+		#collaborate-page
+			.indent
+				padding: 0
+
+				table
+					width: 100%
+					background-color: #ffffff
+					max-width: 1024px
+
+					td
+						vertical-align: middle
+						&:first-node
+							width: 50%
+						img
+							vertical-align: middle
+
+					.user-image
+						max-height: 32px
+						max-width: 32px
+						border-radius: 50px
+						vertical-align: middle
+						cursor: pointer
+
+					.name
+						width: 50%
+
+		table
+			background-color: #ffffff
+			border-radius: 6px
+			box-shadow: 0px 1px 3px 0px rgba( 0, 0, 0, 0.35 )
+
+			th
+				vertical-align: middle
+
+				.nameHeader
+					margin-left: 25px
+
+			thead
+				tr
+					padding: 10px
+					border-bottom: 2px solid #00cbcf
+					color: #9da2a6
+					font-size: 12pt
+					font-weight: normal
+
+			tbody
+				tr
+					padding: 10px
+					color: #262728
+					font-size: 13pt
+					vertical-align: top
+					.name
+						span
+							padding: 10px
+							text-transform: capitalize
+					td
+						span
+							padding-right: 10px
+
+#projects-panel
+	height: 100%
+
+#projects-page
+	display: block !important
+	height: 100%
+	.panel-content
+		height: 100%
+		.left-pane
+			display: inline-block!important
+		.right-pane
+			display: inline-block!important
+			min-height: 100%
+
+.float-right
+	float: right
+
+#transactions-table
+	width: 100%
+	text-align: center
+	th
+		font-size: 14px !important
+	td
+		font-size: 14px !important
+	a
+		color: #2fc1d8 !important
+
+.profile-edit
+	color: #2ec1d8 !important
+	font-size: 12pt
+	font-weight: bold
+	vertical-align: bottom
+	float: right !important
+	img
+		padding-right: 8px
+
+.light
+	color: #9da2a6
+
+
+.inline-block
+	.jobs-node-icon
+		float: right
+		img
+			vertical-align: middle
+			margin: -5px 0 0
+			padding: 0
+
+			&:last-child
+				padding: 0
+				margin: 0
+
+#job-connect-status-dialog
+	width: 200px
+	div
+		text-align: center
+		padding: 20px 20px 20px 20px
+
+/*=========================Data Page========================================= */
+
+#data-page
+
+	#results-count
+		padding: 10px 30px
+		color: #52C1B1
+		font-size: 15px
+		font-family: $default-font-type
+
+	#clear-search
+		background: none
+		border: none
+		outline: none
+		color: white
+		position: relative
+		right: 40px
+		top: 6px
+
+	.search-mode-header
+		min-height: 25px
+		padding: 20px
+		font-size: 15px
+
+		.float-left
+			float: left
+
+			#add-tags
+				background-image: url(/images/tag.png)
+				background-repeat: no-repeat
+				background-position: 2px center
+				background-color: transparent
+				padding-left: 23px
+				font-size: 15px
+				height: 25px
+				color: #52c1b1
+				font-family: $default-font-type
+
+				&:disabled
+					color: #999999
+					background-image: url('/images/tag_disable.png') !important
+
+			button
+				border: none !important
+				padding: 5px 15px !important
+				background-position: center
+				box-shadow: none !important
+				background-color: rgba(255,255,255,0)
+
+				&:focus
+					border: none !important
+
+			.download-link
+				min-width: 16px
+				min-height: 16px
+				background-image: url('/images/download.png') !important
+				background-repeat: no-repeat !important
+				//background-position: 0px 0px
+				padding-left: 20px
+				cursor: pointer
+				opacity: 1
+
+				&:hover
+					background-image: url('/images/download.png') !important
+					background-position: center
+
+				&:disabled
+					opacity: 0.3
+					background-image: url('/images/download_disable.png') !important
+
+
+			.tag-link
+				min-width: 16px
+				min-height: 16px
+				background-image: url('/images/tag.png') !important
+				background-repeat: no-repeat !important
+				//background-position: 0px 0px
+				padding-left: 20px
+				cursor: pointer
+				opacity: 1
+
+				&:hover
+					background-image: url('/images/tag.png') !important
+					background-position: center
+
+				&:disabled
+					opacity: 0.3
+					background-image: url('/images/tag_disable.png') !important
+
+			.editfile-link
+				min-width: 16px
+				min-height: 16px
+				background-image: url('/images/editfile.png') !important
+				background-repeat: no-repeat !important
+				//background-position: 0px 0px
+				padding-left: 20px
+				cursor: pointer
+				opacity: 1
+
+				&:hover
+					background-image: url('/images/editfile.png') !important
+					background-position: center
+
+				&:disabled
+					opacity: 0.3
+					background-image: url('/images/editfile_disable.png') !important
+
+			.delete-link
+				min-width: 16px
+				min-height: 16px
+				background-image: url('/images/delete.png') !important
+				background-repeat: no-repeat !important
+				//background-position: 0px -1px
+				padding-left: 20px
+				cursor: pointer
+				opacity: 1
+
+				&:hover
+					background-image: url('/images/delete.png') !important
+					background-position: center
+
+				&:disabled
+					opacity: 0.3
+					background-image: url('/images/delete_disable.png') !important
+
+		.float-right
+			a
+				margin-right: 10px
+				color: #52c1b1
+
+	.upload
+		top: 4px
+		position: relative
+		left: 40px
+
+	.data-left
+		text-align: left
+		background-color: white
+		min-width: 100%
+		max-width: 100%
+		vertical-align: top
+		float: left
+		min-height: 700px
+
+	.searcher
+		#search-results
+			/*max-height: 700px*/
+
+
+/*=========================Download Wizard========================================= */
+
+.download-wizard
+
+	.resource-searcher
+		.data-panel
+			display: inline-block
+			height: 100%
+			max-height: 100%
+			overflow: hidden
+			width: 98%
+			#search-results
+				max-height: 330px
+				overflow-y: auto
+				min-height: 330px
+
+
+/*========================File Picker Wizard========================================= */
+.pickfile-filters
+	float: right !important
+	margin: 10px 0 !important
+	font-family: $default-font-type
+	font-weight: bold
+	a
+		color: #3AA999 !important
+		margin-right: 15px !important
+		&:hover
+			text-decoration: underline !important
+
+#preselected
+	#results-count
+		padding: 10px 30px !important
+		color: #178676 !important
+		font-size: 15px !important
+		font-family: $default-font-type
+
+#file-picker
+	position: relative
+	#pickfile-button
+		position: absolute
+		cursor: pointer
+		top: 4px
+		left: 260px
+		height: 20px
+		width: 20px
+		filter: alpha(opacity=100)
+		opacity: .7
+		&:hover
+			filter: alpha(opacity=100)
+			opacity: 1
+	.filePickIcon
+		background-image: url('/images/filepickicon.png') !important
+		background-repeat: no-repeat
+	.filePickBadUrl
+		background-image: url('/images/filepickbadurl.png') !important
+		background-repeat: no-repeat
+	.filePickMissing
+		background-image: url('/images/filepickmissing.png') !important
+		background-repeat: no-repeat
+	.ellipsis
+		white-space: nowrap
+		overflow: hidden
+		padding: 0px 25px 0px 0px
+#search-panel
+	#clear-search
+		background: none
+		border: none
+		outline: none
+		color: white
+		position: relative
+		right: 40px
+		top: 6px
+	margin-right: 20px
+
+
+.user-mode-container
+	position: relative
+	white-space: nowrap
+	text-overflow: ellipsis
+	overflow: hidden
+
+.user-mode-analysis .user-mode-container
+	width: 1px
+	max-width: 200px
+
+.user-mode-development .user-mode-container
+	width: 69px
+	max-width: 69px
+
+.user-mode
+	background: #2d2f30
+	font-size: 38px
+	line-height: 46px
+	cursor: pointer
+	padding: 8px 10px 0 10px
+	box-sizing: border-box
+
+	i
+		font-size: 28px
+		vertical-align: middle
+	.expanded
+		display: none
+	.help
+		display: block
+		color: white
+		font-size: 14px
+		text-align: center
+		line-height: 20px
+	.user-mode-development
+		color: #86cf6b
+		display: none
+	.user-mode-analysis
+		color: #00c5db
+		display: none
+	.project
+		font-size: 16px
+		line-height: 16px
+		color: #00c5db
+		vertical-align: middle
+
+.user-mode-container:hover
+	overflow: visible
+	.user-mode
+		position: absolute
+		top: 0
+		left: 0
+		border-bottom-left-radius: 20px
+		border-bottom-right-radius: 20px
+		.expanded
+			display: block
+		.collapsed
+			display: none
+.user-mode-development
+	.user-mode-development
+		display: block
+.user-mode-analysis
+	.user-mode-analysis
+		display: block
+	.tab-name-code, .tab-name-env, .sub-panel-user-groups, #top-header .current-project
+		display: none !important

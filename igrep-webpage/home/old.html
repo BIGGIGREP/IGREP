@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        
+    <title>APPS</title>
+	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>	
+	<link rel="stylesheet" type="text/css" href="/styles/bootstrap/css/bootstrap.min.css">	
+    <link rel="stylesheet" type="text/css" href="/styles/dashboard.css">	
+	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">	
+	<script src="/styles/bootstrap/js/bootstrap.min.js"></script>
+		
+	<style>
+		.bs-docs-sidebar .nav > .active:focus > a, .bs-docs-sidebar .nav > .active:hover > a, .bs-docs-sidebar .nav > .active > a {
+			padding-left: 18px;
+			font-weight: 700;
+			color: #563D7C;
+			background-color: transparent;
+			border-left: 2px solid #563D7C;
+		}
+		.bs-docs-sidebar .nav > li > a:focus, .bs-docs-sidebar .nav > li > a:hover {
+			padding-left: 19px;
+			color: #563D7C;
+			text-decoration: none;
+			background-color: transparent;
+			border-left: 1px solid #563D7C;
+		}
+		.bs-docs-sidebar .nav > li > a {
+			display: block;
+			padding: 4px 20px;
+			font-size: 13px;
+			font-weight: 500;
+			color: #767676;
+		}
+		.navbar-right{
+			margin-right:5px;
+		}
+		.navbar-toggle.navbar-options button{
+		    background-color: transparent;
+			background-image: none;
+			border: 1px solid transparent;
+			border-radius: 4px;
+		}
+		
+	</style>
+	<script>
+		$(document).ready(function(){
+			//$('.navbar-toggle.navbar-options').on('click','button',function(){
+			//	alert('clicked!')
+			//})
+		
+		})
+	</script>
+</head>
+<body>
+	<!-- Navigation toolbar -->
+	<nav class="navbar-inverse navbar-fixed-top" role="navigation">
+		<div class='container-fluid'>
+			<div class="navbar-header">
+				<a class="navbar-brand" href="#">APPS</a>
+			</div>
+			<div>
+				<!-- creates a toggle menu/button on the right side when screen is minimized-->
+				<div class="navbar-toggle navbar-options" data-toggle="collapse" >			
+					<div class="dropdown">
+						<button id='navbar-modal-options' type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" >
+						  <span class="icon-bar"></span>
+						  <span class="icon-bar"></span>
+						  <span class="icon-bar"></span>
+						</button>    				
+						<ul class="dropdown-menu pull-right" aria-labelledby="navbar-modal-options">
+							<li><a href="#">Running Jobs</a></li>
+							<li><a href="#">Completed Jobs</a></li>
+							<li><a href="#">Data</a></li>
+							<li><a href="#">Logout</a></li>
+						</ul>			
+					</div>
+				</div>			
+			</div>
+			
+			
+			<div class="navbar-collapse collapse">
+				<ul class="nav navbar-nav navbar-left">
+					<li><a href="#">Running Jobs</a></li>
+					<li><a href="#">Completed Jobs</a></li>
+					<li><a href="#">Data</a></li>
+				</ul>
+				
+				<ul id='logout-nav' class="nav navbar-nav navbar-right">					
+					<li title='logout' class='logout'>				
+						<a href="/igrep-webpage/login">
+							<span class="logout-img"></span>
+							<span>
+								<b class="username">test</b>							
+							</span>
+						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+
+</body>
+</html>
+
+

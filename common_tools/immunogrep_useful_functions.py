@@ -6,7 +6,8 @@ from immunogrep_global_variables import descriptor_symbol
 import immunogrep_read_file as readwrite
 import traceback
 import subprocess
-# from bson.objectid import ObjectId
+from collections import MutableMapping
+
 
 
 dna_codes = {
@@ -46,14 +47,18 @@ def get_stdout(bash_command):
 		Python wrapper for running python subprocess.call function
 		Returns the output from command
     """
-	time=str(datetime.now()).replace(' ','').replace(':','').replace('/','').replace('\\','').replace('-','')
-	temp_file_name = 'scratch/stdout'+time+'.txt'
+	output = subprocess.check_output(bash_command,shell=True)
+	#time=str(datetime.now()).replace(' ','').replace(':','').replace('/','').replace('\\','').replace('-','')
+	#temp_file_name = 'scratch/stdout'+time+'.txt'
 	#os.system(bash_command +" > {0}".format(temp_file_name))
-	subprocess.call(bash_command +" > {0}".format(temp_file_name))
-	with open(temp_file_name) as e:
-		output = e.read().strip()
-	os.remove(temp_file_name)
-	#os.system("rm '{0}'".format(temp_file_name))
+	#subprocess.call(bash_command +" > {0}".format(temp_file_name),shell=True)
+	#if os.path.isfile(temp_file_name):
+	#	with open(temp_file_name) as e:
+	#		output = e.read().strip()
+	#	os.remove(temp_file_name)
+		#os.system("rm '{0}'".format(temp_file_name))
+	#else:
+	#	output = ""
 	return output
 
 def file_line_count(filepath):
@@ -64,7 +69,13 @@ def file_line_count(filepath):
 			If path is not found, raises an error
     """
 	if os.path.isfile(filepath):
-		return int(get_stdout("wc -l '{0}'".format(filepath)).split()[0])# int(subprocess.check_output(['wc', '-l', filepath]).split()[0]) => subprocess.check_output creates zombie processes, so want to avoid that?
+		filepath = os.path.abspath(filepath)
+		value = get_stdout("wc -l '{0}'".format(filepath)).split()[0]
+		if value:
+			return int(value)
+		else:
+			return 0 
+		#return int()# int(subprocess.check_output(['wc', '-l', filepath]).split()[0]) => subprocess.check_output creates zombie processes, so want to avoid that?
 	else:
 		raise Exception('File does not exist: '+filepath)
 
@@ -281,6 +292,50 @@ def flatten_dictionary(d,val={},p='',start=True):
 	return val
 
 
+
+class DotAccessible(MutableMapping):
+	"""
+		A dictionary that allows dot notation for accessing nested subdictionaries. Code [inspired-by/copied-from]:
+		http://www.velvetcache.org/2012/03/13/addressing-nested-dictionaries-in-python
+		http://stackoverflow.com/questions/3387691/python-how-to-perfectly-override-a-dict
+		http://docs.python.org/2/library/collections.html#collections-abstract-base-classes
+	
+	"""
+	
+	def __init__(self, *args, **kwargs):
+		self.store = dict()
+		self.update(dict(*args, **kwargs))  # use the free update to set keys
+
+	def __getitem__(self, dotkey):
+		value = self.store
+		for key in dotkey.split('.'):
+			value = value[key]
+		return value
+
+	def __setitem__(self, dotkey, value):
+		nested_node = self.store
+		for key in dotkey.split('.')[:-1]:
+			if key not in nested_node:
+				nested_node[key] = dict()
+			nested_node = nested_node[key]
+		nested_node[dotkey.split('.')[-1]] = value
+
+	def __delitem__(self, dotkey):
+		nested_node = self.store
+		for key in dotkey.split('.')[:-1]:
+			nested_node = nested_node[key]
+		del nested_node[dotkey.split('.')[-1]]
+
+	def __iter__(self):
+		return iter(self.store)
+
+	def __len__(self):
+		return len(self.store)
+	
+	def __str__(self):
+		return str(dict(self))
+
+
 def RemoveObjId(document):
 	"""
         This function will recursively search all the values of a document/dictionary. Any value in the dictionary whose type is equal to a MongoDB ObjectId will be converted to a string.
@@ -291,7 +346,8 @@ def RemoveObjId(document):
 	        document		A nested or flattened dictionary; or similarly a document returned by MongoDB
 	        =====================   =====================
     """
-	test=type(ObjectId())
+	from bson.objectid import ObjectId
+	oid_type=type(ObjectId())
 	def remove_oid(document):
 		for f,v in document.iteritems():
 			if isinstance(v,dict):
@@ -455,34 +511,6 @@ def count_unique_values(filelocation=None,output_filelocation=None,field=None,co
 
 
 
-try:
-	import appsoma_api
-except:
-	pass
-#print an error message if system/program fails
-def print_error(e=None):
-
-	exc_type, exc_obj, exc_tb = sys.exc_info()
-	fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-	appsoma_api.html_append('<br>')
-
-	if not(e):
-		e = "Exception error not passed"
-	else:
-		appsoma_api.html_append( "<br><font color='red'> there was an error: '{e}' </font>  ".format(e=str(e)))
-
-	appsoma_api.html_append("<br> <font color='red'> Line Number: {0} , type: {1} , fname: {2} </font><br>".format(str(exc_tb.tb_lineno),str(exc_type),str(fname)))
-	tb_error = traceback.format_exc()
-	appsoma_api.html_append("<font color = 'red'><br> Traceback Error:<br>{error} </font>".format(error = tb_error))
-	#for tb in traceback.format_tb(sys.exc_info()[2]):
-	#	appsoma_api.html_append("<br> <font color = 'red'>{0}</font>".format(tb))
-
-
-
-
-	appsoma_api.html_append("<br><font color='red'>  Please Restart </font>")
-	sys.exit()
-
 #print an error message if system/program fails
 def print_error_string(e=None):
 	"""
@@ -512,10 +540,8 @@ def print_error_string(e=None):
 
 
 
+	
 
-
-	appsoma_api.html_append("<br><font color='red'>  Please Restart </font>")
-	sys.exit()
 
 
 # this is a cleanup function to remove any unused fields

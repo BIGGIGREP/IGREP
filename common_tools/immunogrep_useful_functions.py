@@ -74,7 +74,7 @@ def file_line_count(filepath):
 		if value:
 			return int(value)
 		else:
-			return 0 
+			return 0
 		#return int()# int(subprocess.check_output(['wc', '-l', filepath]).split()[0]) => subprocess.check_output creates zombie processes, so want to avoid that?
 	else:
 		raise Exception('File does not exist: '+filepath)
@@ -299,9 +299,9 @@ class DotAccessible(MutableMapping):
 		http://www.velvetcache.org/2012/03/13/addressing-nested-dictionaries-in-python
 		http://stackoverflow.com/questions/3387691/python-how-to-perfectly-override-a-dict
 		http://docs.python.org/2/library/collections.html#collections-abstract-base-classes
-	
+
 	"""
-	
+
 	def __init__(self, *args, **kwargs):
 		self.store = dict()
 		self.update(dict(*args, **kwargs))  # use the free update to set keys
@@ -331,7 +331,7 @@ class DotAccessible(MutableMapping):
 
 	def __len__(self):
 		return len(self.store)
-	
+
 	def __str__(self):
 		return str(dict(self))
 
@@ -540,7 +540,7 @@ def print_error_string(e=None):
 
 
 
-	
+
 
 
 

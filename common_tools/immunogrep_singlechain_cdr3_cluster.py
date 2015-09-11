@@ -378,7 +378,7 @@ pairing_settings = {
 			'raw_seq_nt':'Sequence',
 			'cdr3_nt':'N. Seq. CDR3',
 			'seq_header':'Seqheader',
-			'shm': 'VREGION.SHM.NT_PER',#'VGENE: Shm.nt',
+			'shm': 'VGENE: Shm.per',#'VGENE: Shm.nt',
 			'full_len_ab_aa':'Full AA',#optional field but preferred
 			'full_len_ab_nt':'Full NT',
 			'isotype':'All C hits',

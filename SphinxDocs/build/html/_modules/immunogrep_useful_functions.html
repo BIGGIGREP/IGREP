@@ -194,7 +194,7 @@
 		<span class="k">if</span> <span class="n">value</span><span class="p">:</span>
 			<span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 		<span class="k">else</span><span class="p">:</span>
-			<span class="k">return</span> <span class="mi">0</span> 
+			<span class="k">return</span> <span class="mi">0</span>
 		<span class="c">#return int()# int(subprocess.check_output([&#39;wc&#39;, &#39;-l&#39;, filepath]).split()[0]) =&gt; subprocess.check_output creates zombie processes, so want to avoid that?</span>
 	<span class="k">else</span><span class="p">:</span>
 		<span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;File does not exist: &#39;</span><span class="o">+</span><span class="n">filepath</span><span class="p">)</span>
@@ -419,9 +419,9 @@
 <span class="sd">		http://www.velvetcache.org/2012/03/13/addressing-nested-dictionaries-in-python</span>
 <span class="sd">		http://stackoverflow.com/questions/3387691/python-how-to-perfectly-override-a-dict</span>
 <span class="sd">		http://docs.python.org/2/library/collections.html#collections-abstract-base-classes</span>
-<span class="sd">	</span>
+
 <span class="sd">	&quot;&quot;&quot;</span>
-	
+
 	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>  <span class="c"># use the free update to set keys</span>
@@ -451,7 +451,7 @@
 
 	<span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">)</span>
-	
+
 	<span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
 
@@ -660,7 +660,7 @@
 
 
 
-	
+
 
 
 

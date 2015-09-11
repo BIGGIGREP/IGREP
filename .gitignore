@@ -28,8 +28,6 @@ local.properties
 # PDT-specific
 .buildpath
 
-#compiled python scripts
-*.pyc
 
 #################
 ## Visual Studio
@@ -196,7 +194,7 @@ $RECYCLE.BIN/
 *.egg
 *.egg-info
 dist/
-build/
+#build/
 eggs/
 parts/
 var/

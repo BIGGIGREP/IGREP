@@ -5,8 +5,6 @@ Useful Functions
 
 Here is a list of Functions used in Immunogrep.
 
-.. todo:: There is an error with 'from bson.ObjectId import ObjectId'
-
 Contents
 ''''''''
 * :ref:`Functions <insideFunc>`

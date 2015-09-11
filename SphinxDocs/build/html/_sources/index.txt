@@ -14,6 +14,7 @@ Contents:
    Variables
    Functions
    IGfile
+   VHVLPairing
 
 Indices and tables
 ==================

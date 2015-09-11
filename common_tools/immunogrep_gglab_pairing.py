@@ -186,16 +186,20 @@ def MIXCRProductivity(field_row):
 def GeneralProductivity(field_row):
 	"""
 		General function for determining if an entire Antibody amino acid sequence is productive or not 
-	
+		
 		Function will return True or False based on rule 
 		Input variable field_row: this will represent all antibody annotation field for a specific sequence the provided annotation file
 		
 		General steps:
-			1) Extract the field referring to the amino acid sequence of the antibody 			
-			4) If there is a stop codon (*) in sequence 
-				=> return false 
-			5) return true
-	
+			Extract the field referring to the amino acid sequence of the antibody 			
+
+			If there is a stop codon (*) in sequence 
+
+				return false 
+
+			Else 
+			
+				return true
 	"""
 	global full_aa_field
 	if '*' in field_row[full_aa_field]:
@@ -205,7 +209,6 @@ def GeneralProductivity(field_row):
 
 def CDR3Productivity(field_row):
 	"""
-	
 		Rule for CDR3 productivity. 		
 		
 		Function will return True or False based on rule 
@@ -214,10 +217,10 @@ def CDR3Productivity(field_row):
 		General steps:
 			1) Extract the CDR3 nucleotide field 
 			2) If length of CDR3 is not a multiple of 3 or length of CDR3 < 9
-				=> return false 
+				return false 
 			3) Translate CDR3 to amino acid 
 			4) If there is a stop codon (*) in sequence
-				=> return false 
+				return false 
 			5) return true
 		
 	"""
@@ -378,7 +381,7 @@ pairing_settings = {
 			'raw_seq_nt':'Sequence',
 			'cdr3_nt':'N. Seq. CDR3',
 			'seq_header':'Seqheader',
-			'shm': 'VREGION.SHM.NT_PER',#'VGENE: Shm.nt',
+			'shm': 'VGENE: Shm.per',#'VGENE: Shm.nt',
 			'full_len_ab_aa':'Full AA',#optional field but preferred
 			'full_len_ab_nt':'Full NT',
 			'isotype':'All C hits',
@@ -474,8 +477,11 @@ def ProcessGene(gene):
 			
 			If a gene is seperated by multiple spaces, then the gene should be identified by a gene that contains either - or '*' 
 			For example: 
+
 				Imgt genes may be: 
+
 					Homo sapiens IGHV1-3*01
+
 					We only want to isolate the word IGHV1-3
 	"""
 	
@@ -996,14 +1002,16 @@ def parse_sorted_paired_file(pairing_temp_file):
 	return [mapping_dict,num_paired,successful_pair,nonpaired_len,locus_pairing_error,num_r1_r2_found,num_unique_h_l,Hchain_pairing_error,Lchain_pairing_error]
 	
 
-#THIS IS another version of add_to_dict. Its functionality should be identical except it does not store everything inside of memory 
-#The previous ADD_TO_DICT FUNCTION is in the main function after this one !!!
-#THIS FUNCTION DIFFERS FROM ADD_TO_DICT BELOW IN THAT IT WILL TRY TO MINIMIZE THE AMOUNT OF MEMORY REQUIRED FOR RUNNING ANALYSIS (it uses about 1/3 to 1/4th of the memory required by  add_to_dict
-#initialitests show that speed is not affected using this method. That is, its not slower than the previous add_to_dict method 
-#THIS FUNCTION WILL READ THROUGH THE LIST OF FILES PROVIDED
-#SO INSTEAD OF STORING DATA FROM READS IN A DICTIONARY, IT WILL INSTEAD STORE THE RESULTS IN a single tab delimited file 
-#this file will be parsed by the function parse_sorted_paired_file using a mixture of awk and python code (see parse_sorted_paired_file) function 
+
 def add_to_dict_memory_safe(list_of_files,list_of_filetypes,required_field_names,productivity_function_call,parent_dir,analysis_method):	
+	""" 	
+
+		This function will parse through multiple annotation files provided for pairing. It does not require a specific filetype. It parses each input file and generates 
+		an output file only containing sequences which passed through our filters and reporting only the fields we require for pairing. The output file as the input file 
+		in :py:func:`.parse_sorted_paired_file`
+
+	"""	 
+	   
 	##DEFINING SOME VARIABLES##
 
 	#get global files names for opening files to write/use in this function 
@@ -1399,6 +1407,9 @@ def Compile_Clusters(clustered_dict_raw,cluster_val):
 		clustered_final_output.write("\t".join(results)+'\n')	
 
 def GenerateAnnotationFile(annotated_file_lists,cluster_val,mapping_dict,usearch_output_file):
+	"""
+		Generates a file for inserting VH-VL paired and cluster data to the database
+	"""
 	global clustered_final_output_file
 	global annotation_headers
 	delimiter='\t'
@@ -1554,43 +1565,54 @@ def RunPairing(annotated_file_paths,analysis_method,output_folder_path='',prefix
 		This is the main function for pairing VH-VL antibody data using the Georgiou lab pipeline. The pairing function is not dependent on a specific file type/format and will pair sequences using any files passed into the field annotated_file_paths.
 		Pairing of VH-VL antibodies is performed by grouping together sequences by their MISEQ header (Miseq id). This program should only be used to pair 'paired end NGS data'. That is, we assume sequences come from MISEQ paired-end sequences containing complementary R1/R2 header names.
 		
-		General algorithm:
+		**General algorithm**
 		
 		The pairing program follows the following steps: 
 			Step A: Go through the provided AB annotated files (IMGT, parsed IGBLAST files, etc), and filter out sequences that lack good results 
+
 				1) Loop through all sequences provided in all files 
 				2) Only select sequences that have a sequence header. Extract the MISEQ ID from the sequence header. 
 				3) Filter out sequences that do not have a cdr3 sequence 
 				4) Filter out sequences that are deemed 'unproductive' using our Productivity Rules, or a custom productivity rule provided by user 
 			
 			Step B: Parse the filtered file 
+
 				1) Sort the generated outputfile by the MISEQ ID
 				2) Only consider sequences where both the R1 and R2 read (sequences with identicals MISEQ ID) passed all filter steps in Step A 
-				3) Filter out sequences that:
+				3) Filter out sequences that
+
 					a) are found to be VH-VH pairs
 					b) are found to be VL-VL pairs
 					c) are found to be pairs of calls from different loci (i.e. IGH-TRA )
+
 				4) All sequences that pass the above rules are considered to be proper VH-VL paired antibodies. We store these MISEQ ids inside 'annnotation files' that can be used to update the database with properly paired sequences
 			
 			Step C: Group together CDRH3-CDRL3 pairs
+
 				1) We group together sequences with identical CDRH3-CDRL3 pairs from the filtered VH-VL paired sequences in Step B
-				2) For each CDRH3-CDRL3 group, we calculate the following as extra information for the group: 
+				2) For each CDRH3-CDRL3 group, we calculate the following as extra information for the group
+
 					a) average SHM (if an SHM field is provided) and standard deviation SHM 
 					b) mode of V,D, and J gene calls (if V, D, or J genes are provided). Mode of gene calls are based on top genes only (genes whose alignment scores are equal to the top alignment score)
 					c) All observed unique isotypes (if isotypes are provided)
 			
-			Step D: Cluster CDRH3-CDRL3 pairs 
+			Step D: Cluster CDRH3-CDRL3 pairs
+
 				1) Unique CDRH3-CDRL3 paired sequences are sorted by their total counts (number of sequences containing respective CDRH3-CDRL3 pair)
-				2) The results from each CDRH3-CDRL3, pair whose counts are found > 1 time, are exported as a FASTA file. 
+				2) The results from each CDRH3-CDRL3, pair whose counts are found > 1 time, are exported as a FASTA file.
+
 					a) The sequence header contains all of the data generated/information we are interested in for the H3-L3 pair. 
 					b) The sequence value for the FASTA is the nucleotide sequence of the CDRH3 (heavy chain) sequence only 
+
 				3) This FASTA file is used as an input file to the program USEARCH VERSION 7. 
 				4) We run the Usearch program for each cluster defined in the cluster_cutoff parameter defined in this function
 			
 			Step E: Summarize the output from each USEARCH cluster file 
+
 				1) For EACH cluster cutoff defined, USEARCH creates an output .uc file 
 				2) We parse this file and generate a finalized output file based on the CDRH3 seed/cluster
 				3) For each seed we calculate the following
+
 					a) The average SHM for all sequences which belong in the seed 
 					b) The V,D, and J call of the SEED sequence 
 					c) The Isotype call of the SEED sequence
@@ -1603,69 +1625,84 @@ def RunPairing(annotated_file_paths,analysis_method,output_folder_path='',prefix
 						ii. simpsons index 
 			
 			Step F: Generate an annotation file for the database 
-				1) We generate an 'annotation' file that stores the following features/results in the Georgiou lab database:
+
+				1) We generate an 'annotation' file that stores the following features/results in the Georgiou lab database
+
 					a) the Miseq of ID of a successful VH-VL paired seqsuence 
 					b) the Cluster ID of all CDRH3-CDRL3 pairs whose count are above 2 
 					c) the Confidence score for each cluster
 					d) the Dominance score for each cluster
 					
-		General usage:
+		**General usage**
 		
 		When calling this function, the most important feature for this program to run correctly is defining the type of file(s) you have submitted. While there is no uniform file type/format, we do need to know which field names in the file correspond to field names we use in the pairing program. 
 		The variable, required_field_names, stores the fields we need to perform the analysis. From these fields, only the following fields are absolutely necessary (although providing all fields are ideal):
+
 			1) seq_header
 			2) cdr3_nt
 					
 		We already know which field names are required for files that were generated using our common annotation methods: IMGT, IGFFT (in house program), MIXCR, IGBLAST. Therefore, if you are pairing files from one of these programs AND you have not modified the output of the files created by our python wrapper functions, there is no need to define the fields. 
 		However, if the file being provided is a custom file or an annotation file we do not know about, then you need to define custom field names in the input variable: field_names
 										
-		Example usage for pairing IMGT files: 			
+		Example usage for pairing IMGT files::
+
 			list_of_imgt_files = a list of strings providing the location of all IMGT generated files for pairing. You do not need to select a specific IMGT file or differente the 11 files by experiment, we handle that in the function
 			list_of_imgt_files = [1_summary_file1.txt,5_summary_file1.txt,1_summary_file2.txt,5_summary_file2.txt] (etc  etc for the files to pair)
 			RunPairing(annotated_file_paths = list_of_imgt_files,analysis_method = IMGT, output_folder_path='paired_seq_data.txt,prefix_output_files='MYPAIRINGEXP',annotated_file_formats='IMGT',field_names=None,cluster_cutoff=[0.85,0.96,0.01])
 		
-		Example use for pairing MIXCR files:
+		Example use for pairing MIXCR files::
+
 			list_of_mixcr_files = a list of strings providing the location of all MIXCR annotation files generated by the function ParseMIXCR
 			list_of_mixcr_files = [file1.mixcr.annotation,file2.mixcr.annotation,file3.mixcr.annotation]
 			RunPairing(annotated_file_paths = list_of_mixcr_files,analysis_method = MIXCR, output_folder_path='paired_seq_data.txt,prefix_output_files='MYPAIRINGEXP',annotated_file_formats='TAB',field_names=None,cluster_cutoff=[0.85,0.96,0.01])
 		
-		Example use for any custom file (a file type not generated by the database, parseMIXCR function, parseIgblast function, parseIGFFT function, or IMGT):
+		Example use for any custom file (a file type not generated by the database, parseMIXCR function, parseIgblast function, parseIGFFT function, or IMGT)::
+
 			list_of_files = a list of strings providing the location of some CSV file that we have not seen before 
 			In this example, this CSV (not TAB) file only contains CDR3 nucleotide information. So every other field provided will be treated as blank for the program and not considered. In the provided file, the CDR3 field is labeled as CDR3 Nt and the sequence header is labeled as, Miseq header
-			field_mappings = { #key = name of the field we need in the program, value = name of the field in the provided file 
+			
+			field_mappings = { key = name of the field we need in the program, value = name of the field in the provided file 
 				'cdr3_nt':	'CDR3 Nt',
 				'seq_header':Miseq header'
 			}
-			list_of_files = [fie1.txt,file2.txt,file3.txt]
-			
+			list_of_files = [fie1.txt,file2.txt,file3.txt]			
 			RunPairing(annotated_file_paths = list_of_files,analysis_method = custom, output_folder_path='paired_seq_data.txt,prefix_output_files='MYCUSTOMPAIRINGEXP',annotated_file_formats='CSV',field_names=field_mappings,cluster_cutoff=[0.85,0.96,0.01])
 			
 			
-		#REQUIRED FIELDS###
-		#annotated_file_paths = a list of files that you want to run pairing with 
-		#analysis_method:
-			#A string defining which annotation program generated the results 
-			#IF an annotation program is not defined in this script (variable above) yet, then use 'CUSTOM'
-			#note: if analysis_method == 'CUSTOM' OR not in the predefined list, then the parameter,field_names, is required 
-		
-		#OPTIONAL FIELDS###
-		#annotated_file_formats: 
-			#accepts three possible formats: 
-				#=> None => do not define file type, let program guess 
-				#=> list of file types => the file type FOR EACH PROVIDED FILE 
-				#=> SINGLE STRING => THIS MEANS ALL INPUTED FILES ARE OF THE SAME TYPE 
-		
-		#field_names: 
-			#A dictionary defining which fields in the file correspond to the fields required for this program 
-			#IMPORTANT: If analysis_method == CUSTOM! then you must define field_names in the file. Program will raise exception otherwise
-			#if provided, the structure of field names is as follows: 
-				#keys of variable: 'vgene','jgene','dgene','raw_seq_nt','cdr3_nt','seq_header','shm','full_len_ab_aa'
-				#values => for each key,provide the field name in the file that corresponds to the key 
+		**REQUIRED FIELDS**
+
+			1) annotated_file_paths = a list of files that you want to run pairing with 
+			2) analysis_method:
+			
+				A string defining which annotation program generated the results 
+				IF an annotation program is not defined in this script (variable above) yet, then use 'CUSTOM'
 				
-		#output_folder_path => path of output folder. If empty, then a new folder is created. If folder path does not exist, then creates a new folder using provided folder path
-		#prefix_output_files => prefix string to use for naming output files
-		#cluster_cutoff => clustering cutoff for determining clustered pairs  (cluster=0.96 #heavy chain clustering percent (0.96 = 96%))
-		#files_from_igrep_database => indicates whether the provided files were downloaded from the database (this is important because files from the database will have the same field names regardless of the annotation type. Therefore, we need to use these files from database
+				.. note:: if analysis_method == 'CUSTOM' OR not in the predefined list, then the parameter,field_names, is required 
+		
+		**OPTIONAL FIELDS**
+			1) annotated_file_formats
+				
+				accepts three possible formats: 
+				
+					None => do not define file type, let program guess 
+					list of file types => the file type FOR EACH PROVIDED FILE 
+					SINGLE STRING => THIS MEANS ALL INPUTED FILES ARE OF THE SAME TYPE 
+		
+			2) field_names
+
+				A dictionary defining which fields in the file correspond to the fields required for this program 
+				
+				.. important::
+					If analysis_method == CUSTOM! then you must define field_names in the file. Program will raise exception otherwise
+					if provided, the structure of field names is as follows: 
+					keys of variable: 'vgene','jgene','dgene','raw_seq_nt','cdr3_nt','seq_header','shm','full_len_ab_aa'
+					values => for each key,provide the field name in the file that corresponds to the key
+
+				
+			3) output_folder_path => path of output folder. If empty, then a new folder is created. If folder path does not exist, then creates a new folder using provided folder path
+			4) prefix_output_files => prefix string to use for naming output files
+			5) cluster_cutoff => clustering cutoff for determining clustered pairs  (cluster=0.96 #heavy chain clustering percent (0.96 = 96%))
+			6) files_from_igrep_database => indicates whether the provided files were downloaded from the database (this is important because files from the database will have the same field names regardless of the annotation type. Therefore, we need to use these files from database
 		
 	"""						
 	if use_low_memory==False:
@@ -1844,12 +1881,12 @@ def RunPairing(annotated_file_paths,analysis_method,output_folder_path='',prefix
 	
 	#THIS IS THE ACTUAL CODE FOR RUNNING PAIRING (THIS CALLS ALL THE FUNCTIONS FOR PAIRING)	
 	#first create the variables 'codeDict' and 'collapsedDict' which will store information regarding R1/R2 pairs from the annotation files 
-	if use_low_memory:		
-		[total_seqs,passed_filter,no_result,no_cdr3_error,not_productive,invalid_chain,successful_pair,Hchain_pairing_error,Lchain_pairing_error,nonpaired_len,num_unique_cdrh3_l3_pair,num_unique_cdrh3_l3_pair_above1,locus_pairing_error,annotated_file_lists,mapping_dict] = add_to_dict_memory_safe(annotated_file_paths,annotated_file_formats,required_field_names,productivity_function,parent_dir,analysis_method)		
-	else:
+	#if use_low_memory:		
+	[total_seqs,passed_filter,no_result,no_cdr3_error,not_productive,invalid_chain,successful_pair,Hchain_pairing_error,Lchain_pairing_error,nonpaired_len,num_unique_cdrh3_l3_pair,num_unique_cdrh3_l3_pair_above1,locus_pairing_error,annotated_file_lists,mapping_dict] = add_to_dict_memory_safe(annotated_file_paths,annotated_file_formats,required_field_names,productivity_function,parent_dir,analysis_method)		
+	#else:
 		#this function stores results in codeDict and collapsedDict. It is memory hungry but should run faster than above function
 		#this function is now deprecated
-		[total_seqs,passed_filter,no_result,no_cdr3_error,not_productive,invalid_chain,successful_pair,Hchain_pairing_error,Lchain_pairing_error,nonpaired_len,num_unique_cdrh3_l3_pair,num_unique_cdrh3_l3_pair_above1,locus_pairing_error,annotated_file_lists,mapping_dict] = add_to_dict(annotated_file_paths,annotated_file_formats,required_field_names,productivity_function,analysis_method)
+	#	[total_seqs,passed_filter,no_result,no_cdr3_error,not_productive,invalid_chain,successful_pair,Hchain_pairing_error,Lchain_pairing_error,nonpaired_len,num_unique_cdrh3_l3_pair,num_unique_cdrh3_l3_pair_above1,locus_pairing_error,annotated_file_lists,mapping_dict] = add_to_dict(annotated_file_paths,annotated_file_formats,required_field_names,productivity_function,analysis_method)
 				
 	number_of_clusters = []
 	for c in cluster_cutoff:

@@ -7,11 +7,18 @@
 	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
 	<title>Database Queries</title>
-
-	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>
-	<script type="text/javascript" src="/scripts/datatables.min.js"></script>
-	<script type="text/javascript" src="/scripts/jquery-ui-1.11.4.js"></script>
-	<script type="text/javascript" src="/scripts/qtip/jquery.qtip.js"></script>
+    
+	<!--
+	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script> 
+    <script type="text/javascript" src="/scripts/datatables.min.js"></script>
+    <script type="text/javascript" src="/scripts/jquery-ui-1.11.4.js"></script>
+    -->
+    
+    <script src="//code.jquery.com/jquery-1.11.3.js"></script>
+    <script src="//cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script type="text/javascript" src="/scripts/qtip/jquery.qtip.js"></script> 
+        
 	<script type="text/javascript" src="/scripts/block_ui.js"></script>
 	<!-- <script type="text/javascript" src="/scripts/exptable.js"></script>-->
 	<script type="text/javascript" src="/styles/bootstrap/js/bootstrap.min.js"></script>
@@ -1700,7 +1707,9 @@
 	<script type="text/javascript">
 		$(document).ready(function(){
 			$('#hi').click(function(){
-				$('#report-seq-data').toggle()
+				//$('#report-seq-data').toggle()
+				$('#report-seq-data').toggleClass('off-1')
+				$('.main-app-section').toggleClass('sidebar2')
 			})
 		})
 	</script>
@@ -1721,17 +1730,15 @@
 		}
 
 		/*When the parent div is set to sidebar-present on, then we want to add padding to the right pane div (class=main)*/
-		div.main-app-section.sidebar-present > .main {
+		div.main-app-section.sidebar1 > .main {
 			padding-left: 250px;
+			transition: all 0.5s ease;
 		}
-
-		div.main-app-section.sidebar2-present > .main {
-			padding-left: 250px;
-		}
-
+		
 		/*double the padding for situation when we want to display both sidebars*/
-		div.main-app-section.sidebar-present.sidebar2-present > .main {
+		div.main-app-section.sidebar1.sidebar2 > .main {
 			padding-left: 500px;
+			transition: all 0.5s ease;
 		}
 
 		div.main-app-section .main > div{
@@ -1744,25 +1751,42 @@
 			/*margin-bottom: 20px;*/
 			margin-top: 50px;
 			/*border-right:2px solid purple;*/
-			background-color: gray; /* #f5f5f5;*/ /*#f5f5f5;*/
+			background-color:white; /* #f5f5f5;*/ /*#f5f5f5;*/
 			position: fixed; /* we make it fixed and a z-index of 1000 to make the pane last the entire vertical page*/
 			top: 100px;
 			bottom: 0;
-			left: 20px;
+			left: 0px;
 			z-index: 1000;
 			display: block;
 			overflow: auto;
 			width:250px;
-			padding-right:20px;
+			padding-right:0px;
+			
+			margin-left:20px;
 			/*make an animation when showing/hiding sidebars*/
 		}
-
-		.s2{
+		nav.sidebar-menu.sidebar-2 {
+			/*width:0px;*/
+			/*margin-left:250px;*/
+			left:0px;
+			padding-right:0px;
 			-webkit-transition: all 0.5s ease;
 			-moz-transition: all 0.5s ease;
 			-o-transition: all 0.5s ease;
 			transition: all 0.5s ease;
-			z-index:1100;
+			z-index:900;
+			
+			
+		}
+
+		nav.sidebar-menu.off-1{			
+			-webkit-transition: all 0.5s ease;
+			-moz-transition: all 0.5s ease;
+			-o-transition: all 0.5s ease;
+			transition: all 0.5s ease;						
+			left:270px;		
+			margin-left:0px;
+								
 		}
 
 		nav.sidebar-menu .sidebar-header{
@@ -1861,7 +1885,8 @@
 	<div class='container-fluid section'>
 		<div class='row'>
 			<!--first create a wrapper div that encompasses both the side bar and the main section-->
-			<div class='main-app-section sidebar-present'>
+			<div class='main-app-section sidebar1 sidebar2'>
+				
 				<!--Create a side bar to show experiment filters and functions -->				
 				<nav id='all-exp-filters' class="sidebar-menu">
 					<span class="sidebar-header">
@@ -1881,7 +1906,7 @@
 				</nav>
 				
 				<!--Create a side bar to show output options. as of now we will just have this side bar 'slide in' -->
-				<nav id='report-seq-data' class="sidebar-menu s2 ">
+				<nav id='report-seq-data' class="sidebar-menu sidebar-2 off-1">
 					<!-- populated by javascript function -->
 					<span class="sidebar-header">
 						<strong>Output these fields</strong>
@@ -1902,7 +1927,7 @@
 				<!--The number of columns we designate for the main section/the table is determined by col-computersize(xs,sm,md)-# -->
 				<!--We start the 'right pane' offset by col-computersize-offset-#. so for standard computer size, we offset by 2 columns -->
 				<!--To get the side bar to work correctly we do a trick and use CSS to control th epadding of this section. The padding will be equal to the sidebar width -->
-				<div id='exp-query-section' class="col-xs-12 main col-sm-12 col-md-12 main">
+				<div id='exp-query-section' class="col-xs-12 main col-sm-12 col-md-12 main sidebar-2">
 					<div class='row'>
 						<h3>EXPERIMENT TABLE GOES HERE</h3>
 						<button id='hi' class='btn'>clickme</button>

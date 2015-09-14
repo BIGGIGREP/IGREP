@@ -1,0 +1,63 @@
+This txt file will document the some of the directives and such in our RST files.
+
+###########################################################################
+#####For titles and sections
+#####This isn't absolute, just a common convention to avoid discrepencies between files.
+
+******
+Titles
+******
+    Will use asterices on top and bottom
+
+Section
+=======
+    for sections in the documentation
+
+Subsection
+----------
+    for subsections of sections
+
+Subsubsection
+^^^^^^^^^^^^^
+    for subsubsections
+
+Paragraph
+"""""""""
+    for paragraphs in the sections.
+
+############################################################
+#####Directives
+
+Autodoc extension
+-----------------
+
+.. automodule:: filename
+    :members:
+    :undoc-members:
+    :inherited-members:
+
+    The autodoc directive which documents all docstrings for all methods and classes in the file 'filename'.
+    :members: refers to all members of the classes. You can refer to specific members by typing the name of the method class etc here.
+    :undoc-members: will include all the classes/methods etc without docstrings. Can specifiy which members as well
+    :inherited-members: Inherited members
+
+.. autoclass:: class
+
+    autodoc for the class. use members etc to get the methods
+
+.. automethod:: method
+
+    Refers to the methods in a py doc.
+
+
+In body text
+------------
+
+.. warning:: warning box
+
+.. note:: note box
+
+.. todo:: todo box
+
+.. seealso:: seealso box
+

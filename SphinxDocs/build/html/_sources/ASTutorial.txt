@@ -1,7 +1,8 @@
 .. _astutorial:
 
+************************
 Appsoma Website Tutorial
-========================
+************************
 
 This is a step by step tutorial for running the appsoma pipeline
 
@@ -9,24 +10,25 @@ This is a step by step tutorial for running the appsoma pipeline
     We'll be moving away from appsoma. The general way of working with the apps should stay quite familiar however.
 
 Contents
-''''''''
+========
 
 * :ref:`Walkthrough <walkthrough>`
     * :ref:`Before GSAF Submission <step0>`
     * :ref:`Access the homepage <step1>`
     * :ref:`NGS Processing Pipeline <step2>`
         * :ref:`Grouping <step3>`
-    * :ref:`(Step Four) <step4>`
+        * :ref:`Processing <step4>`
     * :ref:`(Step Five) <step5>`
 
 .. _walkthrough:
 
 Walkthrough
-'''''''''''
+===========
 
 .. _step0:
 
-**Before GSAF Submission**
+Before GSAF Submission
+----------------------
 
 .. note::
     Specific to GG Lab only
@@ -52,7 +54,8 @@ When GSAF completes you will receive an email containing this
 
 .. _step1:
 
-**Homepage**
+Homepage
+--------
 
 You'll first find yourself at the homepage. This will require you to log into Appsoma using your username and password.
 
@@ -71,7 +74,8 @@ Your first step will be to go to the "Automated NGS Processing Pipeline"
 
 .. _step2:
 
-**NGS Processing Pipeline**
+NGS Processing Pipeline
+-----------------------
 
 After choosing this option make sure you click "Start now".
 Once finished loading you should arrive at this page
@@ -84,7 +88,8 @@ Once finished loading you should arrive at this page
 
 .. _GSAF:
 
-**If using GSAF**
+If using GSAF
+"""""""""""""
 
 paste your url into the box given
 
@@ -95,7 +100,8 @@ paste your url into the box given
 .. note::
     most people wil be using GSAF
 
-**If from scratch**
+If from scratch
+"""""""""""""""
 
 1) select the folder where your experiment is
 2) choose which files you'd like to use
@@ -108,7 +114,8 @@ paste your url into the box given
 
 .. _step3:
 
-**Grouping**
+Grouping
+^^^^^^^^
 
 Next the files you selected will be grouped. You'll have the option to select the following options for the groups individually.
 
@@ -122,5 +129,14 @@ Next the files you selected will be grouped. You'll have the option to select th
     :scale: 75%
 
 .. _step4:
+
+Processing
+^^^^^^^^^^
+
+As you process, this page will show you the current processes running. After it's finished you will have the option of inserting the generated files into the Database.
+
+.. image:: ASTutorialImages/NGSPP3.png
+    :align: center
+    :scale: 75%
 
 .. _step5:

@@ -144,11 +144,10 @@
 <dt><a class="reference internal" href="#step2"><span>NGS Processing Pipeline</span></a></dt>
 <dd><ul class="first last simple">
 <li><a class="reference internal" href="#step3"><span>Grouping</span></a></li>
+<li><a class="reference internal" href="#step4"><span>Processing</span></a></li>
 </ul>
 </dd>
 </dl>
-</li>
-<li><p class="first"><a class="reference internal" href="#step4"><span>(Step Four)</span></a></p>
 </li>
 <li><p class="first"><a class="reference internal" href="#step5"><span>(Step Five)</span></a></p>
 </li>
@@ -160,7 +159,8 @@
 </div>
 <div class="section" id="walkthrough">
 <span id="id1"></span><h2>Walkthrough<a class="headerlink" href="#walkthrough" title="Permalink to this headline">¶</a></h2>
-<p id="step0"><strong>Before GSAF Submission</strong></p>
+<div class="section" id="before-gsaf-submission">
+<span id="step0"></span><h3>Before GSAF Submission<a class="headerlink" href="#before-gsaf-submission" title="Permalink to this headline">¶</a></h3>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Specific to GG Lab only</p>
@@ -179,31 +179,39 @@ Once you&#8217;ve done this your experiment will be stored in the database.</p>
 <p class="last">The link in the image will be used in the <a class="reference internal" href="#gsaf"><span>NGS automated pipeline</span></a></p>
 </div>
 <p><a class="reference internal" href="#astutorial"><span>^To Top</span></a></p>
-<p id="step1"><strong>Homepage</strong></p>
+</div>
+<div class="section" id="homepage">
+<span id="step1"></span><h3>Homepage<a class="headerlink" href="#homepage" title="Permalink to this headline">¶</a></h3>
 <p>You&#8217;ll first find yourself at the homepage. This will require you to log into Appsoma using your username and password.</p>
 <a class="reference external image-reference" href="https://appsoma.com/apps/IGrep+Homepage"><img alt="URL is htpps://appsoma.com/apps/IGrep+Homepage" class="align-center" src="_images/AppSomaHomePage.png" /></a>
 <p>Your first step will be to go to the &#8220;Automated NGS Processing Pipeline&#8221;</p>
 <a class="reference internal image-reference" href="_images/NGSProcessPipeline.png"><img alt="_images/NGSProcessPipeline.png" class="align-center" src="_images/NGSProcessPipeline.png" style="width: 197.5px; height: 68.5px;" /></a>
 <p><a class="reference internal" href="#astutorial"><span>^To Top</span></a></p>
-<p id="step2"><strong>NGS Processing Pipeline</strong></p>
+</div>
+<div class="section" id="ngs-processing-pipeline">
+<span id="step2"></span><h3>NGS Processing Pipeline<a class="headerlink" href="#ngs-processing-pipeline" title="Permalink to this headline">¶</a></h3>
 <p>After choosing this option make sure you click &#8220;Start now&#8221;.
 Once finished loading you should arrive at this page</p>
 <a class="reference internal image-reference" href="_images/NGSPPinit.png"><img alt="_images/NGSPPinit.png" class="align-center" src="_images/NGSPPinit.png" style="width: 960.0px; height: 496.5px;" /></a>
-<p id="gsaf"><strong>If using GSAF</strong></p>
+<div class="section" id="if-using-gsaf">
+<span id="gsaf"></span><h4>If using GSAF<a class="headerlink" href="#if-using-gsaf" title="Permalink to this headline">¶</a></h4>
 <p>paste your url into the box given</p>
 <a class="reference internal image-reference" href="_images/NGSPPlink1.png"><img alt="_images/NGSPPlink1.png" class="align-center" src="_images/NGSPPlink1.png" style="width: 441.0px; height: 207.0px;" /></a>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">most people wil be using GSAF</p>
 </div>
-<p><strong>If from scratch</strong></p>
+</div>
+<div class="section" id="if-from-scratch">
+<h4>If from scratch<a class="headerlink" href="#if-from-scratch" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li>select the folder where your experiment is</li>
 <li>choose which files you&#8217;d like to use</li>
 </ol>
 <a class="reference internal image-reference" href="_images/NGSPP1.png"><img alt="_images/NGSPP1.png" class="align-center" src="_images/NGSPP1.png" style="width: 520.5px; height: 573.75px;" /></a>
 <p><a class="reference internal" href="#astutorial"><span>^To Top</span></a></p>
-<p id="step3"><strong>Grouping</strong></p>
+<div class="section" id="grouping">
+<span id="step3"></span><h5>Grouping<a class="headerlink" href="#grouping" title="Permalink to this headline">¶</a></h5>
 <p>Next the files you selected will be grouped. You&#8217;ll have the option to select the following options for the groups individually.</p>
 <ol class="arabic simple">
 <li>Stitches together pair end R1 and R2 files from MiSeq.</li>
@@ -212,7 +220,15 @@ Once finished loading you should arrive at this page</p>
 <li>Convert your FASTQ to FASTA</li>
 </ol>
 <a class="reference internal image-reference" href="_images/NGSPP2.png"><img alt="_images/NGSPP2.png" class="align-center" src="_images/NGSPP2.png" style="width: 708.0px; height: 741.75px;" /></a>
-<span class="target" id="step5"><span id="step4"></span></span></div>
+</div>
+<div class="section" id="processing">
+<span id="step4"></span><h5>Processing<a class="headerlink" href="#processing" title="Permalink to this headline">¶</a></h5>
+<p>As you process, this page will show you the current processes running. After it&#8217;s finished you will have the option of inserting the generated files into the Database.</p>
+<a class="reference internal image-reference" href="_images/NGSPP3.png"><img alt="_images/NGSPP3.png" class="align-center" src="_images/NGSPP3.png" style="width: 717.0px; height: 729.0px;" /></a>
+<span class="target" id="step5"></span></div>
+</div>
+</div>
+</div>
 </div>
 
 

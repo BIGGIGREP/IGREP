@@ -1,0 +1,915 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>immunogrep_useful_functions &mdash; IGREP 1.0.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700&subset=latin,cyrillic' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IGREP 1.0.0 documentation" href="../index.html"/>
+        <link rel="up" title="Module code" href="index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="../index.html" class="fa fa-home"> IGREP</a>
+        
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../ASTutorial.html">Appsoma Website Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../ASTutorial.html#contents">Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ASTutorial.html#walkthrough">Walkthrough</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../Variables.html">Global Variables</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../Variables.html#list-of-variables">List of variables</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../Functions.html">Useful Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../Functions.html#contents">Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Functions.html#insidefunc">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../IGfile.html">Immunogrepfile</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../IGfile.html#variables">Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../IGfile.html#module-immunogrep_read_file">Header Extraction Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../IGfile.html#immunogrep-classes">Immunogrep Classes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../VHVLPairing.html">VH-VL Pairing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../VHVLPairing.html#contents">Contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">IGREP</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="index.html">Module code</a> &raquo;</li>
+      
+    <li>immunogrep_useful_functions</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for immunogrep_useful_functions</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">immunogrep_global_variables</span> <span class="kn">import</span> <span class="n">listofextension</span>
+<span class="kn">from</span> <span class="nn">immunogrep_global_variables</span> <span class="kn">import</span> <span class="n">descriptor_symbol</span>
+<span class="kn">import</span> <span class="nn">immunogrep_read_file</span> <span class="kn">as</span> <span class="nn">readwrite</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">MutableMapping</span>
+
+
+
+<span class="n">dna_codes</span> <span class="o">=</span> <span class="p">{</span>
+		<span class="s">&#39;A&#39;</span><span class="p">:</span><span class="s">&#39;T&#39;</span><span class="p">,</span>
+		<span class="s">&#39;C&#39;</span><span class="p">:</span><span class="s">&#39;G&#39;</span><span class="p">,</span>
+		<span class="s">&#39;G&#39;</span><span class="p">:</span><span class="s">&#39;C&#39;</span><span class="p">,</span>
+		<span class="s">&#39;T&#39;</span><span class="p">:</span><span class="s">&#39;A&#39;</span><span class="p">,</span>
+		<span class="s">&#39;N&#39;</span><span class="p">:</span><span class="s">&#39;N&#39;</span><span class="p">,</span>
+		<span class="s">&#39;X&#39;</span><span class="p">:</span><span class="s">&#39;X&#39;</span><span class="p">,</span>
+		<span class="s">&#39;-&#39;</span><span class="p">:</span><span class="s">&#39;-&#39;</span><span class="p">,</span>
+		<span class="s">&#39;U&#39;</span><span class="p">:</span><span class="s">&#39;A&#39;</span><span class="p">,</span>
+		<span class="s">&#39;W&#39;</span><span class="p">:</span><span class="s">&#39;W&#39;</span><span class="p">,</span>
+		<span class="s">&#39;M&#39;</span><span class="p">:</span><span class="s">&#39;K&#39;</span><span class="p">,</span>
+		<span class="s">&#39;K&#39;</span><span class="p">:</span><span class="s">&#39;M&#39;</span><span class="p">,</span>
+		<span class="s">&#39;S&#39;</span><span class="p">:</span><span class="s">&#39;S&#39;</span><span class="p">,</span>
+		<span class="s">&#39;R&#39;</span><span class="p">:</span><span class="s">&#39;Y&#39;</span><span class="p">,</span>
+		<span class="s">&#39;Y&#39;</span><span class="p">:</span><span class="s">&#39;R&#39;</span><span class="p">,</span>
+
+		<span class="s">&#39;a&#39;</span><span class="p">:</span><span class="s">&#39;t&#39;</span><span class="p">,</span>
+		<span class="s">&#39;c&#39;</span><span class="p">:</span><span class="s">&#39;g&#39;</span><span class="p">,</span>
+		<span class="s">&#39;g&#39;</span><span class="p">:</span><span class="s">&#39;c&#39;</span><span class="p">,</span>
+		<span class="s">&#39;t&#39;</span><span class="p">:</span><span class="s">&#39;a&#39;</span><span class="p">,</span>
+		<span class="s">&#39;u&#39;</span><span class="p">:</span><span class="s">&#39;a&#39;</span><span class="p">,</span>
+		<span class="s">&#39;w&#39;</span><span class="p">:</span><span class="s">&#39;w&#39;</span><span class="p">,</span>
+		<span class="s">&#39;n&#39;</span><span class="p">:</span><span class="s">&#39;n&#39;</span><span class="p">,</span>
+		<span class="s">&#39;m&#39;</span><span class="p">:</span><span class="s">&#39;k&#39;</span><span class="p">,</span>
+		<span class="s">&#39;k&#39;</span><span class="p">:</span><span class="s">&#39;m&#39;</span><span class="p">,</span>
+		<span class="s">&#39;s&#39;</span><span class="p">:</span><span class="s">&#39;s&#39;</span><span class="p">,</span>
+		<span class="s">&#39;r&#39;</span><span class="p">:</span><span class="s">&#39;y&#39;</span><span class="p">,</span>
+		<span class="s">&#39;x&#39;</span><span class="p">:</span><span class="s">&#39;x&#39;</span><span class="p">,</span>
+		<span class="s">&#39;y&#39;</span><span class="p">:</span><span class="s">&#39;r&#39;</span>
+	<span class="p">}</span>
+
+
+<div class="viewcode-block" id="get_stdout"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.get_stdout">[docs]</a><span class="k">def</span> <span class="nf">get_stdout</span><span class="p">(</span><span class="n">bash_command</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Python wrapper for running python subprocess.call function</span>
+<span class="sd">		Returns the output from command</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+	<span class="n">output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">bash_command</span><span class="p">,</span><span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+	<span class="c">#time=str(datetime.now()).replace(&#39; &#39;,&#39;&#39;).replace(&#39;:&#39;,&#39;&#39;).replace(&#39;/&#39;,&#39;&#39;).replace(&#39;\\&#39;,&#39;&#39;).replace(&#39;-&#39;,&#39;&#39;)</span>
+	<span class="c">#temp_file_name = &#39;scratch/stdout&#39;+time+&#39;.txt&#39;</span>
+	<span class="c">#os.system(bash_command +&quot; &gt; {0}&quot;.format(temp_file_name))</span>
+	<span class="c">#subprocess.call(bash_command +&quot; &gt; {0}&quot;.format(temp_file_name),shell=True)</span>
+	<span class="c">#if os.path.isfile(temp_file_name):</span>
+	<span class="c">#	with open(temp_file_name) as e:</span>
+	<span class="c">#		output = e.read().strip()</span>
+	<span class="c">#	os.remove(temp_file_name)</span>
+		<span class="c">#os.system(&quot;rm &#39;{0}&#39;&quot;.format(temp_file_name))</span>
+	<span class="c">#else:</span>
+	<span class="c">#	output = &quot;&quot;</span>
+	<span class="k">return</span> <span class="n">output</span>
+</div>
+<div class="viewcode-block" id="file_line_count"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.file_line_count">[docs]</a><span class="k">def</span> <span class="nf">file_line_count</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Takes a file path as input. Returns the number of lines in the file using wc -l</span>
+
+<span class="sd">		.. warning::</span>
+<span class="sd">			If path is not found, raises an error</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+	<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+		<span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+		<span class="n">value</span> <span class="o">=</span> <span class="n">get_stdout</span><span class="p">(</span><span class="s">&quot;wc -l &#39;{0}&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+			<span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="mi">0</span>
+		<span class="c">#return int()# int(subprocess.check_output([&#39;wc&#39;, &#39;-l&#39;, filepath]).split()[0]) =&gt; subprocess.check_output creates zombie processes, so want to avoid that?</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;File does not exist: &#39;</span><span class="o">+</span><span class="n">filepath</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Reverse_Complement"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.Reverse_Complement">[docs]</a><span class="k">def</span> <span class="nf">Reverse_Complement</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Takes in sequence x and returns its complement (?)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+	<span class="n">rc_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">dna_codes</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">dna_codes</span> <span class="k">else</span> <span class="s">&#39;N&#39;</span> <span class="k">if</span> <span class="nb">ord</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">&lt;</span><span class="mi">91</span> <span class="k">else</span> <span class="s">&#39;n&#39;</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">x</span><span class="p">)]</span>
+	<span class="k">return</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rc_list</span><span class="p">)</span>
+
+
+<span class="c">#we will use this function for splitting a single file into multiple little files.</span>
+<span class="c">#this will be useufl for multithreading purposes</span>
+<span class="c">#filepath =&gt; input file</span>
+<span class="c">#num_files_to_make =&gt; number of split files to create</span>
+<span class="c">#number_lines_per_seq =&gt; number of lines that correspond to a single sequence (fastq files = 4, fastqfiles = 2)</span>
+<span class="c">#contains_header_row =&gt; IMPORTANT, WE CANNOT JUST USE THE SPLIT COMMAND, INSTEAD WE HAVE TO USE AWK COMMAND THIS IS BECAUSE WE NEED TO CARRY OVER LINES TO EACH SPLIT FILE</span></div>
+<div class="viewcode-block" id="split_files_by_seq"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.split_files_by_seq">[docs]</a><span class="k">def</span> <span class="nf">split_files_by_seq</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span><span class="n">num_files_to_make</span><span class="p">,</span><span class="n">number_lines_per_seq</span><span class="p">,</span><span class="n">contains_header_row</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		This function is used for splitting a single file into multiple little files. This will be useful for multithreading purposes.</span>
+
+<span class="sd">        	.. note:: First make sure files do not start with any documentation fields</span>
+
+<span class="sd">	        =====================   =====================</span>
+<span class="sd">	        **Input**               **Description**</span>
+<span class="sd">	        ---------------------   ---------------------</span>
+<span class="sd">	        filepath                input file</span>
+<span class="sd">	        num_files_to_make       number of split files to create</span>
+<span class="sd">	        number_lines_per_seq    number of lines that correspond to a single sequence (fastq files = 4, fasta files =2)</span>
+<span class="sd">	        contains_header_row     True/False for whether the file contains a header row (i.e. TSV or CSV files have header rows)</span>
+<span class="sd">	        =====================   =====================</span>
+
+<span class="sd">	        .. important::</span>
+<span class="sd">	             We cannot just use the split command, instead we have to use awk command. This is because we need to copy header lines and IGREP documentation lines to each split file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+	<span class="n">num_doc_fields</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="c">#open file and make sure it does not start with documentation</span>
+	<span class="n">header_lines</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+	<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">i</span><span class="p">:</span>
+		<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+			<span class="n">line</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+			<span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">descriptor_symbol</span><span class="p">):</span>
+				<span class="n">num_doc_fields</span><span class="o">+=</span><span class="mi">1</span>
+				<span class="n">header_lines</span><span class="o">+=</span><span class="n">line</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">if</span> <span class="n">contains_header_row</span><span class="p">:</span>
+					<span class="n">num_doc_fields</span><span class="o">+=</span><span class="mi">1</span>
+					<span class="c">#NOW read the top header line</span>
+					<span class="n">header_lines</span><span class="o">+=</span><span class="n">line</span>
+				<span class="k">break</span>
+
+
+	<span class="n">parent_path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filepath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+	<span class="k">if</span> <span class="n">num_doc_fields</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+		<span class="n">my_temp_file</span> <span class="o">=</span> <span class="n">parent_path</span><span class="o">+</span><span class="s">&#39;/header_rows_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+		<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">my_temp_file</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+			<span class="n">e</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header_lines</span><span class="p">)</span>
+
+
+	<span class="c">#first get the number of lines in the file</span>
+	<span class="n">num_lines</span> <span class="o">=</span> <span class="n">file_line_count</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+	<span class="c">#make sure the number of lines per seq matches what would be expected from num_lines</span>
+	<span class="k">if</span><span class="p">(</span><span class="n">num_lines</span><span class="o">%</span><span class="n">number_lines_per_seq</span><span class="o">!=</span><span class="mi">0</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Number of lines in file is not divisible by the number of lines for each sequence: {0}/{1}!=0&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">num_lines</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">number_lines_per_seq</span><span class="p">)))</span>
+
+	<span class="n">num_seqs</span> <span class="o">=</span> <span class="n">num_lines</span><span class="o">/</span><span class="n">number_lines_per_seq</span>
+	<span class="c">#determine how many lines to split the file by</span>
+	<span class="c">#round down, division THEN add 1</span>
+	<span class="c">#we add a 1 to ensure that the num_files_to_make is the max number of files made</span>
+	<span class="n">num_lines_in_split_files</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">num_seqs</span><span class="o">/</span><span class="n">num_files_to_make</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">number_lines_per_seq</span>
+
+	<span class="c">#make a temp folder</span>
+	<span class="n">subfolder</span> <span class="o">=</span> <span class="n">parent_path</span><span class="o">+</span><span class="s">&#39;/&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">())</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="s">&#39;_&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+	<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">subfolder</span><span class="p">)</span>
+
+	<span class="c">#ok THERE are header lines at the top fo the file that we dont watn to split so we need to ignore these lines</span>
+	<span class="k">if</span> <span class="n">num_doc_fields</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+		<span class="c">#the final &#39;-&#39; is IMPORTANT when combining with tail</span>
+		<span class="n">system_command</span> <span class="o">=</span> <span class="s">&quot;tail -n +{5} &#39;{1}&#39;| split -l {0} -a {4} - &#39;{2}/{3}&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">num_lines_in_split_files</span><span class="p">),</span><span class="n">filepath</span><span class="p">,</span><span class="n">subfolder</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="o">+</span><span class="s">&#39;.&#39;</span><span class="p">),</span><span class="n">num_files_to_make</span><span class="o">/</span><span class="mi">10</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">num_doc_fields</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">system_command</span> <span class="o">=</span> <span class="s">&quot;split -l {0} -a {4} &#39;{1}&#39; &#39;{2}/{3}&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">num_lines_in_split_files</span><span class="p">),</span><span class="n">filepath</span><span class="p">,</span><span class="n">subfolder</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="o">+</span><span class="s">&#39;.&#39;</span><span class="p">),</span><span class="n">num_files_to_make</span><span class="o">/</span><span class="mi">10</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+
+	<span class="c">#run the bash split command , split files by lines defined above, generate suffixes whose length is equal to the number of files ot make, output results to temp subfolder, prefix files with inputfile+&#39;.&#39;</span>
+	<span class="c">#os.system(system_command)</span>
+	<span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">system_command</span><span class="p">,</span><span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+	<span class="c">#return the contents of files made</span>
+	<span class="n">files_created</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">subfolder</span><span class="p">)</span>
+
+
+
+	<span class="k">if</span> <span class="n">num_doc_fields</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+		<span class="c">#move files back up one folder, but while moving files also concatenate teh header file</span>
+		<span class="n">hack_bash_command</span> <span class="o">=</span> <span class="s">&#39;&#39;&#39;</span>
+<span class="s">			for file in &quot;{0}/&quot;*</span>
+<span class="s">			do</span>
+<span class="s">				s=$(basename &quot;$file&quot;)</span>
+<span class="s">				cat &quot;{1}&quot; &quot;$file&quot; &gt; &quot;{2}/$s&quot;</span>
+<span class="s">			done</span>
+<span class="s">			rm &quot;{1}&quot;</span>
+<span class="s">			rm -r &quot;{0}&quot;</span>
+<span class="s">		&#39;&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subfolder</span><span class="p">,</span><span class="n">my_temp_file</span><span class="p">,</span><span class="n">parent_path</span><span class="p">)</span>
+		<span class="c">#os.system(hack_bash_command)</span>
+		<span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">hack_bash_command</span><span class="p">,</span><span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="c">#move files back to starting folder , delete temp folder</span>
+		<span class="c">#os.system(&quot;mv {0}/*.* {1}/.;rm -r {0}&quot;.format(subfolder.replace(&#39; &#39;,&#39;\ &#39;),parent_path.replace(&#39; &#39;,&#39;\ &#39;)))</span>
+		<span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s">&quot;mv {0}/*.* {1}/.;rm -r {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subfolder</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="s">&#39;\ &#39;</span><span class="p">),</span><span class="n">parent_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="s">&#39;\ &#39;</span><span class="p">)),</span><span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">parent_path</span><span class="o">+</span><span class="s">&#39;/&#39;</span><span class="o">+</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files_created</span><span class="p">])</span>
+
+
+
+<span class="c">#runs an awk script for merging results from multiple files</span></div>
+<div class="viewcode-block" id="merge_multiple_files"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.merge_multiple_files">[docs]</a><span class="k">def</span> <span class="nf">merge_multiple_files</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">num_header_lines</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">outfile</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs an awk script for merging results from multiple files</span>
+
+<span class="sd">        	=====================   =====================</span>
+<span class="sd">	        **Input**               **Description**</span>
+<span class="sd">	        ---------------------   ---------------------</span>
+<span class="sd">	        file_list               A list of strings corresponding to the path of all files to merge</span>
+<span class="sd">	        num_header_lines	    The number of lines (x) in each file that correspond to a header row. When, FNR!=NR the first x lines are ignored. In other words only the first x lines from the first file are copied to the new file.</span>
+<span class="sd">	        outfile			        The location of the output file (optional). When empty it defaults to the first input file +&#39;.merged&#39;</span>
+<span class="sd">	        =====================   =====================</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+	<span class="k">if</span> <span class="ow">not</span> <span class="n">outfile</span><span class="p">:</span> <span class="c">#no outfile, then make default path</span>
+		<span class="n">outfile</span> <span class="o">=</span> <span class="n">file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;.merged&#39;</span>
+
+	<span class="n">file_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="s">&#39;\ &#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">file_list</span><span class="p">]</span>
+	<span class="n">file_list_strings</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">file_list</span><span class="p">)</span><span class="c">#[&quot;&#39;&quot;+f+&quot;&#39;&quot; for f in file_list])</span>
+
+	<span class="n">awk</span> <span class="o">=</span><span class="s">&#39;&#39;&#39;</span>
+<span class="s">		awk &#39;FNR!=NR&amp;&amp;FNR&lt;={0}{{next}};</span>
+<span class="s">		{{print $0&gt; &quot;{1}&quot; }}&#39; {2}&#39;&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">num_header_lines</span><span class="p">),</span><span class="n">outfile</span><span class="p">,</span><span class="n">file_list_strings</span><span class="p">)</span>
+
+	<span class="c">#os.system(awk)</span>
+	<span class="n">output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">awk</span><span class="p">,</span><span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="c"># call(awk)</span>
+	<span class="k">return</span> <span class="n">outfile</span>
+
+
+
+
+
+<span class="c">#--- The code is included here for prototyping porpoises.</span>
+<span class="c">#function deprecated</span>
+<span class="c">#def flatten_dictionary_old(d):</span>
+<span class="c">#	&quot;&quot;&quot;Input: a dictionary (only a useful function if it&#39;s a nested dictionary).</span>
+<span class="c">#	Output: a flattened dictionary, where nested keys are represented in the flat structure with a . separating them.</span>
+<span class="c">#	{a: 1, b: {c: 2, d: 3}} --&gt; {a: 1, b.c: 2, b.c: 3}</span>
+<span class="c">#	&quot;&quot;&quot;</span>
+<span class="c">#	flattened_dict = {}</span>
+<span class="c">#	def _interior_loop(d, parent_key):</span>
+<span class="c">#		for key, value in d.items():</span>
+<span class="c">#			parent_key = parent_key + [key]</span>
+<span class="c">#			if isinstance(value, dict):</span>
+<span class="c">#				for item in _interior_loop(value, parent_key[:]):</span>
+<span class="c">#					yield item</span>
+<span class="c">#				parent_key.pop()</span>
+<span class="c">#			else:</span>
+<span class="c">#				yield {&#39;.&#39;.join(parent_key): value}</span>
+<span class="c">#				parent_key.pop()</span>
+
+<span class="c">#	for key_value in _interior_loop(d, []):</span>
+<span class="c">#		flattened_dict.update(key_value)</span>
+<span class="c">#	return flattened_dict</span>
+
+</div>
+<div class="viewcode-block" id="flatten_dictionary"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.flatten_dictionary">[docs]</a><span class="k">def</span> <span class="nf">flatten_dictionary</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">val</span><span class="o">=</span><span class="p">{},</span><span class="n">p</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		This function recursively flattens dictionaries.</span>
+<span class="sd">		All values in the dictionary that are found to be nested subdictionaries will be converted to keys containing &#39;.&#39;</span>
+<span class="sd">		This is very useful for moving all keys in a dictionary to the top level rather than having to access each subkey</span>
+
+<span class="sd">			=====================   =====================</span>
+<span class="sd">			**Input**				**Description**</span>
+<span class="sd">			---------------------	---------------------</span>
+<span class="sd">			d						A nested dictionary of key:values</span>
+<span class="sd">			=====================   =====================</span>
+
+<span class="sd">		See example below::</span>
+
+<span class="sd">			Imagine a dictionary is passed as such</span>
+<span class="sd">				d = {</span>
+<span class="sd">					&#39;a&#39;:{&#39;hello&#39;:5,</span>
+<span class="sd">						&#39;world&#39;:10}</span>
+<span class="sd">					&#39;ok&#39;:10</span>
+<span class="sd">				}</span>
+<span class="sd">			Running flatten_dictionary on this function will produce the following</span>
+<span class="sd">			d = {</span>
+<span class="sd">				&#39;a.hello&#39;:5,</span>
+<span class="sd">				&#39;a.world&#39;:10,</span>
+<span class="sd">				&#39;ok&#39;:10,</span>
+<span class="sd">			}</span>
+<span class="sd">			So rather than accesssing d[&#39;a&#39;][&#39;hello&#39;], We access d[&#39;a.hello&#39;]</span>
+
+<span class="sd">		.. important:: Please refer to the function,DotAccessible, to perform the opposite of this function: Convert a flattened dictionary into a nested dictionary</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+	<span class="k">if</span> <span class="n">start</span><span class="p">:</span>
+		<span class="n">val</span> <span class="o">=</span> <span class="p">{}</span>
+	<span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+			<span class="n">flatten_dictionary</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">val</span><span class="p">,</span><span class="n">p</span><span class="o">+</span><span class="n">k</span><span class="o">+</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">test</span><span class="p">):</span>
+			<span class="n">val</span><span class="p">[</span><span class="n">p</span><span class="o">+</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">val</span><span class="p">[</span><span class="n">p</span><span class="o">+</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+	<span class="k">return</span> <span class="n">val</span>
+
+
+</div>
+<div class="viewcode-block" id="DotAccessible"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.DotAccessible">[docs]</a><span class="k">class</span> <span class="nc">DotAccessible</span><span class="p">(</span><span class="n">MutableMapping</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		A dictionary that allows dot notation for accessing nested subdictionaries. Code [inspired-by/copied-from]:</span>
+<span class="sd">		http://www.velvetcache.org/2012/03/13/addressing-nested-dictionaries-in-python</span>
+<span class="sd">		http://stackoverflow.com/questions/3387691/python-how-to-perfectly-override-a-dict</span>
+<span class="sd">		http://docs.python.org/2/library/collections.html#collections-abstract-base-classes</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>  <span class="c"># use the free update to set keys</span>
+
+	<span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dotkey</span><span class="p">):</span>
+		<span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span>
+		<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dotkey</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">):</span>
+			<span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+		<span class="k">return</span> <span class="n">value</span>
+
+	<span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dotkey</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="n">nested_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span>
+		<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dotkey</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+			<span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nested_node</span><span class="p">:</span>
+				<span class="n">nested_node</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+			<span class="n">nested_node</span> <span class="o">=</span> <span class="n">nested_node</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+		<span class="n">nested_node</span><span class="p">[</span><span class="n">dotkey</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+
+	<span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dotkey</span><span class="p">):</span>
+		<span class="n">nested_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span>
+		<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dotkey</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+			<span class="n">nested_node</span> <span class="o">=</span> <span class="n">nested_node</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+		<span class="k">del</span> <span class="n">nested_node</span><span class="p">[</span><span class="n">dotkey</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+
+	<span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="RemoveObjId"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.RemoveObjId">[docs]</a><span class="k">def</span> <span class="nf">RemoveObjId</span><span class="p">(</span><span class="n">document</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function will recursively search all the values of a document/dictionary. Any value in the dictionary whose type is equal to a MongoDB ObjectId will be converted to a string.</span>
+
+<span class="sd">    		=====================   =====================</span>
+<span class="sd">	        **Input**               **Description**</span>
+<span class="sd">	        ---------------------   ---------------------</span>
+<span class="sd">	        document		A nested or flattened dictionary; or similarly a document returned by MongoDB</span>
+<span class="sd">	        =====================   =====================</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+	<span class="kn">from</span> <span class="nn">bson.objectid</span> <span class="kn">import</span> <span class="n">ObjectId</span>
+	<span class="n">oid_type</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">ObjectId</span><span class="p">())</span>
+	<span class="k">def</span> <span class="nf">remove_oid</span><span class="p">(</span><span class="n">document</span><span class="p">):</span>
+		<span class="k">for</span> <span class="n">f</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">document</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+			<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+				<span class="n">remove_oid</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+			<span class="c">#its an object id</span>
+			<span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">oid_type</span><span class="p">):</span>
+				<span class="n">document</span><span class="p">[</span><span class="n">f</span><span class="p">]</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+			<span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="nb">dict</span><span class="p">):</span>
+				<span class="k">for</span> <span class="n">sub_vals</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
+					<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sub_vals</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+						<span class="n">remove_oid</span><span class="p">(</span><span class="n">sub_vals</span><span class="p">)</span>
+	<span class="n">remove_oid</span><span class="p">(</span><span class="n">document</span><span class="p">)</span>
+
+<span class="c">#function description - this will extract a specific field from a file and write it to the output file as a  single column (without a header)</span>
+<span class="c">#if count_field = None, then we assume there are no counts associated with the field of interest.  if count_field =is not None then we assume that column refers to the number of counts a sequence has occurred</span></div>
+<div class="viewcode-block" id="Write_Single_Field"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.Write_Single_Field">[docs]</a><span class="k">def</span> <span class="nf">Write_Single_Field</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">outfile_location</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">field</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">count_field</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">contains_header</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">			This will extract a specific field from a file and write it to the output file as a single column (without a header.)</span>
+<span class="sd">			If *count_field* = None, then we assume there are no counts associated with the field of interest.</span>
+<span class="sd">			If *count_field* =! None, then we assume that column refers to the number of counts a sequence has occurred</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">total_data</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="n">total_field</span> <span class="o">=</span> <span class="mi">0</span>
+
+	<span class="k">if</span> <span class="n">outfile_location</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+		<span class="n">outfile_location</span> <span class="o">=</span> <span class="n">filename</span><span class="o">+</span><span class="s">&#39;_singlefield.txt&#39;</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+		<span class="n">isfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">filename</span><span class="o">==</span><span class="bp">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">isfile</span><span class="o">==</span><span class="bp">False</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;The pathname of the file is invalid&quot;</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">field</span><span class="o">==</span><span class="bp">None</span><span class="p">):</span>
+		<span class="n">IF_file</span> <span class="o">=</span> <span class="n">readwrite</span><span class="o">.</span><span class="n">immunogrepFile</span><span class="p">(</span><span class="n">filelocation</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span><span class="n">filetype</span><span class="o">=</span><span class="s">&#39;TAB&#39;</span><span class="p">,</span><span class="n">contains_header</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+		<span class="k">print</span><span class="p">(</span><span class="s">&quot;Warning no field name was provided.  This file will be treated as a tab file and the first column will be selected&quot;</span><span class="p">)</span>
+		<span class="n">field</span> <span class="o">=</span> <span class="s">&#39;Column 1&#39;</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">IF_file</span> <span class="o">=</span> <span class="n">readwrite</span><span class="o">.</span><span class="n">immunogrepFile</span><span class="p">(</span><span class="n">filelocation</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span><span class="n">filetype</span><span class="o">=</span><span class="n">file_format</span><span class="p">,</span><span class="n">contains_header</span><span class="o">=</span><span class="n">contains_header</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="p">(</span><span class="n">file_format</span><span class="o">==</span><span class="bp">None</span><span class="p">):</span>
+			<span class="n">guessedFiletype</span> <span class="o">=</span> <span class="n">IF_file</span><span class="o">.</span><span class="n">getFiletype</span><span class="p">()</span>
+			<span class="k">print</span><span class="p">(</span><span class="s">&quot;Warning, no file type for this file was provided.  The file was predicted to be a &quot;</span><span class="o">+</span><span class="n">guessedFiletype</span><span class="o">+</span><span class="s">&quot; file.&quot;</span><span class="p">)</span>
+	<span class="k">try</span><span class="p">:</span>
+		<span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile_location</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+		<span class="k">while</span> <span class="ow">not</span><span class="p">(</span><span class="n">IF_file</span><span class="o">.</span><span class="n">IFclass</span><span class="o">.</span><span class="n">eof</span><span class="p">):</span>
+			<span class="n">data</span> <span class="o">=</span> <span class="n">IF_file</span><span class="o">.</span><span class="n">IFclass</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="c">#read in each line as a dictionary</span>
+			<span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+				<span class="n">total_data</span><span class="o">+=</span><span class="mi">1</span>
+				<span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">data</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="n">field</span><span class="p">]:</span>
+					<span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+					<span class="k">if</span> <span class="n">count_field</span><span class="o">!=</span><span class="bp">None</span> <span class="ow">and</span> <span class="n">count_field</span> <span class="ow">in</span> <span class="n">data</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="n">count_field</span><span class="p">]:</span>
+						<span class="n">count</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">count_field</span><span class="p">]</span> <span class="c">#this defines the number of times we will write it to a file</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="n">count</span> <span class="o">=</span> <span class="s">&#39;1&#39;</span>
+					<span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">value</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">+</span><span class="n">count</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span><span class="c">#write sequence to new file</span>
+					<span class="n">total_field</span><span class="o">+=</span><span class="mi">1</span>
+	<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+		<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">outfile_location</span><span class="p">)</span><span class="c">#(&quot;rm &#39;{0}&#39;&quot;.format(outfile_location))</span>
+		<span class="n">print_error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="p">[</span><span class="n">total_data</span><span class="p">,</span><span class="n">total_field</span><span class="p">]</span>
+
+
+<span class="c">#Simple python command for counting the occurrences of a sequence ina file.</span>
+<span class="c">#assumption 1: sequences are sorted alphabetically</span>
+<span class="c">#assumption 2: tab delimited file</span>
+<span class="c">#assumption 3: column 1 = sequence of interest, column 2 = counts for that sequence</span></div>
+<div class="viewcode-block" id="count_sorted_seqs"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.count_sorted_seqs">[docs]</a><span class="k">def</span> <span class="nf">count_sorted_seqs</span><span class="p">(</span><span class="n">input_file_name</span><span class="p">,</span> <span class="n">output_file_name</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Counts the occurances of a sequence in a file. Takes a few assumptions into account.</span>
+
+<span class="sd">		:Assumptions:</span>
+<span class="sd">			* Sequences are sorted alphabetically</span>
+<span class="sd">			* tab delimited file</span>
+<span class="sd">			* column 1 = sequence of interest</span>
+<span class="sd">			* column 2 = counts for that sequence</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">f_in</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_file_name</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+	<span class="n">f_out</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+	<span class="n">line_one</span> <span class="o">=</span> <span class="n">f_in</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+	<span class="n">line_one</span> <span class="o">=</span> <span class="n">line_one</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span>
+	<span class="n">current_seq</span> <span class="o">=</span> <span class="n">line_one</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line_one</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+		<span class="n">current_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_one</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">current_count</span> <span class="o">=</span> <span class="mi">1</span>
+
+	<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f_in</span><span class="p">:</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span>
+		<span class="n">temp_seq</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+			<span class="n">temp_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">temp_count</span> <span class="o">=</span> <span class="mi">1</span>
+
+		<span class="k">if</span> <span class="p">(</span><span class="n">temp_seq</span> <span class="o">==</span> <span class="n">current_seq</span><span class="p">):</span> <span class="c">#same sequence as before, so keep adding to teh counts</span>
+			<span class="n">current_count</span><span class="o">+=</span><span class="n">temp_count</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">f_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">current_seq</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">current_count</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span> <span class="c"># new sequence encountered so output results for old sequence and replace new sequence</span>
+			<span class="n">current_seq</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+			<span class="n">current_count</span> <span class="o">=</span> <span class="n">temp_count</span>
+	<span class="n">f_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">current_seq</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">current_count</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+	<span class="n">f_in</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+	<span class="n">f_out</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<span class="c">#filelocation-&gt; location of file</span>
+<span class="c">#field -&gt; name of the column/field in the file that you want to read</span>
+<span class="c">#file_format -&gt; JSON/TAB/CSV/ETC...</span>
+<span class="c">#contains_header -&gt; whether or not the file contains a header row</span></div>
+<div class="viewcode-block" id="count_unique_values"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.count_unique_values">[docs]</a><span class="k">def</span> <span class="nf">count_unique_values</span><span class="p">(</span><span class="n">filelocation</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">output_filelocation</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">field</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">count_field</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">file_format</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">contains_header</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">delete_intermediate_file</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">mem_safe</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	        ===============   ================</span>
+<span class="sd">	        **Input**         **Description**</span>
+<span class="sd">	        ---------------   ----------------</span>
+<span class="sd">	        filelocation      location of file</span>
+<span class="sd">	        field             name of the column/field in the file that you want to read</span>
+<span class="sd">	        file_format       JSON/TAB/CSV/etc.</span>
+<span class="sd">	        contains_header   whether or not the file contains a header row</span>
+<span class="sd">	        ===============   ================</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">if</span> <span class="n">output_filelocation</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+		<span class="n">output_filename</span> <span class="o">=</span> <span class="n">removeFileExtension</span><span class="p">(</span><span class="n">filelocation</span><span class="p">)</span>
+		<span class="n">output_filename</span> <span class="o">=</span> <span class="n">output_filename</span><span class="o">+</span><span class="s">&#39;.unique_vals.txt&#39;</span>
+		<span class="n">unique_counts</span> <span class="o">=</span> <span class="n">output_filename</span><span class="o">+</span><span class="s">&#39;.counts&#39;</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">output_filename</span> <span class="o">=</span> <span class="n">output_filelocation</span><span class="o">+</span><span class="s">&#39;.single_field_list&#39;</span>
+		<span class="n">output_filename2</span> <span class="o">=</span> <span class="n">output_filelocation</span><span class="o">+</span><span class="s">&#39;_temp2&#39;</span>
+		<span class="n">unique_counts</span> <span class="o">=</span> <span class="n">output_filelocation</span>
+
+	<span class="p">[</span><span class="n">total_found</span><span class="p">,</span><span class="n">total_field</span><span class="p">]</span> <span class="o">=</span> <span class="n">Write_Single_Field</span><span class="p">(</span><span class="n">filelocation</span><span class="p">,</span><span class="n">output_filename</span><span class="p">,</span><span class="n">field</span><span class="p">,</span><span class="n">count_field</span><span class="p">,</span> <span class="n">file_format</span><span class="p">,</span><span class="n">contains_header</span><span class="p">)</span> <span class="c">#take the field we are interested in and just write it to a temp file</span>
+
+	<span class="k">if</span> <span class="n">mem_safe</span><span class="p">:</span>
+		<span class="c">#bash_command = &#39;&#39;&#39;sort &#39;{0}&#39; | uniq -c | awk &#39;BEGIN{{OFS=&quot;\t&quot;}}{{ print $2,$1,$1 }}&#39; &gt; &#39;{1}&#39; &#39;&#39;&#39;.format(output_filename,unique_counts)	 --&gt; oldest method, no longer used</span>
+
+		<span class="c">#USE THESE LINES IF WE FIND THAT THERE ARE MEMORY LIMITATIONS/ERRORS WITH THE FUNCTION##</span>
+		<span class="c">#print datetime.now()</span>
+		<span class="n">bash_command</span> <span class="o">=</span> <span class="s">&#39;&#39;&#39;sort &#39;{0}&#39; &gt; &#39;{1}&#39; &#39;&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span><span class="n">output_filename2</span><span class="p">)</span>
+		<span class="c">#os.system(bash_command)</span>
+		<span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">bash_command</span><span class="p">,</span><span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+		<span class="n">count_sorted_seqs</span><span class="p">(</span><span class="n">output_filename2</span><span class="p">,</span><span class="n">unique_counts</span><span class="p">)</span>
+		<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">output_filename2</span><span class="p">)</span>
+		<span class="c">#os.system(&quot;rm &#39;{0}&#39;&quot;.format(output_filename2))</span>
+		<span class="c">#print datetime.now()</span>
+		<span class="c">###END OF MEMORY SMART BUT SLOER FUNCTION ################</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="c">#FAST method, but could have memory limitations for extremely large files)</span>
+		<span class="n">bash_command</span> <span class="o">=</span> <span class="s">&#39;&#39;&#39;awk &#39;{{OFS = &quot;</span><span class="se">\t</span><span class="s">&quot;}} {{arr[$1]+=$2}} END {{for (i in arr) {{print i,arr[i]}}}}&#39; &#39;{0}&#39; &gt; &#39;{1}&#39; &#39;&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span><span class="n">unique_counts</span><span class="p">)</span>
+		<span class="c">#os.system(bash_command)</span>
+		<span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">bash_command</span><span class="p">,</span><span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+	<span class="k">if</span> <span class="n">delete_intermediate_file</span><span class="p">:</span>
+		<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">output_filename</span><span class="p">)</span>
+		<span class="c">#os.system(&quot;rm &#39;{0}&#39;&quot;.format(output_filename))</span>
+
+	<span class="c">#print datetime.now()</span>
+
+	<span class="k">return</span> <span class="p">[</span><span class="n">total_found</span><span class="p">,</span><span class="n">total_field</span><span class="p">]</span>
+
+
+
+<span class="c">#print an error message if system/program fails</span></div>
+<div class="viewcode-block" id="print_error_string"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.print_error_string">[docs]</a><span class="k">def</span> <span class="nf">print_error_string</span><span class="p">(</span><span class="n">e</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Prints an error message if system/program fails.</span>
+<span class="sd">		Uses traceback to report the last line and module where error occurred</span>
+
+<span class="sd">		:exception code:</span>
+
+<span class="sd">			if not(e):</span>
+<span class="sd">				e = &quot;Exception error not passed&quot;</span>
+<span class="sd">			else:</span>
+<span class="sd">				print there was an error: str(e)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+	<span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_obj</span><span class="p">,</span> <span class="n">exc_tb</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+	<span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">exc_tb</span><span class="o">.</span><span class="n">tb_frame</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+	<span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+		<span class="n">error</span> <span class="o">=</span> <span class="s">&quot;Exception error not passed</span><span class="se">\n</span><span class="s">&quot;</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">error</span> <span class="o">=</span> <span class="s">&quot;There was an error: </span><span class="se">\n</span><span class="s">&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+	<span class="n">error</span><span class="o">+=</span>	<span class="s">&quot;</span><span class="se">\n</span><span class="s">Line Number: {0} , type: {1} , fname: {2}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">exc_tb</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">exc_type</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+
+	<span class="n">tb_error</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
+	<span class="n">error</span><span class="o">+=</span><span class="s">&quot;Traceback Error:</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">tb_error</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">error</span>
+
+
+
+
+
+
+
+<span class="c"># this is a cleanup function to remove any unused fields</span>
+<span class="c"># this will iterate the sequence document and remove any subdocuments or fields that have &quot;None&quot; values</span></div>
+<div class="viewcode-block" id="removeEmptyVals"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.removeEmptyVals">[docs]</a><span class="k">def</span> <span class="nf">removeEmptyVals</span><span class="p">(</span><span class="n">myDict</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		this is a cleanup function to remove any unused fields</span>
+<span class="sd">		this will iterate the sequence document/dictionary and remove any subdocuments or fields that have &quot;None&quot; or empty string or empty array/dict values</span>
+
+<span class="sd">			================	================</span>
+<span class="sd">			**Input**			**Description**</span>
+<span class="sd">			----------------	----------------</span>
+<span class="sd">			myDict				A python dictionary of keys/values</span>
+<span class="sd">			================	================</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">if</span> <span class="n">myDict</span><span class="p">:</span>
+		<span class="n">copyDict</span> <span class="o">=</span> <span class="n">myDict</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span>
+
+		<span class="k">for</span> <span class="n">myKeys</span> <span class="ow">in</span> <span class="n">myDict</span><span class="p">:</span>
+			<span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">myDict</span><span class="p">[</span><span class="n">myKeys</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+				<span class="c">#if it has a subdocument then recursively remove any None elements in subdocument</span>
+				<span class="n">subDict</span> <span class="o">=</span> <span class="n">removeEmptyVals</span><span class="p">(</span><span class="n">myDict</span><span class="p">[</span><span class="n">myKeys</span><span class="p">])</span>
+				<span class="k">if</span> <span class="n">subDict</span> <span class="o">==</span> <span class="p">{}:</span>
+					<span class="n">copyDict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">myKeys</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="n">copyDict</span><span class="p">[</span><span class="n">myKeys</span><span class="p">]</span> <span class="o">=</span> <span class="n">subDict</span><span class="p">;</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">if</span> <span class="n">myDict</span><span class="p">[</span><span class="n">myKeys</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span> <span class="ow">and</span> <span class="n">myDict</span><span class="p">[</span><span class="n">myKeys</span><span class="p">]</span><span class="o">!=</span><span class="bp">False</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">myDict</span><span class="p">[</span><span class="n">myKeys</span><span class="p">]:</span>
+					<span class="n">copyDict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">myKeys</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">copyDict</span> <span class="o">=</span> <span class="n">myDict</span>
+
+	<span class="k">return</span> <span class="n">copyDict</span>
+
+<span class="c">#ASSUMES THAT THE DICTIONARY IS ONLY IN DOT NOTATION!!! I.E. NOT A NESTED DICTIONARY</span>
+<span class="c"># this is a cleanup function to remove any unused fields</span>
+<span class="c"># this will iterate the sequence document and remove any subdocuments or fields that have &quot;None&quot; values or empty strings or empty lists</span>
+<span class="c">#any fields that are &#39;empty&#39; are retuend as a second variable</span></div>
+<div class="viewcode-block" id="divideEmptyAndNonEmptyVals"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.divideEmptyAndNonEmptyVals">[docs]</a><span class="k">def</span> <span class="nf">divideEmptyAndNonEmptyVals</span><span class="p">(</span><span class="n">myDict</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		This is a cleanup function that removes any unused fields.</span>
+<span class="sd">		This will iterate the sequence document and remove any subdocuments or fields that have &quot;None&quot; values, empty strings or empty lists.</span>
+<span class="sd">		Fields that are empty are returned as a second variable.</span>
+
+<span class="sd">	        ===============   ================</span>
+<span class="sd">	        **Input**         **Description**</span>
+<span class="sd">	        ---------------   ----------------</span>
+<span class="sd">	        myDict			  An already flattened dictionary</span>
+<span class="sd">	        ===============   ================</span>
+
+<span class="sd">	        .. note::</span>
+<span class="sd">			This method assumes that the dictionary is in dot notation. i.e. not a nested dictionary</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">empty_fields</span><span class="o">=</span><span class="p">{}</span>
+	<span class="n">non_empty</span> <span class="o">=</span> <span class="p">{}</span>
+	<span class="k">for</span> <span class="n">field</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">myDict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+		<span class="k">if</span> <span class="n">value</span><span class="o">!=</span><span class="bp">False</span> <span class="ow">and</span> <span class="ow">not</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+			<span class="n">empty_fields</span><span class="p">[</span><span class="n">field</span><span class="p">]</span><span class="o">=</span> <span class="s">&quot;&quot;</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">non_empty</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+	<span class="k">return</span> <span class="p">[</span><span class="n">non_empty</span><span class="p">,</span><span class="n">empty_fields</span><span class="p">]</span>
+
+<span class="c"># this is a cleanup function to remove any unused fields</span>
+<span class="c"># this will iterate the sequence document and remove any subdocuments or fields that have &quot;None&quot; values</span></div>
+<div class="viewcode-block" id="removeNoneVals"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.removeNoneVals">[docs]</a><span class="k">def</span> <span class="nf">removeNoneVals</span><span class="p">(</span><span class="n">myDict</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		this is a cleanup function to remove any unused fields</span>
+<span class="sd">		this will iterate the sequence document/dictionary and remove any subdocuments or fields that have &quot;None&quot; only</span>
+
+<span class="sd">			===============   ================</span>
+<span class="sd">			**Input**         **Description**</span>
+<span class="sd">			---------------   ----------------</span>
+<span class="sd">			myDict            A python dictionary of keys/values</span>
+<span class="sd">			===============   ================</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">if</span> <span class="n">myDict</span><span class="p">:</span>
+		<span class="n">copyDict</span> <span class="o">=</span> <span class="n">myDict</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span>
+
+		<span class="k">for</span> <span class="n">myKeys</span> <span class="ow">in</span> <span class="n">myDict</span><span class="p">:</span>
+			<span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">myDict</span><span class="p">[</span><span class="n">myKeys</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+				<span class="c">#if it has a subdocument then recursively remove any None elements in subdocument</span>
+				<span class="n">subDict</span> <span class="o">=</span> <span class="n">removeNoneVals</span><span class="p">(</span><span class="n">myDict</span><span class="p">[</span><span class="n">myKeys</span><span class="p">])</span>
+				<span class="k">if</span> <span class="n">subDict</span> <span class="o">==</span> <span class="p">{}:</span>
+					<span class="n">copyDict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">myKeys</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="n">copyDict</span><span class="p">[</span><span class="n">myKeys</span><span class="p">]</span> <span class="o">=</span> <span class="n">subDict</span><span class="p">;</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">if</span> <span class="n">myDict</span><span class="p">[</span><span class="n">myKeys</span><span class="p">]</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+					<span class="n">copyDict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">myKeys</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">copyDict</span> <span class="o">=</span> <span class="n">myDict</span>
+
+	<span class="k">return</span> <span class="n">copyDict</span>
+
+
+
+<span class="c">#spint out a counter of the current status of a process (i.e. percent done)</span></div>
+<div class="viewcode-block" id="LoopStatus"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.LoopStatus">[docs]</a><span class="k">def</span> <span class="nf">LoopStatus</span><span class="p">(</span><span class="n">counter</span><span class="p">,</span><span class="n">totalSeq</span><span class="p">,</span><span class="n">perIndicate</span><span class="p">,</span><span class="n">startPer</span><span class="p">,</span><span class="n">div</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">addedInfo</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        	counter of the current status of a process. (i.e. percent done)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+	<span class="n">percentDone</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">counter</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">totalSeq</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">percentDone</span><span class="o">%</span><span class="n">perIndicate</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="n">percentDone</span><span class="o">&gt;</span><span class="n">startPer</span><span class="p">:</span>
+		<span class="n">stringvar</span> <span class="o">=</span><span class="s">&#39;{0}% percent done. Time: {1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">percentDone</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()))</span>
+		<span class="k">if</span> <span class="n">addedInfo</span><span class="p">:</span>
+			<span class="n">stringvar</span><span class="o">+=</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">{0}</span><span class="se">\n\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">addedInfo</span><span class="p">)</span>
+		<span class="k">print</span><span class="p">(</span><span class="n">stringvar</span><span class="p">)</span>
+		<span class="n">startPer</span> <span class="o">=</span> <span class="n">percentDone</span>
+	<span class="k">return</span> <span class="n">startPer</span>
+
+<span class="c">#spint out a counter of the current status of a process (i.e. percent done)</span>
+<span class="c">#THIS FUNCTION USES GENERATOR INSTEAD</span></div>
+<div class="viewcode-block" id="LoopStatusGen"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.LoopStatusGen">[docs]</a><span class="k">def</span> <span class="nf">LoopStatusGen</span><span class="p">(</span><span class="n">totalSeq</span><span class="p">,</span><span class="n">perIndicate</span><span class="p">,</span><span class="n">addedInfo</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		counter of the current status of a process.</span>
+
+<span class="sd">		.. note::</span>
+<span class="sd">			this function uses generator instead</span>
+
+<span class="sd">		.. seealso::</span>
+<span class="sd">			:py:func:`.LoopStatus`</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">counter</span><span class="o">=</span><span class="mi">0</span>
+	<span class="n">startPer</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+		<span class="n">percentDone</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">counter</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">totalSeq</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">percentDone</span><span class="o">%</span><span class="n">perIndicate</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="n">percentDone</span><span class="o">&gt;</span><span class="n">startPer</span><span class="p">:</span>
+			<span class="n">stringvar</span> <span class="o">=</span><span class="s">&#39;{0}% percent done. Time: {1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">percentDone</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()))</span>
+			<span class="k">if</span> <span class="n">addedInfo</span><span class="p">:</span>
+				<span class="n">stringvar</span><span class="o">+=</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">{0}</span><span class="se">\n\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">addedInfo</span><span class="p">)</span>
+
+			<span class="k">print</span><span class="p">(</span><span class="n">stringvar</span><span class="p">)</span> <span class="c">#print out the current perecent</span>
+			<span class="n">startPer</span> <span class="o">=</span> <span class="n">percentDone</span>
+		<span class="k">yield</span> <span class="n">startPer</span> <span class="c">#use a generator to pause</span>
+		<span class="n">counter</span><span class="o">+=</span><span class="mi">1</span>
+</div>
+<div class="viewcode-block" id="removeFileExtension"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.removeFileExtension">[docs]</a><span class="k">def</span> <span class="nf">removeFileExtension</span><span class="p">(</span><span class="n">stringFileName</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Removes File Extension</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+	<span class="n">filename</span> <span class="o">=</span> <span class="n">stringFileName</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)</span>
+	<span class="n">lastExtension</span> <span class="o">=</span> <span class="n">filename</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+	<span class="n">foundExtension</span> <span class="o">=</span> <span class="bp">False</span>
+
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">listofextension</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="n">lastExtension</span><span class="p">:</span>
+			<span class="n">foundExtension</span> <span class="o">=</span> <span class="bp">True</span>
+
+	<span class="k">if</span> <span class="n">foundExtension</span><span class="p">:</span>
+		<span class="n">editedFileName</span> <span class="o">=</span> <span class="n">filename</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+			<span class="n">editedFileName</span><span class="o">+=</span><span class="s">&quot;.&quot;</span><span class="o">+</span><span class="n">filename</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">editedFileName</span> <span class="o">=</span> <span class="n">stringFileName</span>
+
+	<span class="k">return</span> <span class="n">editedFileName</span>
+
+</div>
+<div class="viewcode-block" id="fieldsForAnnotatingAb"><a class="viewcode-back" href="../Functions.html#immunogrep_useful_functions.fieldsForAnnotatingAb">[docs]</a><span class="k">def</span> <span class="nf">fieldsForAnnotatingAb</span><span class="p">():</span>
+
+	<span class="n">abFields</span> <span class="o">=</span> <span class="p">{</span>
+		<span class="s">&quot;FULL_SEQ&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span> <span class="c">#dna sequence</span>
+		<span class="s">&quot;SEQ_HEADER&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span> <span class="c">#header for dna sequence</span>
+		<span class="s">&quot;STRAND_DIR&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span> <span class="c">#after the alignment is the v/d/j gene aligned to the fwd or reverse complement?</span>
+		<span class="s">&quot;VGENE_START&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;JGENE_START&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;FR1_START_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span> <span class="c">#nucleotide position along sequence where FR1 starts</span>
+		<span class="s">&quot;FR1_END_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;CDR1_START_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;CDR1_END_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;FR2_START_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;FR2_END_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;CDR2_START_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;CDR2_END_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;CDR3_START_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;CDR3_END_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;FR4_START_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;FR4_END_NT&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
+		<span class="s">&quot;SEQ_ALGN&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span> <span class="c">#the actual sequence that is aligned to the germline (includes gap characters (-)), to be used for later scripts</span>
+		<span class="s">&quot;GERMLINE_ALGN&quot;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span> <span class="c">#the actual germline sequence that best aligns to sequence (includes gap characters (-)), to be used for later scripts</span>
+		<span class="s">&quot;START_FEATURE&quot;</span><span class="p">:</span><span class="bp">None</span> <span class="c">#what region does the antibody start/along alignment</span>
+	<span class="p">};</span>
+	<span class="k">return</span> <span class="n">abFields</span>
+</pre></div></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Costas.
+    </p>
+  </div>
+
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+  
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'1.0.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

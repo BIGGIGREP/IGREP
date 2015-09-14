@@ -5,7 +5,7 @@ import json
 import subprocess
 
 
-parent_of_proxy = os.path.dirname(os.path.dirname(os.path.abspath("__file__")))
+parent_of_proxy = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,os.path.join(parent_of_proxy,'common_tools'))# '../common_tools/') #add scripts in this file to the proxy list
 
 import immunogrep_db_query_api as query

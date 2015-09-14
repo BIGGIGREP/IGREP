@@ -9,20 +9,15 @@
 	<title>Database Queries</title>
 	
 	<!--
-	We will relase non cdn versions when we are officially running on server
 	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script> 
     <script type="text/javascript" src="/scripts/datatables.min.js"></script>
     <script type="text/javascript" src="/scripts/jquery-ui-1.11.4.js"></script>
-    <script type="text/javascript" src="/scripts/qtip/jquery.qtip.js"></script> 
     -->
     
     <script src="//code.jquery.com/jquery-1.11.3.js"></script>
-    <!-- datatable 10.4 does nto seem to work -->
-    <script src="//cdn.datatables.net/1.9.4/js/jquery.dataTables.min.js"></script>
+    <script src="//cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
     <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
-    <script src="//cdn.jsdelivr.net/qtip2/2.2.1/jquery.qtip.min.js"></script>
-    
-    
+    <script type="text/javascript" src="/scripts/qtip/jquery.qtip.js"></script> 
         
 	<script type="text/javascript" src="/scripts/block_ui.js"></script>
 	<!-- <script type="text/javascript" src="/scripts/exptable.js"></script>-->
@@ -30,18 +25,14 @@
 	<script type="text/javascript" src="/scripts/igrep.script.tools.js"></script>
 
 
-	<link rel="stylesheet" type="text/css" href="/styles/datatables.css" >
-	<link rel="stylesheet" type="text/css" href="/scripts/jquery-ui-1.11.4.custom/jquery-ui.theme.css" >
+	<link rel="stylesheet" type="text/css" href="/styles/datatables.css" />
+	<link rel="stylesheet" type="text/css" href="/scripts/jquery-ui-1.11.4.custom/jquery-ui.theme.css" />
 	<link rel="stylesheet" type="text/css" href="/styles/bootstrap/css/bootstrap.min.css">
 	<link rel="stylesheet" type="text/css" href="/styles/dashboard.css">
-	<link rel="stylesheet" type="text/css" href="/styles/jquery.qtip.min.css">
-	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css"> 
-	<!--this stylesheet is required for making the experiment table and filters-->
-	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_expcollection_filters.css">
+	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">
 
 	<script type="text/javascript">
 		/*THIS script will code for creating the experiment metadata table. it will also include data for making the right side pane */
-		
 		//global variable that will store metadata for each experiment returned from query
 		var exp_metadata_info = {}
 		var exp_metadata_list = []
@@ -63,8 +54,11 @@
 		//simillar to above var, but  more info
 		//->map experimentid+recombination type: schema and experimentid+annotation: schema
 		//replace field names containining '.' with '___'
+
 		var analysis_schema_annotations_html = {}
 		var analysis_schema_annotations_html_by_analysis = {}
+		
+		
 		
 		//this variable will control how the 'OUTPUT FIELD ORDER'/'MODIFY FIELD OUTPUT' will appear
 		//the order of these fields will match the order they will be returned as outputs to TAB/CSV files (or FASTA/FASTQ)
@@ -82,11 +76,14 @@
 			'RECOMBINATION_TYPE',
 			'PREDICTED_CHAIN_TYPE',
 			'LOCUS_NAME',
+
 			'VREGION.VGENES',
 			'DREGION.DGENES',
 			'JREGION.JGENES',
+
 			'FULL_LENGTH',
 			'STOP_CODONS',
+
 			'VREGION.FR1.AA',
 			'VREGION.CDR1.AA',
 			'VREGION.FR2.AA',
@@ -94,6 +91,7 @@
 			'VREGION.FR3.AA',
 			'CDR3.AA',
 			'JREGION.FR4.AA',
+
 			'VREGION.FR1.NT',
 			'VREGION.CDR1.NT',
 			'VREGION.FR2.NT',
@@ -101,6 +99,7 @@
 			'VREGION.FR3.NT',
 			'CDR3.NT',
 			'JREGION.FR4.NT',
+
 			'VREGION.CDR1.AA_LENGTH',
 			'VREGION.CDR1.NT_LENGTH',
 			'VREGION.CDR2.AA_LENGTH',
@@ -112,6 +111,7 @@
 			'DREGION.DGENE_SCORES',
 			'VREGION.SHM.NT',
 			'VREGION.SHM.AA',
+
 			'GAPPED.VREGION.FR1.AA',
 			'GAPPED.VREGION.CDR1.AA',
 			'GAPPED.VREGION.FR2.AA',
@@ -119,6 +119,7 @@
 			'GAPPED.VREGION.FR3.AA',
 			'GAPPED.CDR3.AA',
 			'GAPPED.JREGION.FR4.AA',
+
 			'GAPPED.VREGION.FR1.NT',
 			'GAPPED.VREGION.CDR1.NT',
 			'GAPPED.VREGION.FR2.NT',
@@ -126,10 +127,12 @@
 			'GAPPED.VREGION.FR3.NT',
 			'GAPPED.CDR3.NT',
 			'GAPPED.JREGION.FR4.NT',
+
 			'VREGION.VGENE_QUERY_START',
 			'VREGION.VGENE_QUERY_END',
 			'JREGION.JGENE_QUERY_START',
 			'JREGION.JGENE_QUERY_END'
+
 		]
 
 		//similar to varible above
@@ -224,12 +227,15 @@
 			//if it doesnt exist, then have it return by default the order of their fields
 			var r1pos = sort_tree_in_this_order.length+1
 			var r2pos = sort_tree_in_this_order.length+1
+
+
 			for (var i = 0; i<sort_tree_in_this_order.length;i++){
 				if (row1 == sort_tree_in_this_order[i] || row1.startsWith(sort_tree_in_this_order[i]+'.'))
 					r1pos = i
 				if (row2 == sort_tree_in_this_order[i] || row2.startsWith(sort_tree_in_this_order[i]+'.'))
 					r2pos = i
 			}
+
 			//since they are both equally weighted, return the sort order allphabetically by their value
 			if (r1pos==r2pos){
 				if (row1 === row2) {
@@ -243,6 +249,8 @@
 				//return by their sort position
 				return (r1pos < r2pos) ? -1 : 1;
 			}
+
+
 		}
 
 
@@ -252,6 +260,8 @@
 			if (typeof parent_div == 'undefined') {
 				parent_div = 'schema-fields';
 			}
+
+
 			var me = $('#'+parent_div)
 			var field_array = []
 			var name
@@ -271,6 +281,7 @@
 				})
 			}
 			return field_array
+
 		}
 
 		//This will take ALL of the data from exp metadata and generate a dictionaty that contains all possible fields from all experiments
@@ -347,11 +358,12 @@
 			return uniqueNames
 		}
 
-		//main function for generating the experiment table and the filtering options.
+
+		//main function for generating the app.
 		//It will accept two fields:
 			//a list of dictionaries describing metadata for each experiment
 			//a string corresponding to the users name in the database (want to avoid use appsoma_api.get_user_info)
-		function InitializeAPP(info_from_db,location_of_table){
+		function InitializeAPP(info_from_db){
 			if(!('metadata' in info_from_db)&&!('user_data' in info_from_db))
 				alert('Invalid exeriment metadata object format')
 			if ('metadata' in info_from_db)
@@ -365,7 +377,7 @@
 
 			var IgnoreFields = ['DUPLICATED_FIELDS','ANALYSES_SETTINGS']
 			var temp_dict
-			exp_user = db_username		
+			exp_user = db_username
 			//parse metadata provided
 			//remove keys we dont want to show
 			//also set global variables for the app (schema fields, annotation methods)
@@ -412,19 +424,17 @@
 			all_analyses = MakeUnique(all_analyses,true)
 			all_recomb = MakeUnique(all_recomb,true)
 			current_exp_set = exp_metadata_list
-			
-			//draw the experiment table
-			expdT = MakeHTMLTable(location_of_table,'name',[{'colname':'PROJECT_NAME'},{'colname':'EXPERIMENT_NAME'},{'colname':'READ_ACCESS'},{'colname':'OWNERS_OF_EXPERIMENT'},{'colname':'SEQ_COUNT'},{'colname':'ANALYSES'},{'colname':'DESCRIPTION'},{'colname':'_id','hidden':true}],exp_metadata_list,true,false,true,'Experiment Metadata',[],'','300px','200px', '',false)
+			expdT = MakeHTMLTable('exp-table-goes-here','name',[{'colname':'PROJECT_NAME'},{'colname':'EXPERIMENT_NAME'},{'colname':'READ_ACCESS'},{'colname':'OWNERS_OF_EXPERIMENT'},{'colname':'DESCRIPTION'},{'colname':'SEQ_COUNT'},{'colname':'ANALYSES'},{'colname':'_id','hidden':true}],exp_metadata_list,true,false,true,'Experiment Metadata',[],'','300px','200px', '',false)
 
 			//adds annotation section to the html page
-			//AddAnnotationFilter()
-			//AddAnalysesRecombResults()
+			AddAnnotationFilter()
+			AddAnalysesRecombResults()
 
 			//figure out ALL possible annotation fields based on users experiments. //create checkboxes for selecting specific fields
-			//global_annotation= GetGlobalSchema(analysis_schema_annotations)
+			global_annotation= GetGlobalSchema(analysis_schema_annotations)
 
-			//TableListener()
-			//FindAnnotatedFields([])
+			TableListener()
+			FindAnnotatedFields([])
 		}
 
 
@@ -686,12 +696,12 @@
 				tooltipheader = '';
 			}
 
-			//$(tableid+' tbody tr').each(function(){{	--> DO NOT USE THIS, USE DATATABLE ROWS. TABLEID WILL ONLY LIST THE FIRST TEN ROWS
+			//$('#'+tableid+' tbody tr').each(function(){{	--> DO NOT USE THIS, USE DATATABLE ROWS. TABLEID WILL ONLY LIST THE FIRST TEN ROWS
 			datatable_var.$('tr').each(function(){
+
+
 				$(this).attr('title',tool_tip_text_array[datatable_var.fnGetPosition(this)]);
 			});
-
-			
 			//finally associate a qtip jquery to all of the rows in the datatable
 			datatable_var.$('tr').qtip({
 				content:{
@@ -712,9 +722,8 @@
 					}
 				},
 				style:{
-					classes:"expqtipcontent"
-				}
 
+				}
 			});
 		}
 
@@ -737,7 +746,9 @@
 			//width: column width
 		/*,minColWidth='200px',maxColWidth='',wrap_text=false*/
 		//class_table_name => optional if user wants to add a new class to the table
-		function MakeHTMLTable(jquery_locator,name,header,data,multiple_row_selection,use_cell_tooltips,use_row_qtips,qTipHeader,row_tooltips,class_table_name,maxTableHeight,minColWidth, maxColWidth,wrap_text){
+		function MakeHTMLTable(divid,name,header,data,multiple_row_selection,use_cell_tooltips,use_row_qtips,qTipHeader,row_tooltips,class_table_name,maxTableHeight,minColWidth, maxColWidth,wrap_text){
+
+
 
 			if (typeof header == 'undefined') {
 				header = [];
@@ -828,9 +839,9 @@
 				"<div class='table-errors' style='color:red;'></div>"
 			"</div>"
 
-			$(jquery_locator).html(html_code);
+			$('#'+divid).html(html_code);
 
-			tableid = jquery_locator+' table.igrep-datatable'
+			tableid = divid+' table.igrep-datatable'
 
 			//settings used for making datatable
 			datatable_parameters = {
@@ -864,14 +875,14 @@
 						}
 			}
 
-			myDataTable = $(tableid).dataTable(datatable_parameters)
+			myDataTable = $('#'+tableid).dataTable(datatable_parameters)
 
 
 			if (multiple_row_selection){
 				$('.multirowselect').removeClass('not-multiple')
 
 				//Allow the HTML table to be selectable using the jquery selectable
-				$(tableid+' tbody').selectable({
+				$('#'+tableid+' tbody').selectable({
 					items:'tr',
 					stop: function( event, ui ) {
 						var current_rows
@@ -894,14 +905,14 @@
 				}).disableSelection()
 
 				//add javascript/jquery to allow multiple selection of fields
-				$(jquery_locator+' .all-row-deselect').on('click',function(){
+				$('#'+divid+' .all-row-deselect').on('click',function(){
 					//FIND ALL ROWS in the datatable var (must use datatable() function to include non -filtered rows
 					myDataTable.$('tr').removeClass('ui-selected');
 					//trigger a click event so that other HTML or other functions can detect SELECTING of datatable rows (not just clicking of rows)
 					myDataTable.$('tr').first().trigger('click')
 				});
 
-				$(jquery_locator+' .all-row-select').on('click',function(){
+				$('#'+divid+' .all-row-select').on('click',function(){
 					//FIND ROWS THAT ARE FILTERED
 					var filteredrows = myDataTable.$('tr', {"filter": "applied"});
 					myDataTable.$('tr').removeClass('ui-selected'); //remove class from ALL rows in table
@@ -912,7 +923,7 @@
 			}
 			else{ //ALLOW only one row to be selected
 
-				$(tableid).on('click', 'tbody tr', function() { // tbody tr').click( function( event ) {
+				$('#'+tableid).on('click', 'tbody tr', function() { // tbody tr').click( function( event ) {
 					if ( $(this).hasClass('ui-selected') ) {
 						$(this).removeClass('ui-selected');
 					}
@@ -945,7 +956,7 @@
 
 				//modfiy table header css
 			//myDataTable.$('thead td').css(css_styles)
-			$(jquery_locator+' table.dataTable thead td').css(css_styles)
+			$('#'+divid+' table.dataTable thead td').css(css_styles)
 
 
 
@@ -1027,17 +1038,17 @@
 
 		//THIS SORT PART MUST COME AFTER THE ABOVE FUNCTION TO ENSURE THAT ALL ROWS CAN BE SELLECTED....IF IT IS ABOVE THEN ONLY THE FIRST TEN ROWS ARE SELECTD
 		//pass in the 'div' parent that contains the datatable
-		function getDataTableData( jquery_locator ) {
+		function getDataTableData( divid ) {
 			//DO THE FOLLOWING SEARCH:
 				//search for all table elements under divid whose class is datTable,
 				//then for each table only select tables that have a row with calss ui-selected
 				//THEN go back a step and get the parent (which is the original table)
 				//ONCE we do that then we can retrieve the original datatable
-			var tablefound=$(jquery_locator+' table.dataTable tr.ui-selected').closest('table')
+			var tablefound=$('#'+divid+' table.dataTable tr.ui-selected').closest('table')
 
 			if (tablefound.length==0){
 				//no tables found
-				//replyJson({'datable_results': {'divname':divid,'row_data':[]} } );
+				replyJson({'datable_results': {'divname':divid,'row_data':[]} } );
 			}
 			else{
 				//retrievent the datatable associated with this div
@@ -1052,7 +1063,7 @@
 					var aData=dT.fnGetData(iRow);
 					rowData.push([iRow,aData]);
 				}
-				//replyJson({'datatable_results': {'divdname':divid,'row_data':rowData} } );
+				replyJson({'datatable_results': {'divdname':divid,'row_data':rowData} } );
 			}
 		}
 
@@ -1456,16 +1467,15 @@
 					current_selection.push(current_exp_set[iRow]['_id'])
 				}
 				results['_id'] = current_selection
-				results['projection'] = GetMongoProjectionFromCheckboxes()				
+				results['projection'] = GetMongoProjectionFromCheckboxes()
+				console.log(results['projection'])
 				//replyJson(results)
 			});
 
 		});
 	</script>
-	
 	<script type="text/javascript">
-		//Javascript function for loading the experiment metadata
-		//Runs an ajax call for getting the experiment metadata
+	//REAL JAVASCRPIPT STARTS HERE
 		//open config file, get settings for proxy for running quick python functions for app assisitance and address for igrep database proxy
 		//run an ajax call to get:
 			//1) the current user of the experiment
@@ -1475,7 +1485,7 @@
 		//Run an ajax call to the http server. Request metadata from database or proxy_path
 		//empty proxy_path => have server use default path
 		//Upon successful request, generate the datatable using exp_metadata
-		function GetMetaData(p){			
+		function GetMetaData(p){
 			exp_metadata = [
 				    {
 					"REVERSE_PRIMER_USED_IN_RT_STEP": "n/a",
@@ -1653,8 +1663,9 @@
 					"SEQUENCING_PLATFORM": "454"
 				    },
 
-				]								
-				InitializeAPP({'metadata':exp_metadata,'db_username':'cchrysostomou'},'#exp-table-goes-here')
+				]
+				console.log(exp_metadata)
+				InitializeAPP({'metadata':exp_metadata,'db_username':'cchrysostomou'})
 		}
 		/*function GetMetaData(proxy_path){
 			$.blockUI({ message: 'Searching metadata...' });
@@ -1682,135 +1693,209 @@
 		}*/
 		function ClearPage(){
 			$('#main-app-page').html('<div class="alert alert-danger" role="alert">There was an error when processing the database query. Please report this to an administrator</div>')
-		}		
+		}
+		$(document).ready(function(){
+			//GetMetaData();
+			// Example usage
+		});
 	</script>
-	
 	<script type="text/javascript">
 		$(document).ready(function(){
-			GetMetaData()
+			$('#hi').click(function(){
+				//$('#report-seq-data').toggle()
+				$('#report-seq-data').toggleClass('offscreen')
+				$('.main-app-section').toggleClass('sidebar2')
+			})
 		})
 	</script>
 	
 	<script>
-		//The following function/listening events are to be used for setting filters on the experiment table
-		//users can select fields to filter the table by and select values for each field 
-		function addToMain(){
-			$('ul.set-new-filters').find('li.selected').each(function(){				
-				$(this).addClass('inmain')/*these elements are now located in the main section*/	
-				$(this).clone(true,true).appendTo('ul.current-filters') //copy element to main page					
-			}) 
-		}
 		$(document).ready(function(){
-
-			//when the user selects 'add more filters' button then we want to show the next sidepane. replace current sidebar with this one
-			$('nav.sidebar-menu').on('click','button.add-filter-btn',function(){
-				//show the sidebar 'set-new-filters'
-				$('nav.set-new-filters').removeClass('offscreen');				
-				//make sure we hide any sidebars that are open
-				$('nav.exp-filter-options').addClass('offscreen')
-				$('div[name="exp-query-section"]').removeClass('sidebar3-present')
-				$(this).closest('.main-app-section').find('li.selecting').removeClass('selecting')
-			})
-
-			//anytime a filter-topic li element is clicked
-			$('nav.sidebar-menu').on('click','li.filter-topic',function(e){
-				if($(e.target).is('span.remove')){
-					//ignore clicks on the 'remove x' button
-            		e.preventDefault();
-            		return;
-        		}
-				$(this).toggleClass('selected')
-				if($(this).hasClass('selected')){
-					var target = $(this).closest('ul').attr('name')
-					$(this).closest('.main-app-section').find('li[name="'+target+'"]').addClass('selected')
-				}
-				else{
-					if($(this).closest('ul').find('li.selected').length==0){
-						var target = $(this).closest('ul').attr('name')
-						$(this).closest('.main-app-section').find('li[name="'+target+'"]').removeClass('selected')		
-					}	
-				}
-			})
-
-			//when user says 'go-back' in the 'add-filters' section
-			$('nav.set-new-filters').on('click','.go-back',function(e){								
-				$(e.delegateTarget).addClass('offscreen');//start moving this parent off screen
-				$('div[name="exp-query-section"]').removeClass('sidebar3-present') //start moving the experimentatl to the left
-				$('nav.exp-filter-options').addClass('offscreen') /*remove the options in sidepane3 off*/
-				$(this).closest('.main-app-section').find('li.selecting').removeClass('selecting') /*turn off any selecting objects*/				
-				//add selected-li-elements to the main pane
-				addToMain();
-			})
-
-			//Listening for when user clicks on a filter with more than one option, then we need to show the right sidebar			
-			$('li.show-options').on('click',function(e){	
-				if($(e.target).is('span.remove')){
-					//ignore clicks on the 'remove x' button
+			$('nav.sidebar-menu').on('click','li a',function(e){
+				if($(e.target).is('i')){
+					//ignore clicks on the 'i'/glyphicons 
             		e.preventDefault();
             	return;
         		}
-				if($(this).hasClass('selecting')){
-					$('div[name="exp-query-section"]').removeClass('sidebar3-present')
-					$('nav.exp-filter-options').addClass('offscreen')	
-					$(this).removeClass('selecting')
+				//$(this).toggleClass('active')
+				if($(this).hasClass('active')){
+					$(this).removeClass('active')					
+					$(this).siblings('ul').collapse('hide')
+					$(this).siblings('ul').find('a').removeClass('active')
 				}
 				else{
-					var class_search = $(this).attr('name')				
-					$('nav.exp-filter-options').removeClass('offscreen')
-					$('div[name="exp-query-section"]').addClass('sidebar3-present')
-					$('nav.exp-filter-options ul').hide()					
-					$('nav.exp-filter-options').find('ul[name="'+class_search+'"]').show()
-					$(this).closest('.main-app-section').find('li.selecting').removeClass('selecting')
-					$(this).addClass('selecting')
-				}			
-			})
+					$(this).addClass('active')
+					$(this).siblings('ul').collapse('show')					
+				}
 
-			//user hits the 'go-back' button when selecting specific values for a filter
-			$('nav.exp-filter-options').on('click','.go-back',function(e){
-				$('div[name="exp-query-section"]').removeClass('sidebar3-present')
-				$('nav.exp-filter-options').addClass('offscreen')
-				$(this).closest('.main-app-section').find('li.selecting').removeClass('selecting')
-			})
-
-			//deselect all selected items in a group
-			$('nav.sidebar-menu').on('click','li.deselect',function(){
-				var target = $(this).closest('ul').attr('name')
-				$(this).closest('ul').find('li.selected').removeClass('selected')				
-				$(this).closest('.main-app-section').find('li[name="'+target+'"]').removeClass('selected')		
-			})
-
-
-			//close sidebar 3 when these filter-topics are chosen 
-			$('ul.current-filters').on('click','li.filter-topic',function(){
-				$('div[name="exp-query-section"]').removeClass('sidebar3-present')
-				$('nav.exp-filter-options').addClass('offscreen')
-				$(this).closest('.main-app-section').find('li.selecting').removeClass('selecting')
-			})
-			$('ul.set-new-filters').on('click','li.filter-topic',function(){
-				$('div[name="exp-query-section"]').removeClass('sidebar3-present')
-				$('nav.exp-filter-options').addClass('offscreen')
-				$(this).closest('.main-app-section').find('li.selecting').removeClass('selecting')				
-			})
-
-			
-			//if a filter was selected by the user, then hide it
-			$('nav.sidebar-menu').on('click','ul.current-filters li.inmain span.remove',function(){
-				var li = $(this).closest('li')
-				var name = li.attr('name')
-				//remove this element from the sidebar-menu pane
-				li.remove()
-				var cloned_element = $('ul.set-new-filters').find('li[name="'+name+'"]')
-				//find its originaiting element in the ul element 'set-new-filters', remove it from being selected, but also allow it to appear in pane
-				cloned_element.removeClass('selected inmain selecting')				
-				$('nav.exp-filter-options ul[name="'+name+'"]').find('li.selected').removeClass('selected')
-				//close sidebar 3 when these filter-topics are chosen 
-				$('div[name="exp-query-section"]').removeClass('sidebar3-present')
-				$('nav.exp-filter-options').addClass('offscreen')
 			})
 		})
 	</script>
 	<style>
-		/*
+		/*main part of html page (exp-queries)*/
+		#exp-query-section {
+			margin-bottom: 20px;
+			padding-top: 75px;
+		}
+
+		/* Stylization of the sidebar and functionality sidebar */
+
+		div.section{
+			padding-left:20px;
+		}
+
+		/*format the settings for the sidebars*/
+		nav.sidebar-menu { /*modify where sidebar starts below nav pane, and its background color */
+			/*padding-left: 10px;
+			/*margin-bottom: 20px;*/
+			/*border-right:2px solid purple;*/
+			margin-top: 50px;
+			background-color:white; /* #f5f5f5;*/ /*#f5f5f5;*/
+			position: fixed; /* we make it fixed and a z-index of 1000 to make the pane last the entire vertical page*/
+			top: 100px;
+			bottom: 0;
+			left: 0px;
+			z-index: 1000;
+			display: block;
+			/*overflow: auto;*/
+			width:12%;/*default width, but we are going to change it for each sidebar*/
+			padding-right:5px;
+			margin-left:10px;
+			/*make an animation when showing/hiding sidebars*/
+		}
+		
+		/*Now lets actually define the width of each individual sidebar */
+		div.main-app-section nav.sidebar1{
+			width:15%;
+		}
+		
+		/*define the settings for the second side bar. it should be 2x the width of sidebar 1*/
+		div.main-app-section nav.sidebar2{
+			width:20%;
+			left:15%; /*start it at the wdith of sidebar1*/
+			padding-right:0px;
+			-webkit-transition: all 0.5s ease;
+			-moz-transition: all 0.5s ease;
+			-o-transition: all 0.5s ease;
+			transition: all 0.5s ease;
+			z-index:900; /*make it a smaller zindex so it can hide under sidebar 1*/
+		}
+		
+		/*when we want to turn off the second sidebar, use these settings*/
+		div.main-app-section nav.sidebar2.offscreen{			
+			-webkit-transition: all 0.5s ease;
+			-moz-transition: all 0.5s ease;
+			-o-transition: all 0.5s ease;
+			transition: all 0.5s ease;						
+			left:0%; /*hide it all behind the first sidebar*/
+			width:0%;/*make its width 0*/
+			/*margin-left:0px;*/
+		}
+		
+		/*When the parent div is set to sidebar-present on, then we want to add padding to the right pane div (class=main)*/
+		div.main-app-section.sidebar1 > .main {
+			padding-left: 15%; /*THIS SHOULD BE EQUAL TO THE WIDTH OF NAV.SIDEBAR1*/
+			transition: all 0.5s ease;
+		}
+		
+		/*double the padding for situation when we want to display both sidebars*/
+		div.main-app-section.sidebar1.sidebar2 > .main {
+			padding-left: 35%; /*THIS SHOULD BE EQUAL TO THE WIDTH OF NAV.SIDEBAR1+NAV.SIDEBAR2*/
+			transition: all 0.5s ease;			
+		}
+
+		div.main-app-section .main > div{
+			padding-left:30px;
+			padding-top: 30px;
+		}
+
+
+		nav.sidebar-menu .sidebar-header{
+			color:black; /*creates a blue colored label for side bar*/ /*formerly: #337AB7*/;
+		}
+
+		nav.sidebar-menu hr{
+			/*increase width of line*/
+			border-width:2px;
+			border-color: black;
+		}
+
+		/**STYLE TEXT IN THE SIDE BAR **/
+		
+		/* all links */
+		nav.sidebar-menu li a {
+			text-transform: none;
+			color: #767676;								
+			font-size:10px;			
+			border-left: 2px solid transparent;/*add trasnparent border */
+			padding:5px 3px;
+		}
+
+		/*parent links*/
+		nav.sidebar-menu ul.parent > li > a {
+			color: black;
+			text-transform: uppercase;			
+			font-size: 12px;
+		}
+		
+		nav.sidebar-menu li{
+			cursor: pointer;
+		}
+
+		/* active & hover links */
+		nav.sidebar-menu li.active a,
+		nav.sidebar-menu li a:hover,
+		nav.sidebar-menu li a:focus {
+			color: #337AB7 !important;
+			/*font-weight: bold; */
+			text-decoration: none;
+			background-color: transparent;			
+		}
+
+
+		/*only show a border on parents*/
+		nav.sidebar-menu ul.parent>li>a:hover{
+			border-color:#337AB7;
+		}
+
+		nav.sidebar-menu li a.active,
+		nav.sidebar-menu li a.active:hover {
+			color:  #337AB7 !important;
+			font-weight: bold;
+			text-decoration: none;
+			background-color: transparent;			
+		}
+
+		nav.sidebar-menu ul.parent>li>a.active,
+		nav.sidebar-menu ul.parent>li>a.active:hover{
+			border-left: 3px solid #337AB7 !important;
+		}
+
+		/*modify fonts for links within man lists*/
+		nav.sidebar-menu ul li ul li a{
+			padding:0% 10%;			
+		}
+		nav.sidebar-menu ul li ul li{
+			
+		}
+
+		/*programming the glyphicons: '>' and down version of <  when elements are clicked*/
+		nav.sidebar-menu li i.glyphicon.collapsed:after{
+			font-family:"Glyphicons Halflings";
+			content:"\e080";
+		}
+		nav.sidebar-menu li i.glyphicon:after{
+			font-family:"Glyphicons Halflings";
+			content:"\e114";
+		}
+		
+		nav.sidebar-menu li i.glyphicon:hover{
+			font-weight:bold;
+			color:red;
+		}
+
+		/*END OF FORMATTING OF SIDEBARS*/
+
 		input.multirowselect.not-multiple {
 			display: none;
 		}
@@ -1839,7 +1924,7 @@
 			font-weight: bold;
 			cursor: pointer;
 		}
-		*/
+		
 		
 				 
 	</style>
@@ -1862,127 +1947,70 @@
 	<div class='container-fluid section'>
 		<div class='row'>
 			<!--first create a wrapper div that encompasses both the side bar and the main section-->
-			<div class='main-app-section sidebar1-present sidebar2-present'>				
+			<div class='main-app-section sidebar1 sidebar2'>
+				
 				<!--Create a side bar to show experiment filters and functions -->				
-				<nav class="sidebar-menu sidebar1">										
-					<span class="sidebar-header">
-						<strong>Experiment Table Filters</strong>	
-					</span>
-					<hr />
-					<div align='right'>
-						<button type="button" class="btn btn-info btn-xs add-filter-btn">
-							<span class="glyphicon glyphicon-plus">
-							</span>
-							Add more filters
-						</button>
-					</div>					
-					<ul class ="current-filters nav nav-stacked parent">
-						<li class='filter-topic value="cchrysostomou"' name='myexperiments'>
-							<a>
-								My Experiments
-							</a>
-						</li>
-						<li class='filter-topic' name='ngsdata'>
-							<a>
-								Contains NGS sequences
-							</a>
-						</li>
-						<li class='show-options' name='annotated'>
-							<a>
-								Contains Annotated Data								
-							</a>							
-						</li>
-						<li class='show-options optional-filter present' name='vhvlpaired'>
-							<a>
-								VH-VL Paired
-							</a>
-						</li>
-					</ul>					
-				</nav>
-
-				<!-- this side bar will be located in the same position as sidebar1-->
-				<nav class='set-new-filters sidebar-menu sidebar1 offscreen'>
-					<span class="sidebar-header">						
-						<span class='glyphicon go-back'></span>
-						<strong>Select Filters</strong>	
-					</span>
-					<hr>
-					<!-- populated by javascript function -->
-					<div class='filter-parent filter-annotation'>
-						<ul class ="nav nav-stacked parent set-new-filters">
-							<li class='nav-header show-options' name='ownersofexperiments'>								
-								<a>
-									Owner of experiments
-								</a>
-								<!-- its important to have this exact span element in all li elements in this ul-->
-								<span title='remove filter'  class='glyphicon remove'></span>
-							</li>							
-						</ul>
-					</div>
-				</nav>				
-
-				<nav class='exp-filter-options sidebar-menu sidebar3 offscreen'>
-					<!-- for all possible filters with more than one option, this will show a ul element listing all option for a field -->
-					<ul class="nav nav-stacked vhvlpaired" name='vhvlpaired'>
+				<nav id='all-exp-filters' class="sidebar-menu sidebar1">
+					<div>
 						<span class="sidebar-header">
-							<span class='glyphicon go-back'></span>
-							<strong>VH-VL Paired</strong>	
+							<strong>Experiment Table Filters</strong>	
 						</span>
-						<hr />						
-						<li class='deselect'>
-							<a>Deselect All</a>
-						</li>
-						<li class='filter-topic' value="True">
-							<a>True</a>
-						</li>
-						<li  class='filter-topic' value="False">
-							<a>False</a>
-						</li>
-					</ul>
-					<uL class='nav nav-stacked' name="annotated">	
-						<span class="sidebar-header">
-							<span class='glyphicon go-back'></span>
-							<strong>Annotation Source</strong>	
-						</span>						
-						<hr/>
-						<li class='deselect'>
-							<a>Deselect All</a>
-						</li>
-						<li  class='filter-topic' value="IMGT">
-							<a >IMGT</a>
-						</li>
-						<li  class='filter-topic' value="IGBLAST">
-							<a>IGBLAST</a>
-						</li>
-						<li class='filter-topic' value="GEORGIOU_INHOUSE">
-							<a>GEORGIOU_INHOUSE</a>
-						</li>									
-					</ul>
-					<uL class='nav nav-stacked' name="ownersofexperiments">	
-						<span class="sidebar-header">
-							<span class='glyphicon go-back'></span>
-							<strong>Owners of experiments</strong>	
-						</span>						
-						<hr/>
-						<li class='deselect'>
-							<a>Deselect All</a>
-						</li>
-						<li  class='filter-topic'>
-							<a>cchrysostomou</a>
-						</li>
-						<li  class='filter-topic'>
-							<a>jon</a>
-						</li>
-						<li class='filter-topic'>
-							<a>ejohnson</a>
-						</li>									
-					</ul>		
+						<hr />
+						<!-- populated by javascript function -->
+						<div class='filter-parent filter-annotation'>
+							<ul class ="nav nav-stacked parent">
+								<li>
+									<a>
+										Owner of experiments
+									</a>
+								</li>
+								<li>
+									<a >
+										VH-VL Paired
+										<i class="glyphicon collapsed" data-target="#paired-options" data-toggle="collapse" aria-expanded="true"></i>
+									</a>
+									
+									<ul id='paired-options' class="nav nav-stacked collapse" aria-expanded="false">
+										<li>
+											<a>True</a>
+										</li>
+										<li>
+											<a>False</a>
+										</li>										
+									</ul>
+								</li>
+								<li>
+									<a>
+										Contains NGS sequences
+									</a>
+								</li>
+								
+								<li class="nav-header">
+									<a class="" >
+										Contains annotated data
+										<i class="glyphicon collapsed" data-target="#annotation-options" data-toggle="collapse" aria-expanded="false"></i>
+									</a>
+									
+									<ul id='annotation-options' class="nav nav-stacked collapse" aria-expanded="false">
+										<li>
+											<a>IMGT</a>
+										</li>
+										<li>
+											<a>IGBLAST</a>
+										</li>
+										<li>
+											<a>GEORGIOU_INHOUSE</a>
+										</li>
+									</ul>
+								</li>
+								
+							</ul>
+						</div>
+					</div>
 				</nav>
-
-
-				<!-- this field will be optional. to be used only with the download exp data app -->
+				
 				<!--Create a side bar to show output options. as of now we will just have this side bar 'slide in' -->
-				<nav id='report-seq-data' class="sidebar-menu sidebar2 offscreen">
+				<nav id='report-seq-data' class="sidebar-menu sidebar2">
 					<!-- populated by javascript function -->
 					<span class="sidebar-header">
 						<strong>Output these fields</strong>
@@ -1999,16 +2027,18 @@
 					</div>
 				</nav>
 
-				<!-- class => main creates the 'right pane' for the dashboard/main content -->				
+				<!-- class => main creates the 'right pane' for the dashboard/main content -->
+				<!--The number of columns we designate for the main section/the table is determined by col-computersize(xs,sm,md)-# -->
+				<!--We start the 'right pane' offset by col-computersize-offset-#. so for standard computer size, we offset by 2 columns -->
 				<!--To get the side bar to work correctly we do a trick and use CSS to control th epadding of this section. The padding will be equal to the sidebar width -->
-				<!-- we use sidebar classes to mimic sidebar padding-->
-				<div name='exp-query-section' class="col-xs-12 main col-sm-12 col-md-12 main sidebar1-present">
+				<div id='exp-query-section' class="col-xs-12 main col-sm-12 col-md-12 main sidebar-2">
 					<div class='row'>
-						<div id='exp-table-goes-here'>
-						</div>
-					</div>														
+						<h3>EXPERIMENT TABLE GOES HERE</h3>
+						<button id='hi' class='btn'>clickme</button>
+					</div>
 				</div>
 			</div>
+
 		</div>
 	</div>
 

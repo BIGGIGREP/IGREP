@@ -1,0 +1,293 @@
+/*main part of html page (exp-queries)*/
+div[name="exp-query-section"] {
+	margin-bottom: 20px;
+	padding-top: 75px;
+}
+
+/* Stylization of the sidebar and functionality sidebar */
+
+div.section{
+	padding-left:20px;
+}
+
+/*format the settings for the sidebars*/
+nav.sidebar-menu { /*modify where sidebar starts below nav pane, and its background color */
+	/*padding-left: 10px;
+	/*margin-bottom: 20px;*/
+	/*border-right:2px solid purple;*/
+	margin-top: 50px;
+	background-color:white; /* #f5f5f5;*/ /*#f5f5f5;*/
+	position: fixed; /* we make it fixed and a z-index of 1000 to make the pane last the entire vertical page*/
+	top: 100px;
+	bottom: 0;
+	left: 0px;
+	z-index: 1000;
+	display: block;
+	/*overflow: auto;*/
+	width:12%;/*default width, but we are going to change it for each sidebar*/
+	padding-right:5px;
+	margin-left:10px;
+	overflow:auto;
+	/*make an animation when showing/hiding sidebars*/
+}
+
+nav.set-new-filters {
+	z-index:1100;
+}
+
+/*Now lets actually define the width of each individual sidebar */
+div.main-app-section nav.sidebar1{
+	width:15%;
+	-webkit-transition: all 0.5s ease;
+	-moz-transition: all 0.5s ease;
+	-o-transition: all 0.5s ease;
+	transition: all 0.5s ease;
+}
+
+/*Now lets actually define the width of each individual sidebar */
+div.main-app-section nav.sidebar1.offscreen{
+	left:-20%; /*hide collapsed sidebars by moving it left (equal to width of sidebar1 + some padding for the <hr> tag)*/
+}
+
+div.main-app-section nav.sidebar3{
+	width:10%;
+	left:15%;/*should be equal to the width of sidebar1*/
+	z-index:900;/*make it smaller so it can hide under sidebar1*/
+	-webkit-transition: all 0.5s ease;
+	-moz-transition: all 0.5s ease;
+	-o-transition: all 0.5s ease;
+	transition: all 0.5s ease;
+}
+
+div.main-app-section nav.sidebar3.offscreen{
+	left:0%;	
+	width:0%;
+}
+
+
+/*define the settings for the second side bar. it should be 2x the width of sidebar 1*/
+div.main-app-section nav.sidebar2{
+	width:20%;
+	left:15%; /*start it at the wdith of sidebar1*/
+	padding-right:0px;
+	-webkit-transition: all 0.5s ease;
+	-moz-transition: all 0.5s ease;
+	-o-transition: all 0.5s ease;
+	transition: all 0.5s ease;
+	z-index:900; /*make it a smaller zindex so it can hide under sidebar 1*/
+}
+
+/*when we want to turn off the second sidebar, use these settings*/
+div.main-app-section nav.sidebar2.offscreen{			
+	-webkit-transition: all 0.5s ease;
+	-moz-transition: all 0.5s ease;
+	-o-transition: all 0.5s ease;
+	transition: all 0.5s ease;						
+	left:0%; /*hide it all behind the first sidebar*/
+	width:0%;/*make its width 0*/
+	/*margin-left:0px;*/
+}
+
+/*When the parent div is set to sidebar-present on, then we want to add padding to the right pane div (class=main)*/
+
+div.main-app-section>div.main{			
+	-webkit-transition: all 0.5s ease;
+	-moz-transition: all 0.5s ease;
+	-o-transition: all 0.5s ease;
+	transition: all 0.5s ease;						
+}
+
+div.main-app-section .main > div{
+	padding-left:30px;
+	padding-top: 30px;
+}
+
+div.main-app-section>div.main.sidebar1-present{						
+	padding-left:15%;/*this should be equal to the width of sidebar1*/
+}
+
+div.main-app-section>div.main.sidebar2-present{			
+	padding-left:20%;/*this should be equal to the width of sidebar2*/
+}
+
+div.main-app-section>div.main.sidebar3-present{			
+	padding-left:10%;/*this should be equal to the width of sidebar3*/
+}
+
+div.main-app-section>div.main.sidebar1-present.sidebar2-present{						
+	padding-left:35%;/*this should be equal to the width of sidebar1*/
+}
+
+div.main-app-section>div.main.sidebar1-present.sidebar2-present.sidebar3-present{						
+	padding-left:45%;/*this should be equal to the width of sidebar1*/
+}
+
+div.main-app-section>div.main.sidebar1-present.sidebar3-present{						
+	padding-left:25%;/*this should be equal to the width of sidebar1*/
+}		
+
+
+nav.sidebar-menu .sidebar-header{
+	color:black; /*creates a blue colored label for side bar*/ /*formerly: #337AB7*/;
+}
+
+nav.sidebar-menu hr{
+	/*increase width of line*/
+	border-width:2px;
+	border-color: black;
+}
+
+/**STYLE TEXT IN THE SIDE BAR **/
+
+/* all links */
+nav.sidebar-menu li a {
+	text-transform: none;
+	color: #767676;								
+	font-size:10px;			
+	border-left: 2px solid transparent;/*add trasnparent border */
+	padding:5px 3px;
+}
+
+/*parent links*/
+nav.sidebar-menu ul.parent > li > a {
+	color: black;
+	text-transform: uppercase;			
+	font-size: 11px;
+	display:inline;
+}
+
+nav.sidebar-menu li{
+	cursor: pointer;
+}
+
+
+/* active & hover links */
+/*old code
+nav.sidebar-menu li.filter-topic.active a,
+nav.sidebar-menu li a:hover,
+nav.sidebar-menu li a:focus {
+	color: #337AB7 !important;
+	/*font-weight: bold; */
+/*	text-decoration: none;
+	background-color: transparent;			
+}
+
+*/
+/*only show a border on parents
+nav.sidebar-menu ul.parent>li>a:hover{
+	border-color:#337AB7;
+}
+
+nav.sidebar-menu li a.active,
+nav.sidebar-menu li a.active:hover {
+	color:  #337AB7 !important;
+	font-weight: bold;
+	text-decoration: none;
+	background-color: transparent;			
+}
+
+nav.sidebar-menu ul.parent>li>a.active,
+nav.sidebar-menu ul.parent>li>a.active:hover{
+	border-left: 3px solid #337AB7 !important;
+}*/
+
+
+
+/*when a user is choosing options for filtering/selected a field metadata to search*/
+nav.sidebar-menu li.selecting {
+	/*color:  #337AB7 !important;*/
+	border-left: 2px solid #337AB7 !important;
+	/*font-weight: bold;*/
+	text-decoration: none;
+	background-color: transparent;				
+}
+
+nav.sidebar-menu li.selecting>span.glyphicon.arrowmark:after{
+	color:  #337AB7;
+	float:right;
+	font-family:"Glyphicons Halflings";
+	content:"\e080";
+}
+
+
+/*when a specific filter-topic has been selected*/
+
+nav.sidebar-menu li.selected a:after{
+	font-family:"Glyphicons Halflings";
+	content:"\e013";/*show a checkmark*/
+	margin-left:2px;
+}
+
+/*allow for users to remove self-selected filters*/
+/*we use the empty span element to insert a glyphicon tht only appears in thsi ul element*/
+nav.sidebar-menu>ul.current-filters li.inmain>span:before{
+	font-family:"Glyphicons Halflings";
+	content:"\e083";/*show an x mark*/	
+}
+
+nav.sidebar-menu>ul.current-filters li.inmain>span:hover{
+	color:red;
+}
+
+
+
+
+
+/*modify fonts for links within man lists*/
+nav.sidebar-menu ul li ul li a{
+	padding:0% 10%;			
+}
+nav.sidebar-menu ul li ul li{
+	
+}
+
+/*Hide filters that have been added to the main screen*/
+nav.set-new-filters li.in-main{
+	display:none;
+}
+
+
+
+/*programming the glyphicons: '>' and down version of <  when elements are clicked*/
+/*nav.sidebar-menu li i.glyphicon.collapsed:after{
+	font-family:"Glyphicons Halflings";
+	content:"\e080";
+}
+nav.sidebar-menu li i.glyphicon:after{
+	font-family:"Glyphicons Halflings";
+	content:"\e114";
+}
+
+nav.sidebar-menu li i.glyphicon:hover{
+	font-weight:bold;
+	color:red;
+}*/
+
+/*END OF FORMATTING OF SIDEBARS*/
+
+/*Modify the button from bootstrap*/
+button.add-filter-btn{
+	border-radius: 20px;
+	margin-right:5px;
+	margin-bottom:5px;
+}
+
+/*modify how the header/title bar appears for filter options*/
+nav.exp-filter-options ul span.sidebar-header{
+	text-overflow:ellipsis;/*show as ellipses if any text goes over width*/
+	display:block;/*required for ellipsis to work*/
+	white-space: nowrap; /*required for ellipsis to work*/
+	overflow-x:hidden;/*required for ellipsis to work*/
+}
+
+/*styling the qtip in the experiment table*/
+.expqtipcontent{
+	min-width: 300px;
+	max-width: 500px;
+}
+
+.expqtipcontent pre{
+	background-color: white;
+	border:none;
+}
+/**/

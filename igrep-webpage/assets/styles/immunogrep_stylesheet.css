@@ -433,14 +433,25 @@ h3 {
 	margin: 0 0 0 4em;
 }
 
+/*make a GO-BACK glyphicon element*/
+.glyphicon.go-back:before{
+	font-family:"Glyphicons Halflings" !important;
+	content:"\e079";
+	font-weight:normal !important;
+}
+/*make a GO-BACK glyphicon element*/
+.glyphicon.go-back:hover{
+	cursor:pointer;	
+	font-weight:bold;
+}
 
 
-.label {
+/*.label {
 	color: #888;
 	font-weight: bold;
 	margin: 0.2em 1em 0 0;
 	
-}
+}*/
 
 .radio-options {
 	color: #888;

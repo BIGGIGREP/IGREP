@@ -60,10 +60,6 @@
 	border-radius: 5px;
 }
 
-
-
-
-
 /*
 // Application header
 //-----------------------------------------------------------------------------------
@@ -153,7 +149,6 @@ nav.igrep-app-header h1{
 }*/
 
 #main-tabs{
-	
 	/*vertical-align: middle;
 	font-weight: bold;*/
 	/*font-size: 16px;*/
@@ -183,7 +178,6 @@ nav.igrep-app-header h1{
 	*/
 	/*background-color: #00404C !important; /* $menu-tab-background;*/
 	/*background-color: #7C2900 !important;*/
-	
 	/*
 	box-sizing: border-box;
 	height: 54px;
@@ -283,6 +277,12 @@ nav.navbar-header li.active{
 #logout-nav ul{
 	/*content:none;*/ /*we do this to make the navbar take up one row rather than two. not sur ewhyit works*/
 }
+
+#logout-nav span.glyphicon{
+	margin-right: 5px;
+	/*content:none;*/ /*we do this to make the navbar take up one row rather than two. not sur ewhyit works*/
+}
+
 
 
 

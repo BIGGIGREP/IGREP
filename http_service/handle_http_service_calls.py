@@ -3,7 +3,7 @@ import sys
 import os 
 import json
 import subprocess
-
+import string
 
 parent_of_proxy = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,os.path.join(parent_of_proxy,'common_tools'))# '../common_tools/') #add scripts in this file to the proxy list
@@ -20,15 +20,15 @@ except:
 
 def authenticate_user(u,p):
 	if use_posix:
-		res =  subprocess.check_output('sudo python authenticate_script.py '+u+' '+p,shell=True)
-		if int(res)==0:
+		res =  subprocess.call('sudo python authenticate_script.py '+u+' '+p,shell=True)
+		if int(res)!=0:
 			return False
 		else:
 			return True
 	else:
 		print('im not doing authentication!!!!')
 		return True	
-	
+
 def load_configuration_file():
 	'''
 		
@@ -39,11 +39,16 @@ def load_configuration_file():
 	if not os.path.isfile('igrep_services.cfg'):
 		print('There is no configuration file defining, will set default parameters')
 		igrep_params = {
-			'igrep_mongoproxy_path':'localhost:6200'
+			'igrep_mongoproxy_path':'localhost:6200',
+			'appdata_location':'/opt/igrep_server_data.txt'
 		}
 	else:
 		with open('igrep_services.cfg','r') as ff:			
 			igrep_params = json.load(ff)
+	igrep_params['appdata_location'] = os.path.abspath(igrep_params['appdata_location'])
+	if not os.path.isdir(igrep_params["appdata_location"]):
+	    os.makedirs(igrep_params["appdata_location"])
+
 	return igrep_params
 
 #def walklevel(some_dir, level=1,followlinks=False):
@@ -76,6 +81,39 @@ def splitall(path):
 
 igrep_params = load_configuration_file()
 
+def check_authentication_key(headers):
+	"""
+		Make sure the person requesting webpages has logged in to website beforehand
+		headers = the self.headers variable from basehttp
+	"""
+	
+	if not os.path.isfile(os.path.join(igrep_params["appdata_location"],'keyfile.txt')):
+		#we dont even have any key files set up yet
+		return False
+
+	cookie_found = False
+	d = {}
+	for i,v in enumerate(headers.items()):
+		if v[0] == 'cookie':
+			cookie_found = True
+			values = v[1].split(';')
+			
+			for v in values:
+				v = v.split('=')
+				d[v[0].strip()]=v[1].strip()
+	
+	if cookie_found and 'username' in d and 'key' in d:
+		with open(os.path.join(igrep_params["appdata_location"],'keyfile.txt'),'r') as f:				
+			users = json.loads(f.read())
+		if d['username'] in users and users[d['username']] == d['key']:
+			return True
+		else:
+			return False
+	else:
+		return False
+			
+	
+
 #THIS MODULE SHOULD SERVE AS A HELPER SCRIPT FOR MAKING OUR IGREP APPS
 #JAVASCRIPT FUNCTIONS CAN MAKE AJAX CALLS TO THE PROXY WHICH CAN SUBSEQUEENTLY CALL ANY OF THE
 #FUNCTIONS DEFINED IN HTTPIGREPHANDLER
@@ -103,7 +141,41 @@ class HtppIgrepHandler():
 			It will check whether the user logging in is a current user in the computer
 			
 		"""
-		return authenticate_user(username,password)
+		successful = authenticate_user(username,password)
+		
+		def random_password(length=10):
+			chars = string.ascii_uppercase + string.digits + string.ascii_lowercase
+			password = ''
+			for i in range(length):
+				password += chars[ord(os.urandom(1)) % len(chars)]
+			return password
+		
+
+		if successful:
+			r = random_password()
+
+			#MAKE THIS FUCNTION
+			#CHEKC PERMISSIONS OF FILE TO ENSURE THAT ITS ONLY RW------- FOR CONTROLLER
+			if os.path.isfile(os.path.join(igrep_params["appdata_location"],'keyfile.txt')):
+				with open(os.path.join(igrep_params["appdata_location"],'keyfile.txt'),'r') as f:				
+					users = json.loads(f.read())
+			else:
+				users = {}
+
+			users[username] = r
+			
+			with open(os.path.join(igrep_params["appdata_location"],'keyfile.txt'),'w') as f:
+				f.write(json.dumps(users))
+			res = {
+				'key':r ,
+				'success':True,
+				'username':username
+			}
+		else:
+			res = {
+				'success':False				
+			}
+		return res
 
 	def get_default_mongoproxy_address(self):
 		return igrep_params['igrep_mongoproxy_path']
@@ -230,4 +302,3 @@ class HtppIgrepHandler():
 			
 		return {'metadata':metadata_from_experiment_database ,'user_data':users}		
 	
-

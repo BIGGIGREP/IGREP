@@ -5,6 +5,9 @@ user = sys.argv[1]
 passwd = sys.argv[2]
 
 if authenticate(user,passwd):
-	print 1
+	#0 => means success in exit code
+	sys.exit(0)	
 else:
-	print 0 
+	#=>anything else is an error of somekind
+	sys.exit(1)
+	

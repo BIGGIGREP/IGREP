@@ -26,13 +26,13 @@ def return_error_string(e):
 	error+=str(tb_error)
 	return error 
 
-
 class HttpHandler( BaseHTTPRequestHandler ):
 	
 	def do_HEAD(self):
 		pass
 	
 	def get_reply_str(self):		
+		
 		self.reply_string = None
 		self.reply_path = None
 		"""
@@ -52,9 +52,7 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		#with open('test.txt','a') as f:
 		#	f.write('original path '+self.path+'\n')
 		#print('original path',self.path)
-		if self.path.endswith('favicon.ico'):
-			self.reply_string = ""
-			return
+		
 		self.path=os.path.normpath(urllib.url2pathname(self.path) )
 		orig_path  =self.path
 		self.root_path = 'igrep-webpage'
@@ -66,10 +64,18 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		self.parent_of_proxy = os.path.dirname(os.path.dirname(os.path.abspath("__file__")))
 		self.reroute = os.path.join(self.parent_of_proxy,self.root_path,'assets')
 		self.reroute_apps = os.path.join(self.parent_of_proxy,self.root_path)
+		self.login_path = os.path.join(self.parent_of_proxy,self.root_path,'login','index.html')
+		
+		
+		if self.path.endswith('favicon.ico'):
+			self.reply_string = ""
+			return
+		
 				
 		#remove the '/' or '\' from beginning of path
 		self.path = self.path.strip(os.sep)
 		split_path = self.path.split(os.sep)
+		
 		if self.path == '':
 			self.path = os.path.join(self.parent_of_proxy,self.root_path)
 		elif self.path == self.root_path.rstrip('/\\').rstrip(os.sep):
@@ -107,6 +113,8 @@ class HttpHandler( BaseHTTPRequestHandler ):
 				self.reply_path = os.path.join(self.path,'index.html')
 				#with open(self.path+'index.html') as w:
 					#reply_str = w.read()
+					
+
 			else:
 				#self.reply_string=''
 				print_string = os.path.join(os.path.sep,os.path.relpath(self.path,start=self.parent_of_proxy))
@@ -119,7 +127,8 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		#return reply_str
 
 	def do_GET(self):		
-		try:
+		try:			
+			
 			#reply_str = self.get_reply_str()
 			self.get_reply_str()
 			
@@ -132,7 +141,17 @@ class HttpHandler( BaseHTTPRequestHandler ):
 				self.wfile.write(self.reply_string)
 			elif self.reply_path!=None:				
 				self.reply_path =  os.path.abspath(self.reply_path)
-				shutil.copyfileobj(open(self.reply_path,'rb'), self.wfile)
+
+				#FIRST ALWAYS TRY TO SEE IF THE USER REQUESTING PAGES IS A MEMBER
+				#IMPROVE ON HOW TO DO THIS CHECK!!
+				if(self.reply_path.endswith('.html')) and handle_http_service_calls.check_authentication_key(self.headers)==False:
+					return shutil.copyfileobj(open(self.login_path,'rb'), self.wfile)
+				else:
+					return shutil.copyfileobj(open(self.reply_path,'rb'), self.wfile)
+									
+				
+				
+				
 		except Exception as e:			
 			self.send_error(401,str(e))
 			print('Error in html request: '+str(e))
@@ -142,6 +161,7 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		pass
 
 	def do_POST(self):
+		#check_authentication_key(self.headers)		
 		self.path = urllib.unquote( self.path )
 		length = int( self.headers["Content-Length"] )
 		#user passes in data/a function they want to run
@@ -220,7 +240,7 @@ class HttpServerThread(threading.Thread):
 			sys.exit(0)
 		except IOError as e:
 			if e.errno != errno.EINTR and e.errno != errno.EPIPE and e.errno != errno.EPERM:
-				print str(e), "HTTP server IO error in onRun"
+				print str(e), "HTTP server IO error in on run"
 		except Exception as e:
 			print str(e), "HTTP server thread onRun"
 

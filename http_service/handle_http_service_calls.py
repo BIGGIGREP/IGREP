@@ -40,7 +40,7 @@ def load_configuration_file():
 		print('There is no configuration file defining, will set default parameters')
 		igrep_params = {
 			'igrep_mongoproxy_path':'localhost:6200',
-			'appdata_location':'/opt/igrep_server_data.txt'
+			'appdata_location':'opt/igrep_app_data/'
 		}
 	else:
 		with open('igrep_services.cfg','r') as ff:			

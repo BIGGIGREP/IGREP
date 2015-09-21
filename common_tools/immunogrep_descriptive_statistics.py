@@ -1,4 +1,4 @@
-import immunogrep_immunogrepfile as readfile
+import immunogrep_read_file as readfile
 import pandas as pd 
 import numpy as np
 import matplotlib
@@ -6,16 +6,23 @@ import matplotlib.pyplot as plt
 import copy
 from collections import defaultdict
 from collections import OrderedDict
-import immunogrep_useful_immunogrep_functions as useful
+import immunogrep_useful_functions as useful
 import os 
 import subprocess
 import datetime
 
-import appsoma_api
+
 import gc
 import time
 
-#appsoma_api.resource_pull("https://www.appsoma.com/programs/get/cchrysostomou/default/make_unique_aa.bash",'process_aa_file.bash')
+#for making folders in igrep
+import immunogrep_file_system_tools as filesystem
+
+try:
+	import appsoma_api
+	appsoma_api.resource_pull("https://www.appsoma.com/programs/get/cchrysostomou/default/make_unique_aa.bash",'process_unique_ab_aa_file.bash')
+except:
+	pass
 
 delim = '_:_'
 
@@ -104,6 +111,46 @@ recomb_call = {
 	'IGL':'VJ',
 	'TRG':'VJ',
 }
+
+def ProcessGene(gene):
+	"""
+		Removes the allele calls from genes
+		
+		Assumption: 
+			
+			Multiple genes are seperated by ',' 
+			
+			Alleles are seperated by '*' 
+			
+			If a gene is seperated by multiple spaces, then the gene should be identified by a gene that contains either - or '*' 
+			For example: 
+
+				Imgt genes may be: 
+
+					Homo sapiens IGHV1-3*01
+
+					We only want to isolate the word IGHV1-3
+	"""
+	
+	if not gene:
+		return ''	
+	#extract all genes in field 
+	gene_array = gene.split(',')
+	for gene_num,each_gene in enumerate(gene_array):
+		#split each gene by spaces. Go through each word
+		split_words  = each_gene.split(' ')
+		if len(split_words)==1: #there is only one word 
+			gene_array[gene_num] = split_words[0].split('*')[0]
+		else:
+			g = ''
+			for subv in split_words:
+				#if we find a word with gene characters in it, it must be our gene 
+				if '*' in subv or '-' in subv:						
+					#extract everything before '*'
+					g = subv.split('*')[0]
+					break
+			gene_array[gene_num] = g	
+	return ','.join(gene_array)
 	
 
 def defaultdictcdr3(num_exp):
@@ -113,6 +160,9 @@ def defaultdictgenes(num_exp):
 	return [0]*(num_exp)
 
 def FloatRange(min,max,step,num_dec=None):
+	"""
+		Uses a generator to return a series of floating numbers starting from min, increasing in increments of step, and continuing until max 
+	"""
 	min = float(min)
 	max = float(max)
 	x = min
@@ -133,8 +183,9 @@ def FloatRange(min,max,step,num_dec=None):
 			
 
 def PlotGeneDist(dataframe,figure_path,plot_title='',xlabel='',ylabel='',max_val=None,min_val=None,step=None):	
-	
-	g = dataframe
+	#replace nan and infinity values with 0
+	g = dataframe.replace([np.inf, -np.inf,np.nan], 0)
+		
 	if len(g)==0:
 		return
 	if not max_val:
@@ -142,7 +193,7 @@ def PlotGeneDist(dataframe,figure_path,plot_title='',xlabel='',ylabel='',max_val
 	if not min_val:
 		min_val = min(g.min())
 	if not step:
-		step = 10
+		step = 10 #10 (max_val-min_val)/float(len(g)) #10
 	
 	# Create a figure of given size
 	fig = plt.figure(figsize=(16,24))
@@ -157,7 +208,8 @@ def PlotGeneDist(dataframe,figure_path,plot_title='',xlabel='',ylabel='',max_val
 	# Remove plot frame
 	ax.set_frame_on(False)
 	# Pandas trick: remove weird dotted line on axis
-	ax.lines[0].set_visible(False)
+	if len(ax.lines)>0:
+		ax.lines[0].set_visible(False)
 	
 	# Customize title, set position, allow space on top of plot for title
 	ax.set_title(ax.get_title(), fontsize=20, alpha=0.7, ha='left')
@@ -172,7 +224,7 @@ def PlotGeneDist(dataframe,figure_path,plot_title='',xlabel='',ylabel='',max_val
 		ax.set_ylabel(ylabel, fontsize=14,alpha=0.7)
 	
 	#ax.xaxis.set_label_coords(0, 1.04)
-	 
+
 	# Position x tick labels on bottom
 	ax.xaxis.tick_bottom()
 	# Remove tick lines in x and y axes
@@ -287,8 +339,7 @@ def PlotVJGeneHeatMap(dataframe,figure_path,max_val=None,min_val=None):
 def PlotCDR3Histogram(cdr3,figure_path):					
 	#step1=> filter out all CDR3lengths<=2
 	cdr3=cdr3[cdr3['CDR3_LENGTH']>2]
-	
-		
+			
 	#setup figure
 	fig = plt.figure(figsize=(20,10))
 		
@@ -334,7 +385,10 @@ def PlotCDR3Histogram(cdr3,figure_path):
 			sub_df.loc[j] = 0                         
 		sub_df.sort().plot(ax=ax, kind='bar',alpha=0.7)                					
 		
-		ax.set_xlim([0, max_cdr3_len+3])             
+		max_val = max_cdr3_len+3
+		xticks = [r for r in FloatRange(0,max_val,5)]
+
+		ax.set_xlim([0, max_val])             
 		ax.set_xlabel(xlabels[l], fontsize=14)
 		
 		[n,bins] = np.histogram(total_count)            
@@ -348,7 +402,9 @@ def PlotCDR3Histogram(cdr3,figure_path):
 		width = 1*(bins[1]-bins[0])
 		heights = [bn*normalize_histogram_height for bn in n]
 		plt.bar(bins[:-1],heights,width,color='black',alpha=0.15)
-		 
+		
+		ax.xaxis.set_ticks(xticks)
+		ax.xaxis.set_ticklabels([str(int(l)) for l in xticks])
 			
 		for tick in ax.xaxis.get_major_ticks():
 			tick.label.set_fontsize(10)
@@ -394,7 +450,7 @@ def CalculateDiversities(cdr3_df,figure_path):
 		temp = cdr3_df.loc[r]
 		
 		try:
-			temp.drop('CDR3_LENGTH',axis=1,inplace=True)
+			temp = temp.drop('CDR3_LENGTH',axis=1)
 		except:
 			pass
 		
@@ -408,7 +464,7 @@ def CalculateDiversities(cdr3_df,figure_path):
 		num_above_0 = (total_seq_count>0).sum()
 		
 		if num_above_0 <= 2 and 'TOTAL_COUNTS' in temp.columns:
-			temp.drop('TOTAL_COUNTS',inplace=True,axis=1)
+			temp = temp.drop('TOTAL_COUNTS',axis=1)
 		
 			
 				
@@ -531,8 +587,9 @@ def Descriptive_Statistics(list_of_files,input_file_type,analysis_name='',exp_na
 	if len(exp_names)!=len(list_of_files):
 		exp_names = []
 	
-	if not output_file_prefix:
-		output_file_prefix = useful.removeFileExtension(list_of_files[0])+'.summary'
+	#by default, save results to the same folder as the input file
+	if not output_file_prefix:		
+		output_file_prefix = useful.removeFileExtension(list_of_files[0])
 	
 	analysis_name = analysis_name.upper()
 	supported_analyses = fields_for_analysis.keys()
@@ -552,7 +609,7 @@ def Descriptive_Statistics(list_of_files,input_file_type,analysis_name='',exp_na
 	
 	filenames_to_use = [f[0] if isinstance(f,list) else f for f in list_of_files]
 	print('Performing descriptive statistics at {0}.'.format(str(datetime.datetime.now())))
-	print('\tAnalyzing the following files: {0}'.format(','.join(filenames_to_use)))
+	print('Analyzing the following files:\n\t {0}'.format('\n\t'.join(filenames_to_use)))
 	unique_aa_file = None 
 	unique_cdr3_file = None 	
 	v_gene_analysis = None
@@ -595,7 +652,11 @@ def Descriptive_Statistics(list_of_files,input_file_type,analysis_name='',exp_na
 	aaanalysis = True if 'ab_aa' in statistics_to_run else False
 	
 	vjgene_dict=defaultdict(lambda:defaultdictgenes(num_exp))
-	cdr3_dict=defaultdict(lambda:defaultdictcdr3(num_exp))	
+	
+	#cdr3_dict=defaultdict(lambda:defaultdictcdr3(num_exp))	
+	cdr3_dict_vdj = defaultdict(lambda:defaultdictcdr3(num_exp))	
+	cdr3_dict_vj = defaultdict(lambda:defaultdictcdr3(num_exp))	
+	cdr3_dict_unk = defaultdict(lambda:defaultdictcdr3(num_exp))	
 	
 	use_these_fields = fields_to_use.values()
 	fields_to_use['stopc'] = 'stopc'
@@ -608,7 +669,7 @@ def Descriptive_Statistics(list_of_files,input_file_type,analysis_name='',exp_na
 	
 	
 	if not fields_to_use['recomb']:
-		#maybe the user never defined a feild for recombinoation type..that coudl be a problem 
+		#maybe the user never defined a feild for recombinoation type..that coudl be a problem because we will have to guess it using the variable at the top of the script: recomb_call
 		recomb_not_defined = True	
 		fields_to_use['recomb'] = 'recomb'
 	else:
@@ -630,44 +691,40 @@ def Descriptive_Statistics(list_of_files,input_file_type,analysis_name='',exp_na
 			seqnum+=1
 			num_sequences[fnum]+=1			
 			seq_lines = defaultdict(str,seq_lines)
-			if not seq_lines[fields_to_use['full_len_ab']]:
-				#no results 
-				continue
-			num_results[fnum]+=1
-			
-			
+			if seq_lines[fields_to_use['full_len_ab']]:
+				#full length antibody sequence not found
+				num_results[fnum]+=1				
+												
 			#only select the first gene in the list. alos remove allelic name ('*')
 			seq_lines[fields_to_use['vgene']] = seq_lines[fields_to_use['vgene']].split(',')[0].split('*')[0]
 			seq_lines[fields_to_use['dgene']] = seq_lines[fields_to_use['dgene']].split(',')[0].split('*')[0]
-			
-			
-			if recomb_not_defined:
+						
+			#IF NO RECOMBINATION TYPE IS FOUND or provided, THEN guess it using the vgene or jgene call
+			if recomb_not_defined or not seq_lines[fields_to_use['recomb']]:
 				r = '' #not sure what the recombation type is yet
 				#try to guess the recombination type 				
 				if seq_lines[fields_to_use['vgene']]:
 					#use vgene if present
 					# look at the first three characters in vgene to predict recombioation type
-					gn = seq_lines[fields_to_use['vgene']]
+					gn = ProcessGene(seq_lines[fields_to_use['vgene']])
 					if gn[:3] in recomb_call:
 						r = recomb_call[gn[:3]]
 					elif gn[:2] in recomb_call: #next check the first two letters (IGBLAST REPORTS TA RATHER THAN TRA for example 
 						r = recomb_call[gn[:2]]
 				if not r and seq_lines[fields_to_use['jgene']]:
 					#still not r found, so use jgene 
-					gn = seq_lines[fields_to_use['jgene']]
+					gn = ProcessGene(seq_lines[fields_to_use['jgene']])
 					if gn[:3] in recomb_call:
 						r = recomb_call[gn[:3]]
 					elif gn[:2] in recomb_call: #next check the first two letters (IGBLAST REPORTS TA RATHER THAN TRA for example 
 						r = recomb_call[gn[:2]]					
 				
 				#update recomb result 
-				seq_lines[fields_to_use['recomb']] = r				
-				
+				seq_lines[fields_to_use['recomb']] = r								
 			
 			if not seq_lines[fields_to_use['recomb']]:
-				#IF NO RECOMBINATION TYPE IS FOUND THEN CONTINUE
 				continue
-			
+								
 			if seq_lines[fields_to_use['recomb']] == 'VDJ':
 				num_vdj[fnum]+=1								
 			elif seq_lines[fields_to_use['recomb']] == 'VJ':				
@@ -696,23 +753,38 @@ def Descriptive_Statistics(list_of_files,input_file_type,analysis_name='',exp_na
 			num_cdr3[fnum]+=1
 			
 			if cdr3analysis:
-				key_cdr3 = delim.join([seq_lines[fields_to_use['cdr3']],seq_lines[fields_to_use['recomb']]])
-				cdr3_dict[key_cdr3][fnum]+=1
+				key = seq_lines[fields_to_use['cdr3']]
+				#key_cdr3 = delim.join([],seq_lines[fields_to_use['recomb']]])
+				if seq_lines[fields_to_use['recomb']]=='VDJ':
+					cdr3_dict_vdj[key][fnum]+=1
+				elif seq_lines[fields_to_use['recomb']]=='VJ':
+					cdr3_dict_vj[key][fnum]+=1					
+				else:
+					print('unknown recombination types: ',seq_lines[fields_to_use['recomb']])
+					cdr3_dict_unk[key][fnum]+=1 
+									  
+			if seqnum>10000:
+				break
 				
-	output_file_names['ab_aa'].close()
-	
-	
+					
 	if aaanalysis:
+		output_file_names['ab_aa'].close()
 		print('Generating a file of unique AB amino acid sequences')
 		unique_aa_file = output_file_prefix+'.unique_aa_file.txt'
 		#Use some bash to make a unique amino acid file using sorting and then some awk 
 		GenerateAAFile(intermediate_file,unique_aa_file,aa_files,exp_names)
 		#number of amino acid sequences observed
-		num_unique_aa = useful.file_line_count(unique_aa_file)-1
+		if not os.path.isfile(unique_aa_file):
+			num_unique_aa = 0 
+		else:
+			num_unique_aa = useful.file_line_count(unique_aa_file)-1 #-1 => remove header row count
 	
 	#Now have some fun with pandas 	
 	if set(['vgene','jgene','vjgene']) & set(statistics_to_run):
-		
+		#vjgene_dict format = {
+			#'key' = 'vgene',_,'jgene',_,'recombtype'
+			#value = [count,count] => a list of counts for presence of that key in EACH providced file/experiment. Length of list = number of experiments
+		#}
 		gene_df = pd.DataFrame(vjgene_dict).transpose()
 		if 'VGENE' not in gene_df.columns:
 			gene_df['VGENE'] = ''
@@ -722,15 +794,22 @@ def Descriptive_Statistics(list_of_files,input_file_type,analysis_name='',exp_na
 			gene_df['recomb'] = ''
 		gene_df['TOTAL_COUNTS'] = gene_df.sum(axis=1)		
 		gene_df = gene_df.reset_index()				
-		gene_df = gene_df.apply(lambda x:ModifyPDTable(x,['VGENE','JGENE','recomb'],delim),axis=1)				
+		gene_df = gene_df.apply(ModifyPDTable,axis=1,args=(['VGENE','JGENE','recomb'],delim))
 		
 		
 		new_names = {}
 		for f,v in enumerate(exp_names):
 			new_names[f]=v
-		#rename the columns to match the experiment names 
+			#key = experiment index number
+			#value = new name
+
+		#rename the columns 0,1,...num experiments to match the experiment names 
 		gene_df = gene_df.rename(columns=new_names)
 		
+		#format of gene_df:
+			#index => no index set, just use default numbers
+			#columns => start with column for each experiment, then add the following columns: VGENE, JGENE, recomb, TOTAL_COUNTS
+
 		if 'vgene' in statistics_to_run:
 			print('Performing V gene analysis')
 			
@@ -738,9 +817,10 @@ def Descriptive_Statistics(list_of_files,input_file_type,analysis_name='',exp_na
 			#group elements by VH GENE CALLS and VL gene calls 
 			sorted_v_counts =  gene_df.groupby(['recomb','VGENE']).sum()#.count()#.sort('VGENE',ascending=1)						
 			
-			#find out which level in multilevel index corresponds to 'VGENE' => looking at above code , it should be level 1			
+			#find out which level in multilevel index corresponds to 'VGENE' => looking at above code , it should be level 1 (recomb should be level 0)
 			vgene_level = sorted_v_counts.index.names.index('VGENE')			
 			
+			#remove results where vGENE is empty
 			if '' in list(sorted_v_counts.index.levels[vgene_level]):
 				sorted_v_counts = sorted_v_counts.drop('',level='VGENE')			
 			
@@ -822,12 +902,19 @@ def Descriptive_Statistics(list_of_files,input_file_type,analysis_name='',exp_na
 		if sum(num_cdr3)>0:
 			#again create a pandas dataframe but this time using the unique cdr3 calls 
 			print('Loading CDR3s into a dataframe')
-			cdr3_df = pd.DataFrame(cdr3_dict).transpose()			
+			cdr3_df_list = [pd.DataFrame.from_dict(c,orient='index') for c in [cdr3_dict_vdj,cdr3_dict_vj,cdr3_dict_unk]]
+			#merge all dftogether
+			keys=['VDJ','VJ','UNK']
+			cdr3_df = pd.concat(cdr3_df_list,keys=keys)
+			#cdr3_df = pd.DataFrame(cdr3_dict).transpose()			
 			cdr3_df['TOTAL_COUNTS'] = cdr3_df.sum(axis=1)
 			print('Dataframe created')
 			
+			cdr3_df.index.names = ['recomb','CDR3']
 			cdr3_df = cdr3_df.reset_index()				
-			cdr3_df = cdr3_df.apply(lambda x:ModifyPDTable(x,['CDR3','recomb'],delim),axis=1)			
+			#cdr3_df['CDR3'] = ''
+			#cdr3_df['recomb'] = ''
+			#cdr3_df = cdr3_df.apply(ModifyPDTable,axis=1,raw=True,reduce=True,args=(['CDR3','recomb'],delim))			
 			
 			new_names = {}
 			#performm 			
@@ -869,7 +956,7 @@ def Descriptive_Statistics(list_of_files,input_file_type,analysis_name='',exp_na
 	print('Descriptive statistics completed at {0}.'.format(str(datetime.datetime.now())))
 	
 	gc.collect()
-	time.sleep(3)
+
 	
 	return {'files':files_generated,'figures':plots_created}
 
@@ -978,8 +1065,7 @@ def GenerateResultsSummaryFile(output_file,analysis_requests,input_file_paths,ex
 				
 #if 'vgene','jgene','vjgene','cdr3','diversity' 
 def ModifyPDTable(row,new_col_names,delim):			
-	new_row = row.pop('index').split(delim)		
-	for i,c in enumerate(new_row):				
+	for i,c in enumerate(row.pop('index').split(delim)):				
 		row[new_col_names[i]] = c
 	return row
 	
@@ -996,13 +1082,16 @@ def GenerateAAFile(intermediate_file,unique_aa_file,header_row,experiment_names)
 		header_row.append(e+' Counts')
 	num_exp_counts = len(experiment_names)	
 	hfile = intermediate_file+'.header.txt'
-	parent = '/'.join(intermediate_file.split('/')[:-1])+'/'
+	parent = useful.get_parent_dir(intermediate_file) # os.path.dirname(os.path.dirname(os.path.abspath(intermediate_file)))# '/'.join(intermediate_file.split('/')[:-1])+'/'
 	#write a header row 
 	with open(hfile,'w') as w:
 		w.write('\t'.join(header_row)+'\n')
 	
-	#the bash script process_aa_file will sort sequences in file then count their occurrences and collapse
-	bash_command = '''bash process_aa_file.bash '{0}' '{1}' '{2}' {3} {4}'''.format(intermediate_file,unique_aa_file,hfile,str(num_exp_counts),str(total_count_column))
+	#the bash script process_aa_file will sort sequences in file then count their occurrences and collapse	
+	this_script_folder = useful.get_parent_dir(__file__)
+	#the bash script,process_unique_ab_aa_file.bash, MUST be in the same folder as this script (immunogrep_descriptive_statistics)
+	bash_script_path = os.path.join(this_script_folder,'process_unique_ab_aa_file.bash')
+	bash_command = '''bash '{5}' '{0}' '{1}' '{2}' {3} {4}'''.format(intermediate_file,unique_aa_file,hfile,str(num_exp_counts),str(total_count_column),bash_script_path)
 	
 	#run the bash 
 	#subprocess.call(bash_command,shell=True)

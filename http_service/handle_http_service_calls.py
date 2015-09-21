@@ -82,13 +82,14 @@ def splitall(path):
 igrep_params = load_configuration_file()
 
 def check_authentication_key(headers):
+
 	"""
 		Make sure the person requesting webpages has logged in to website beforehand
 		headers = the self.headers variable from basehttp
 	"""
 	
 	if not os.path.isfile(os.path.join(igrep_params["appdata_location"],'keyfile.txt')):
-		#we dont even have any key files set up yet
+		#we dont even have any key files set up yet		
 		return False
 
 	cookie_found = False

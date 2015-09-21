@@ -37,7 +37,7 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		self.reply_path = None
 		"""
 			
-			Process self.path in http request to figure out what html files or figures to server to webpage
+			Process self.path in http request to figure out what html files or figures to serve
 		
 		"""
 		# CURRENT ROUTES
@@ -55,7 +55,7 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		
 		self.path=os.path.normpath(urllib.url2pathname(self.path) )
 		orig_path  =self.path
-		self.root_path = 'igrep-webpage'
+		self.root_path = 'igrep-webpage'		
 		self.image_path = 'images'
 		self.app_path = 'apps'
 		self.scripts_path = 'scripts'
@@ -64,8 +64,7 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		self.parent_of_proxy = os.path.dirname(os.path.dirname(os.path.abspath("__file__")))
 		self.reroute = os.path.join(self.parent_of_proxy,self.root_path,'assets')
 		self.reroute_apps = os.path.join(self.parent_of_proxy,self.root_path)
-		self.login_path = os.path.join(self.parent_of_proxy,self.root_path,'login','index.html')
-		
+				
 		
 		if self.path.endswith('favicon.ico'):
 			self.reply_string = ""
@@ -77,26 +76,43 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		split_path = self.path.split(os.sep)
 		
 		if self.path == '':
-			self.path = os.path.join(self.parent_of_proxy,self.root_path)
+			#if user just types in hostname:portname, then reroute to homepage
+			self.path = os.path.join(self.parent_of_proxy,self.root_path,'home')
 		elif self.path == self.root_path.rstrip('/\\').rstrip(os.sep):
-			self.path = os.path.join(self.parent_of_proxy,self.root_path)
+			#if user just types in hostname:portname, then reroute to homepage
+			self.path = os.path.join(self.parent_of_proxy,self.root_path,'home')
+		elif self.path=='home':
+			#if user just types in hostname:portname/home, then reroute to homepage
+			self.path = os.path.join(self.parent_of_proxy,self.root_path,'home')
+		elif self.path=='login':
+			#if user just types in hostname:portname/login, then reroute to login page
+			self.path = os.path.join(self.parent_of_proxy,self.root_path,'login')
 		elif self.root_path == split_path[0]:# re.match(os.path.join(self.root_path+"\\",'.'),self.path):			
+			#if the first path after the hostname:port (split_path[0]) is equal to the root path, then rerout to parent_dir/original path
+			#we can use the oroignal path because all webpages are found within the root path
 			self.path = os.path.join(self.parent_of_proxy,self.path)
 		elif self.image_path == split_path[0]:# re.match(self.image_path+'['+os.sep+'].',self.path):			
+			#if the first path after hostname:port is equal to the path corresponding to global images, then reroute to root_path/assets/imagepath/...
+			#we assume that self.reroute ends with /assets (see var above if changed)
 			self.path = os.path.join(self.reroute,self.path)
 		elif self.scripts_path == split_path[0]:# re.match(self.scripts_path+'['+os.sep+'].',self.path):						
+			#if the first path after hostname:port is equal to the path corresponding to global scripts then reroute to root_path/assets/scriptspath/...
 			self.path = os.path.join(self.reroute,self.path)
 		elif self.styles_path == split_path[0]:# re.match(self.styles_path+'['+os.sep+'].',self.path):
+			#if the first path after hostname:port is equal to the path corresponding to global stylesheets then reroute to root_path/assets/stylepath/...
 			self.path=self.path.lstrip('/\\\\').lstrip(os.sep)
 			self.path = os.path.join(self.reroute,self.path)
 		elif self.app_path == split_path[0]:# re.match(self.app_path+'[/\\\\].',self.path):
+			#if the first path after hostname:port is equal to the path corresponding to any apps created, then reroute to the apps path (self.reroute_apps)
 			self.path=self.path.lstrip('/\\\\').lstrip(os.sep)
 			self.path = os.path.join(self.reroute_apps,self.path)
 		elif self.path.strip('/\\').strip(os.sep)=='igrep':
+			#just for testing the first time web was created...an easter egg of emptiness now
 			self.reply_string = "it2sasstart"	
 			return
 		else:
-			self.path = os.path.join(self.parent_of_proxy,self.path).lstrip(os.sep)
+			#for all other instances, make sure the webpage is directed to within the webpage locaion (currently igrep-webpage (self.root_path))
+			self.path = os.path.join(self.parent_of_proxy,self.root_path,self.path).lstrip(os.sep)
 			#return reply_str		
 		# Someday you might have other routes				
 		#print('newpath',self.path)
@@ -118,10 +134,12 @@ class HttpHandler( BaseHTTPRequestHandler ):
 			else:
 				#self.reply_string=''
 				print_string = os.path.join(os.path.sep,os.path.relpath(self.path,start=self.parent_of_proxy))
+				print(self.path)
 				raise Exception('The following folder provided does not have an index.html file: '+print_string)				
 		else:
 			#self.reply_string=''
 			print_string = os.path.join(os.path.sep,os.path.relpath(self.path,start=self.parent_of_proxy))
+			print(self.path)
 			raise Exception('The following folder provided does not have an index.html file: '+print_string)				
 		
 		#return reply_str
@@ -136,6 +154,7 @@ class HttpHandler( BaseHTTPRequestHandler ):
 			#self.send_header( "Content-length", str(len(reply_str)) )
 			self.send_header( "Access-Control-Allow-Origin", "*" )
 			self.end_headers()
+			self.login_path = os.path.join(self.parent_of_proxy,self.root_path,'login','index.html')
 			#self.wfile.write( reply_str )
 			if self.reply_string!=None:
 				self.wfile.write(self.reply_string)
@@ -144,9 +163,11 @@ class HttpHandler( BaseHTTPRequestHandler ):
 
 				#FIRST ALWAYS TRY TO SEE IF THE USER REQUESTING PAGES IS A MEMBER
 				#IMPROVE ON HOW TO DO THIS CHECK!!
+
 				if(self.reply_path.endswith('.html')) and handle_http_service_calls.check_authentication_key(self.headers)==False:
 					return shutil.copyfileobj(open(self.login_path,'rb'), self.wfile)
 				else:
+					print(self.reply_path)
 					return shutil.copyfileobj(open(self.reply_path,'rb'), self.wfile)
 									
 				
@@ -161,7 +182,11 @@ class HttpHandler( BaseHTTPRequestHandler ):
 		pass
 
 	def do_POST(self):
-		#check_authentication_key(self.headers)		
+		#first make sure the user has logged in
+		#if handle_http_service_calls.check_authentication_key(self.headers)==False:
+		#	self.send_error(403)
+		#	return
+
 		self.path = urllib.unquote( self.path )
 		length = int( self.headers["Content-Length"] )
 		#user passes in data/a function they want to run

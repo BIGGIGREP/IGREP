@@ -4,9 +4,15 @@
 	<meta charset="utf-8" />
 	<title></title>
 	
+	
+	<!-- this code for loading jquery locally
+	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>	
+	-->
+	<!-- this code for loading jquery from web -->
+	<script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+	<script type="text/javascript" src="/scripts/igrep.script.tools.js"></script>			
+	
 	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">
-	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>
-	<script type="text/javascript" src="/scripts/igrep.script.tools.js"></script>		
 	<style>
 		
 	</style>
@@ -17,7 +23,7 @@
 		$(document).ready(function(){
 			$("#login-form").submit( function() {
 				
-				$("#authentication-error").hide()
+				$("#authentication-error").hide()				
 				authenticate($(this).find("input[name='username']").val(),$(this).find("input[name='password']").val(),$(this).find("button") )
 				return false;
 			});
@@ -113,7 +119,7 @@
 		</div>
 		-->
 		<div id="username_password_div">
-			<form id="login-form" action="">				
+			<form id="login-form" >				
 				<div id="authentication-error" class="hidden errors space_down authentication-fail">
 					Authentication Failed
 				</div>

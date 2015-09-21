@@ -87,6 +87,11 @@ def Reverse_Complement(x):
 	rc_list = [dna_codes[c] if c in dna_codes else 'N' if ord(c) <91 else 'n' for c in reversed(x)]
 	return ''.join(rc_list)
 
+def get_parent_dir(path):
+	"""
+		Uses os.path to return the parent directory of a file
+	"""
+	return os.path.dirname(os.path.abspath(path))
 
 #we will use this function for splitting a single file into multiple little files.
 #this will be useufl for multithreading purposes

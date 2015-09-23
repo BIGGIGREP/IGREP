@@ -111,8 +111,8 @@ class HttpHandler( BaseHTTPRequestHandler ):
 			self.reply_string = "it2sasstart"	
 			return
 		else:
-			#for all other instances, make sure the webpage is directed to within the webpage locaion (currently igrep-webpage (self.root_path))
-			self.path = os.path.join(self.parent_of_proxy,self.root_path,self.path).lstrip(os.sep)
+			#for all other instances, make sure the webpage is directed to within the webpage locaion (currently igrep-webpage (self.root_path))			
+			self.path = os.path.join(self.parent_of_proxy,self.root_path,self.path)			
 			#return reply_str		
 		# Someday you might have other routes				
 		#print('newpath',self.path)

@@ -4,33 +4,51 @@
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Running Jobs</title>	
-	<script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
-	
-	<script type="text/javascript" charset="utf8" src="/scripts/make-igrep-datatable.js"></script>
+	<title>Running Jobs</title>
 
-	<!--<script>
-		$('#table_id').qtip()
-	</script>-->
+    <!--load scripts from internet-->
+    
+	<script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.11.3.min.js"></script>        
+    <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>    
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+    <script src="//cdn.jsdelivr.net/qtip2/2.2.1/jquery.qtip.min.js"></script>
+    <script type="text/javascript" src="/scripts/block_ui.js"></script>
+
+    
+    <!--load scripts from local pages-->
+    <!--    
+    <script type="text/javascript" charset="utf8" src="/scripts/jquery-1.11.3.min.js></script>
+    <script type="text/javascript" charset="utf8" src="/scripts/jquery-ui-1.11.4.js></script>
+    <script type="text/javascript" charset="utf8" src="/scripts/datatables-1-10-9-min.js></script>
+    <script type="text/javascript" charset="utf8" src="/scripts/qtip/jquery.qtip.min.js"></script>
+
+    -->
+
+    <link rel="stylesheet" type="text/css" href="/scripts/jquery-ui-1.11.4.custom/jquery-ui.theme.css" >
+    <link rel="stylesheet" type="text/css" href="/styles/datatables.css"> <!-- note, using datatables-1-10-9-min.css results in the sort ascending images not being loaded correctly. we would have to change the folder directory to use that css-->    
+    <link rel="stylesheet" type="text/css" href="/styles/jquery.qtip.min.css">
+
+    <link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">    
+    
+    <!--<script type="text/javascript" charset="utf8" src="/scripts/make-igrep-datatable.js"></script>-->
+
+    <script type="text/javascript" charset="utf8" src="/scripts/make-metadata-table.js"></script>
+
+	<script>
+		$(document).ready(function(){
+            //$("#a").DataTable()
+            $('#table_id').metadataselect()
+
+
+        })
+	</script>
 </head>
 <body>	
-	IM A JOB!
-	<table id="table_id" class="display">
-    <thead>
-        <tr>
-            <th>Column 1</th>
-            <th>Column 2</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>Row 1 Data 1</td>
-            <td>Row 1 Data 2</td>
-        </tr>
-        <tr>
-            <td>Row 2 Data 1</td>
-            <td>Row 2 Data 2</td>
-        </tr>
-    </tbody>
-	</table>
+	<div>
+        im a job
+    </div>
+	<div id="table_id" >
+    </div>
+    <button id='ok' value='clikc'>click</button>
+   
 </body>

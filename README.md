@@ -1,2 +1,2 @@
 # IGREP
-Version 0.1: Currently moving our code and apps for BIGG lab antibody sequencing from Appsoma
+Version 0.1: Currently moving our code and apps for BIGG lab antibody sequencing from Appsoma to our own custom made webserver

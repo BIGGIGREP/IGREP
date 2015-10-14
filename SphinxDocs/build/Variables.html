@@ -1,0 +1,352 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Global Variables &mdash; IGREP 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="IGREP 1.0.0 documentation" href="index.html" />
+    <link rel="next" title="Useful Functions" href="Functions.html" />
+    <link rel="prev" title="Appsoma Website Tutorial" href="ASTutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Functions.html" title="Useful Functions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ASTutorial.html" title="Appsoma Website Tutorial"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">IGREP 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="global-variables">
+<h1>Global Variables<a class="headerlink" href="#global-variables" title="Permalink to this headline">¶</a></h1>
+<p id="variables">This covers the global variables used in all of the other files in Immunogrep.</p>
+<div class="section" id="list-of-variables">
+<h2>List of variables<a class="headerlink" href="#list-of-variables" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="18%" />
+<col width="65%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Variables</strong></td>
+<td><strong>Value</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>descriptor_symbol</td>
+<td>#&#64;</td>
+<td>To signify the line has information needed to transact in immunogrep pipeline</td>
+</tr>
+<tr class="row-odd"><td>fasta_file_delimiter</td>
+<td>&lt;</td>
+<td>To signify additional info in sequence header</td>
+</tr>
+<tr class="row-even"><td>idIdentifier</td>
+<td>SEQ_ID</td>
+<td>For use with mongoDB</td>
+</tr>
+<tr class="row-odd"><td>expIdentifier</td>
+<td>EXP_ID</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>seqRawData</td>
+<td>&#64;SEQ</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>description_var</td>
+<td>DESCRIPTION</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>translation_var</td>
+<td>TRANSLATION</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>tracktion_var</td>
+<td>TRACKTION</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>type_var</td>
+<td>TYPE</td>
+<td>This is the analysis type key (i.e. &#8216;TYPE&#8217;:&#8217;IMGT&#8217; or &#8216;TYPE&#8217;:&#8217;INHOUSE&#8217;, etc.)</td>
+</tr>
+<tr class="row-odd"><td>annotationExt</td>
+<td>annotation</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>analysisExt</td>
+<td>analysis</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>queryExt</td>
+<td>Query</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>IFExt</td>
+<td>IFFile</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>listofextension</td>
+<td>&nbsp;</td>
+<td>Consists of various extensions</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>An example of the decorator label</p>
+<p class="last"><a class="reference external" href="mailto:#&#37;&#52;&#48;D{'DESCRIPTION">#<span>&#64;</span>D{'DESCRIPTION</a>&#8216;:[list of label headers; order matters here],&#8217;TRANSLATON&#8217;:{dictionary for communicating with the database}}</p>
+</div>
+</div></blockquote>
+<div class="section" id="imgt-files-info">
+<h3>imgt_files_info<a class="headerlink" href="#imgt-files-info" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">This part is ugly and I haven&#8217;t figured out a better way of looking at it. Also not all &#8216;Name&#8217;s are in.</p>
+</div>
+<dl class="docutils">
+<dt>this summarizes each of the column names associated with each imgt file from IMGT V-QUEST</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Name:</th><td class="field-body"><strong>1_Summary</strong></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Headers:</th><td class="field-body">&#8216;Sequence number&#8217;,&#8217;Sequence ID&#8217;,&#8217;Functionality&#8217;,&#8217;V-GENE and allele&#8217;,&#8217;V-REGION score&#8217;,&#8217;V-REGION identity %&#8217;,
+&#8216;V-REGION identity nt&#8217;,&#8217;V-REGION identity % (with ins/del events)&#8217;,&#8217;V-REGION identity nt (with ins/del events)&#8217;,
+&#8216;J-GENE and allele&#8217;,&#8217;J-REGION score&#8217;,&#8217;J-REGION identity %&#8217;,&#8217;J-REGION identity nt&#8217;,&#8217;D-GENE and allele&#8217;,
+&#8216;D-REGION reading frame&#8217;,&#8217;CDR1-IMGT length&#8217;,&#8217;CDR2-IMGT length&#8217;,&#8217;CDR3-IMGT length&#8217;,&#8217;CDR-IMGT lengths&#8217;,&#8217;FR-IMGT lengths&#8217;,
+&#8216;AA JUNCTION&#8217;,&#8217;JUNCTION frame&#8217;,&#8217;Orientation&#8217;,&#8217;Functionality comment&#8217;,&#8217;V-REGION potential ins/del&#8217;,&#8217;J-GENE and allele comment&#8217;,
+&#8216;V-REGION insertions&#8217;,&#8217;V-REGION deletions&#8217;,&#8217;Sequence&#8217;</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Important_Headers:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">&#8216;Sequence number&#8217;,&#8217;Sequence ID&#8217;,&#8217;Functionality&#8217;,&#8217;V-GENE and allele&#8217;,&#8217;V-REGION score&#8217;,&#8217;V-REGION identity %&#8217;,
+&#8216;V-REGION identity nt&#8217;,&#8217;V-REGION identity % (with ins/del events)&#8217;,&#8217;V-REGION identity nt (with ins/del events)&#8217;,
+&#8216;J-GENE and allele&#8217;,&#8217;J-REGION score&#8217;,&#8217;J-REGION identity %&#8217;,&#8217;J-REGION identity nt&#8217;,&#8217;D-GENE and allele&#8217;,
+&#8216;D-REGION reading frame&#8217;,&#8217;CDR1-IMGT length&#8217;,&#8217;CDR2-IMGT length&#8217;,&#8217;CDR3-IMGT length&#8217;,&#8217;CDR-IMGT lengths&#8217;,&#8217;FR-IMGT lengths&#8217;,
+&#8216;AA JUNCTION&#8217;,&#8217;JUNCTION frame&#8217;,&#8217;Orientation&#8217;,&#8217;Functionality comment&#8217;,&#8217;V-REGION potential ins/del&#8217;,&#8217;J-GENE and allele comment&#8217;,
+&#8216;V-REGION insertions&#8217;,&#8217;V-REGION deletions&#8217;,&#8217;Sequence&#8217;</td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</div></blockquote>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Name:</th><td class="field-body"><strong>2_IMGT-gapped-nt-sequences</strong></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Headers:</th><td class="field-body">&#8216;Sequence number&#8217;,&#8217;Sequence ID&#8217;,&#8217;Functionality&#8217;,&#8217;V-GENE and allele&#8217;,&#8217;J-GENE and allele&#8217;,&#8217;D-GENE and allele&#8217;,
+&#8216;V-D-J-REGION&#8217;,&#8217;V-J-REGION&#8217;,&#8217;V-REGION&#8217;,&#8217;FR1-IMGT&#8217;,&#8217;CDR1-IMGT&#8217;,&#8217;FR2-IMGT&#8217;,&#8217;CDR2-IMGT&#8217;,&#8217;FR3-IMGT&#8217;,&#8217;CDR3-IMGT&#8217;,
+&#8216;JUNCTION&#8217;,&#8217;J-REGION&#8217;,&#8217;FR4-IMGT&#8217;</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Important_Headers:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">&#8216;Sequence number&#8217;,&#8217;Sequence ID&#8217;,&#8217;Functionality&#8217;,&#8217;V-GENE and allele&#8217;,&#8217;J-GENE and allele&#8217;,&#8217;D-GENE and allele&#8217;,
+&#8216;V-D-J-REGION&#8217;,&#8217;V-J-REGION&#8217;,&#8217;V-REGION&#8217;,&#8217;FR1-IMGT&#8217;,&#8217;CDR1-IMGT&#8217;,&#8217;FR2-IMGT&#8217;,&#8217;CDR2-IMGT&#8217;,&#8217;FR3-IMGT&#8217;,&#8217;CDR3-IMGT&#8217;,
+&#8216;JUNCTION&#8217;,&#8217;J-REGION&#8217;,&#8217;FR4-IMGT&#8217;</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Name:</th><td class="field-body"><strong>3_Nt-sequences</strong></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Headers:</th><td class="field-body">&#8216;Sequence number&#8217;,&#8217;Sequence ID&#8217;,&#8217;Functionality&#8217;,&#8217;V-GENE and allele&#8217;,&#8217;J-GENE and allele&#8217;,&#8217;D-GENE and allele&#8217;,&#8217;V-D-J-REGION&#8217;,
+&#8216;V-J-REGION&#8217;,&#8217;V-REGION&#8217;,&#8217;FR1-IMGT&#8217;,&#8217;CDR1-IMGT&#8217;,&#8217;FR2-IMGT&#8217;,&#8217;CDR2-IMGT&#8217;,&#8217;FR3-IMGT&#8217;,&#8217;CDR3-IMGT&#8217;,&#8217;JUNCTION&#8217;,&#8221;3&#8217;V-REGION&#8221;,
+&#8216;(N-D)-J-REGION&#8217;,&#8217;(N-D)-REGION&#8217;,&#8221;P3&#8217;V&#8221;,&#8217;N-REGION&#8217;,&#8217;N1-REGION&#8217;,&#8221;P5&#8217;D&#8221;,&#8217;D-REGION&#8217;,&#8221;P3&#8217;D&#8221;,&#8221;P5&#8217;D1&#8221;,&#8217;D1-REGION&#8217;,&#8221;P3&#8217;D1&#8221;,
+&#8216;N2-REGION&#8217;,&#8221;P5&#8217;D2&#8221;,&#8217;D2-REGION&#8217;,&#8221;P3&#8217;D2&#8221;,&#8217;N3-REGION&#8217;,&#8221;P5&#8217;D3&#8221;,&#8217;D3-REGION&#8217;,&#8221;P3&#8217;D3&#8221;,&#8217;N4-REGION&#8217;,&#8221;P5&#8217;J&#8221;,&#8221;5&#8217;J-REGION&#8221;,&#8217;D-J-REGION&#8217;,
+&#8216;J-REGION&#8217;,&#8217;FR4-IMGT&#8217;,&#8217;V-D-J-REGION start&#8217;,&#8217;V-D-J-REGION end&#8217;,&#8217;V-J-REGION start&#8217;,&#8217;V-J-REGION end&#8217;,&#8217;V-REGION start&#8217;,&#8217;V-REGION end&#8217;,
+&#8216;FR1-IMGT start&#8217;,&#8217;FR1-IMGT end&#8217;,&#8217;CDR1-IMGT start&#8217;,&#8217;CDR1-IMGT end&#8217;,&#8217;FR2-IMGT start&#8217;,&#8217;FR2-IMGT end&#8217;,&#8217;CDR2-IMGT start&#8217;,&#8217;CDR2-IMGT end&#8217;,
+&#8216;FR3-IMGT start&#8217;,&#8217;FR3-IMGT end&#8217;,&#8217;CDR3-IMGT start&#8217;,&#8217;CDR3-IMGT end&#8217;,&#8217;JUNCTION start&#8217;,&#8217;JUNCTION end&#8217;,&#8221;3&#8217;V-REGION start&#8221;,&#8221;3&#8217;V-REGION end&#8221;,
+&#8216;(N-D)-J-REGION start&#8217;,&#8217;(N-D)-J-REGION end&#8217;,&#8217;(N-D)-REGION start&#8217;,&#8217;(N-D)-REGION end&#8217;,&#8221;P3&#8217;V start&#8221;,&#8221;P3&#8217;V end&#8221;,&#8217;N-REGION start&#8217;,
+&#8216;N-REGION end&#8217;,&#8217;N1-REGION start&#8217;,&#8217;N1-REGION end&#8217;,&#8221;P5&#8217;D start&#8221;,&#8221;P5&#8217;D end&#8221;,&#8217;D-REGION start&#8217;,&#8217;D-REGION end&#8217;,&#8221;P3&#8217;D start&#8221;,&#8221;P3&#8217;D end&#8221;,
+&#8220;P5&#8217;D1 start&#8221;,&#8221;P5&#8217;D1 end&#8221;,&#8217;D1-REGION start&#8217;,&#8217;D1-REGION end&#8217;,&#8221;P3&#8217;D1 start&#8221;,&#8221;P3&#8217;D1 end&#8221;,&#8217;N2-REGION start&#8217;,&#8217;N2-REGION end&#8217;,
+&#8220;P5&#8217;D2 start&#8221;,&#8221;P5&#8217;D2 end&#8221;,&#8217;D2-REGION start&#8217;,&#8217;D2-REGION end&#8217;,&#8221;P3&#8217;D2 start&#8221;,&#8221;P3&#8217;D2 end&#8221;,&#8217;N3-REGION start&#8217;,&#8217;N3-REGION end&#8217;,
+&#8220;P5&#8217;D3 start&#8221;,&#8221;P5&#8217;D3 end&#8221;,&#8217;D3-REGION start&#8217;,&#8217;D3-REGION end&#8217;,&#8221;P3&#8217;D3 start&#8221;,&#8221;P3&#8217;D3 end&#8221;,&#8217;N4-REGION start&#8217;,&#8217;N4-REGION end&#8217;,
+&#8220;P5&#8217;J start&#8221;,&#8221;P5&#8217;J end&#8221;,&#8221;5&#8217;J-REGION start&#8221;,&#8221;5&#8217;J-REGION end&#8221;,&#8217;D-J-REGION start&#8217;,&#8217;D-J-REGION end&#8217;,&#8217;J-REGION start&#8217;,&#8217;J-REGION end&#8217;,
+&#8216;FR4-IMGT start&#8217;,&#8217;FR4-IMGT end&#8217;</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Important_Headers:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">&#8216;Sequence number&#8217;,&#8217;Sequence ID&#8217;,&#8217;Functionality&#8217;,&#8217;V-GENE and allele&#8217;,&#8217;J-GENE and allele&#8217;,&#8217;D-GENE and allele&#8217;,&#8217;V-D-J-REGION&#8217;,
+&#8216;V-J-REGION&#8217;,&#8217;V-REGION&#8217;,&#8217;FR1-IMGT&#8217;,&#8217;CDR1-IMGT&#8217;,&#8217;FR2-IMGT&#8217;,&#8217;CDR2-IMGT&#8217;,&#8217;FR3-IMGT&#8217;,&#8217;CDR3-IMGT&#8217;,&#8217;JUNCTION&#8217;, &#8216;FR4-IMGT&#8217;,&#8217;V-D-J-REGION start&#8217;,
+&#8216;V-D-J-REGION end&#8217;,&#8217;V-J-REGION start&#8217;,&#8217;V-J-REGION end&#8217;,&#8217;V-REGION start&#8217;,&#8217;V-REGION end&#8217;,&#8217;FR1-IMGT start&#8217;,&#8217;FR1-IMGT end&#8217;,&#8217;CDR1-IMGT start&#8217;,
+&#8216;CDR1-IMGT end&#8217;,&#8217;FR2-IMGT start&#8217;,&#8217;FR2-IMGT end&#8217;,&#8217;CDR2-IMGT start&#8217;,&#8217;CDR2-IMGT end&#8217;,&#8217;FR3-IMGT start&#8217;,&#8217;FR3-IMGT end&#8217;,&#8217;CDR3-IMGT start&#8217;,
+&#8216;CDR3-IMGT end&#8217;,&#8217;JUNCTION start&#8217;, &#8216;JUNCTION end&#8217;,&#8217;D-J-REGION start&#8217;,&#8217;D-J-REGION end&#8217;,&#8217;J-REGION start&#8217;,&#8217;J-REGION end&#8217;,&#8217;FR4-IMGT start&#8217;,&#8217;FR4-IMGT end&#8217;</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Name:</th><td class="field-body"><strong>4_IMGT-gapped-AA-sequences</strong></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Headers:</th><td class="field-body">&#8216;Sequence number&#8217;,&#8217;Sequence ID&#8217;,&#8217;Functionality&#8217;,&#8217;V-GENE and allele&#8217;,&#8217;J-GENE and allele&#8217;,&#8217;D-GENE and allele&#8217;,
+&#8216;V-D-J-REGION&#8217;,&#8217;V-J-REGION&#8217;,&#8217;V-REGION&#8217;,&#8217;FR1-IMGT&#8217;,&#8217;CDR1-IMGT&#8217;,&#8217;FR2-IMGT&#8217;,&#8217;CDR2-IMGT&#8217;,&#8217;FR3-IMGT&#8217;,&#8217;CDR3-IMGT&#8217;,
+&#8216;JUNCTION&#8217;,&#8217;J-REGION&#8217;,&#8217;FR4-IMGT&#8217;</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Important_Headers:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">&#8216;Sequence number&#8217;,&#8217;Sequence ID&#8217;,&#8217;Functionality&#8217;,&#8217;V-GENE and allele&#8217;,&#8217;J-GENE and allele&#8217;,&#8217;D-GENE and allele&#8217;,
+&#8216;V-D-J-REGION&#8217;,&#8217;V-J-REGION&#8217;,&#8217;V-REGION&#8217;,&#8217;FR1-IMGT&#8217;,&#8217;CDR1-IMGT&#8217;,&#8217;FR2-IMGT&#8217;,&#8217;CDR2-IMGT&#8217;,&#8217;FR3-IMGT&#8217;,&#8217;CDR3-IMGT&#8217;,
+&#8216;JUNCTION&#8217;,&#8217;J-REGION&#8217;,&#8217;FR4-IMGT&#8217;</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Name:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Headers:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Important_Headers:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Name:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Headers:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Important_Headers:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Global Variables</a><ul>
+<li><a class="reference internal" href="#list-of-variables">List of variables</a><ul>
+<li><a class="reference internal" href="#imgt-files-info">imgt_files_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ASTutorial.html"
+                        title="previous chapter">Appsoma Website Tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Functions.html"
+                        title="next chapter">Useful Functions</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/Variables.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Functions.html" title="Useful Functions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ASTutorial.html" title="Appsoma Website Tutorial"
+             >previous</a> |</li>
+        <li><a href="index.html">IGREP 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Costas.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

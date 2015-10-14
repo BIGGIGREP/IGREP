@@ -186,20 +186,16 @@ def MIXCRProductivity(field_row):
 def GeneralProductivity(field_row):
 	"""
 		General function for determining if an entire Antibody amino acid sequence is productive or not 
-		
+	
 		Function will return True or False based on rule 
 		Input variable field_row: this will represent all antibody annotation field for a specific sequence the provided annotation file
 		
 		General steps:
-			Extract the field referring to the amino acid sequence of the antibody 			
-
-			If there is a stop codon (*) in sequence 
-
-				return false 
-
-			Else 
-			
-				return true
+			1) Extract the field referring to the amino acid sequence of the antibody 			
+			4) If there is a stop codon (*) in sequence 
+				=> return false 
+			5) return true
+	
 	"""
 	global full_aa_field
 	if '*' in field_row[full_aa_field]:
@@ -209,6 +205,7 @@ def GeneralProductivity(field_row):
 
 def CDR3Productivity(field_row):
 	"""
+	
 		Rule for CDR3 productivity. 		
 		
 		Function will return True or False based on rule 
@@ -217,10 +214,10 @@ def CDR3Productivity(field_row):
 		General steps:
 			1) Extract the CDR3 nucleotide field 
 			2) If length of CDR3 is not a multiple of 3 or length of CDR3 < 9
-				return false 
+				=> return false 
 			3) Translate CDR3 to amino acid 
 			4) If there is a stop codon (*) in sequence
-				return false 
+				=> return false 
 			5) return true
 		
 	"""
@@ -477,11 +474,8 @@ def ProcessGene(gene):
 			
 			If a gene is seperated by multiple spaces, then the gene should be identified by a gene that contains either - or '*' 
 			For example: 
-
 				Imgt genes may be: 
-
 					Homo sapiens IGHV1-3*01
-
 					We only want to isolate the word IGHV1-3
 	"""
 	
@@ -652,7 +646,7 @@ def parse_sorted_paired_file(pairing_temp_file):
 				else:
 					pairing_dict_array[other_index] = temp_array
 					receptor_1 = pairing_dict_array[0][ab_field_loc['LOCUS']][:2]
-					receptor_1 = pairing_dict_array[1][ab_field_loc['LOCUS']][:2]
+					receptor_2 = pairing_dict_array[1][ab_field_loc['LOCUS']][:2]
 					if rtype=='VDJ':
 						if receptor_1!=receptor_2:
 							locus_pairing_error+=1						
@@ -1002,16 +996,14 @@ def parse_sorted_paired_file(pairing_temp_file):
 	return [mapping_dict,num_paired,successful_pair,nonpaired_len,locus_pairing_error,num_r1_r2_found,num_unique_h_l,Hchain_pairing_error,Lchain_pairing_error]
 	
 
-
+#THIS IS another version of add_to_dict. Its functionality should be identical except it does not store everything inside of memory 
+#The previous ADD_TO_DICT FUNCTION is in the main function after this one !!!
+#THIS FUNCTION DIFFERS FROM ADD_TO_DICT BELOW IN THAT IT WILL TRY TO MINIMIZE THE AMOUNT OF MEMORY REQUIRED FOR RUNNING ANALYSIS (it uses about 1/3 to 1/4th of the memory required by  add_to_dict
+#initialitests show that speed is not affected using this method. That is, its not slower than the previous add_to_dict method 
+#THIS FUNCTION WILL READ THROUGH THE LIST OF FILES PROVIDED
+#SO INSTEAD OF STORING DATA FROM READS IN A DICTIONARY, IT WILL INSTEAD STORE THE RESULTS IN a single tab delimited file 
+#this file will be parsed by the function parse_sorted_paired_file using a mixture of awk and python code (see parse_sorted_paired_file) function 
 def add_to_dict_memory_safe(list_of_files,list_of_filetypes,required_field_names,productivity_function_call,parent_dir,analysis_method):	
-	""" 	
-
-		This function will parse through multiple annotation files provided for pairing. It does not require a specific filetype. It parses each input file and generates 
-		an output file only containing sequences which passed through our filters and reporting only the fields we require for pairing. The output file as the input file 
-		in :py:func:`.parse_sorted_paired_file`
-
-	"""	 
-	   
 	##DEFINING SOME VARIABLES##
 
 	#get global files names for opening files to write/use in this function 
@@ -1407,9 +1399,6 @@ def Compile_Clusters(clustered_dict_raw,cluster_val):
 		clustered_final_output.write("\t".join(results)+'\n')	
 
 def GenerateAnnotationFile(annotated_file_lists,cluster_val,mapping_dict,usearch_output_file):
-	"""
-		Generates a file for inserting VH-VL paired and cluster data to the database
-	"""
 	global clustered_final_output_file
 	global annotation_headers
 	delimiter='\t'
@@ -1565,54 +1554,43 @@ def RunPairing(annotated_file_paths,analysis_method,output_folder_path='',prefix
 		This is the main function for pairing VH-VL antibody data using the Georgiou lab pipeline. The pairing function is not dependent on a specific file type/format and will pair sequences using any files passed into the field annotated_file_paths.
 		Pairing of VH-VL antibodies is performed by grouping together sequences by their MISEQ header (Miseq id). This program should only be used to pair 'paired end NGS data'. That is, we assume sequences come from MISEQ paired-end sequences containing complementary R1/R2 header names.
 		
-		**General algorithm**
+		General algorithm:
 		
 		The pairing program follows the following steps: 
 			Step A: Go through the provided AB annotated files (IMGT, parsed IGBLAST files, etc), and filter out sequences that lack good results 
-
 				1) Loop through all sequences provided in all files 
 				2) Only select sequences that have a sequence header. Extract the MISEQ ID from the sequence header. 
 				3) Filter out sequences that do not have a cdr3 sequence 
 				4) Filter out sequences that are deemed 'unproductive' using our Productivity Rules, or a custom productivity rule provided by user 
 			
 			Step B: Parse the filtered file 
-
 				1) Sort the generated outputfile by the MISEQ ID
 				2) Only consider sequences where both the R1 and R2 read (sequences with identicals MISEQ ID) passed all filter steps in Step A 
-				3) Filter out sequences that
-
+				3) Filter out sequences that:
 					a) are found to be VH-VH pairs
 					b) are found to be VL-VL pairs
 					c) are found to be pairs of calls from different loci (i.e. IGH-TRA )
-
 				4) All sequences that pass the above rules are considered to be proper VH-VL paired antibodies. We store these MISEQ ids inside 'annnotation files' that can be used to update the database with properly paired sequences
 			
 			Step C: Group together CDRH3-CDRL3 pairs
-
 				1) We group together sequences with identical CDRH3-CDRL3 pairs from the filtered VH-VL paired sequences in Step B
-				2) For each CDRH3-CDRL3 group, we calculate the following as extra information for the group
-
+				2) For each CDRH3-CDRL3 group, we calculate the following as extra information for the group: 
 					a) average SHM (if an SHM field is provided) and standard deviation SHM 
 					b) mode of V,D, and J gene calls (if V, D, or J genes are provided). Mode of gene calls are based on top genes only (genes whose alignment scores are equal to the top alignment score)
 					c) All observed unique isotypes (if isotypes are provided)
 			
-			Step D: Cluster CDRH3-CDRL3 pairs
-
+			Step D: Cluster CDRH3-CDRL3 pairs 
 				1) Unique CDRH3-CDRL3 paired sequences are sorted by their total counts (number of sequences containing respective CDRH3-CDRL3 pair)
-				2) The results from each CDRH3-CDRL3, pair whose counts are found > 1 time, are exported as a FASTA file.
-
+				2) The results from each CDRH3-CDRL3, pair whose counts are found > 1 time, are exported as a FASTA file. 
 					a) The sequence header contains all of the data generated/information we are interested in for the H3-L3 pair. 
 					b) The sequence value for the FASTA is the nucleotide sequence of the CDRH3 (heavy chain) sequence only 
-
 				3) This FASTA file is used as an input file to the program USEARCH VERSION 7. 
 				4) We run the Usearch program for each cluster defined in the cluster_cutoff parameter defined in this function
 			
 			Step E: Summarize the output from each USEARCH cluster file 
-
 				1) For EACH cluster cutoff defined, USEARCH creates an output .uc file 
 				2) We parse this file and generate a finalized output file based on the CDRH3 seed/cluster
 				3) For each seed we calculate the following
-
 					a) The average SHM for all sequences which belong in the seed 
 					b) The V,D, and J call of the SEED sequence 
 					c) The Isotype call of the SEED sequence
@@ -1625,84 +1603,69 @@ def RunPairing(annotated_file_paths,analysis_method,output_folder_path='',prefix
 						ii. simpsons index 
 			
 			Step F: Generate an annotation file for the database 
-
-				1) We generate an 'annotation' file that stores the following features/results in the Georgiou lab database
-
+				1) We generate an 'annotation' file that stores the following features/results in the Georgiou lab database:
 					a) the Miseq of ID of a successful VH-VL paired seqsuence 
 					b) the Cluster ID of all CDRH3-CDRL3 pairs whose count are above 2 
 					c) the Confidence score for each cluster
 					d) the Dominance score for each cluster
 					
-		**General usage**
+		General usage:
 		
 		When calling this function, the most important feature for this program to run correctly is defining the type of file(s) you have submitted. While there is no uniform file type/format, we do need to know which field names in the file correspond to field names we use in the pairing program. 
 		The variable, required_field_names, stores the fields we need to perform the analysis. From these fields, only the following fields are absolutely necessary (although providing all fields are ideal):
-
 			1) seq_header
 			2) cdr3_nt
 					
 		We already know which field names are required for files that were generated using our common annotation methods: IMGT, IGFFT (in house program), MIXCR, IGBLAST. Therefore, if you are pairing files from one of these programs AND you have not modified the output of the files created by our python wrapper functions, there is no need to define the fields. 
 		However, if the file being provided is a custom file or an annotation file we do not know about, then you need to define custom field names in the input variable: field_names
 										
-		Example usage for pairing IMGT files::
-
+		Example usage for pairing IMGT files: 			
 			list_of_imgt_files = a list of strings providing the location of all IMGT generated files for pairing. You do not need to select a specific IMGT file or differente the 11 files by experiment, we handle that in the function
 			list_of_imgt_files = [1_summary_file1.txt,5_summary_file1.txt,1_summary_file2.txt,5_summary_file2.txt] (etc  etc for the files to pair)
 			RunPairing(annotated_file_paths = list_of_imgt_files,analysis_method = IMGT, output_folder_path='paired_seq_data.txt,prefix_output_files='MYPAIRINGEXP',annotated_file_formats='IMGT',field_names=None,cluster_cutoff=[0.85,0.96,0.01])
 		
-		Example use for pairing MIXCR files::
-
+		Example use for pairing MIXCR files:
 			list_of_mixcr_files = a list of strings providing the location of all MIXCR annotation files generated by the function ParseMIXCR
 			list_of_mixcr_files = [file1.mixcr.annotation,file2.mixcr.annotation,file3.mixcr.annotation]
 			RunPairing(annotated_file_paths = list_of_mixcr_files,analysis_method = MIXCR, output_folder_path='paired_seq_data.txt,prefix_output_files='MYPAIRINGEXP',annotated_file_formats='TAB',field_names=None,cluster_cutoff=[0.85,0.96,0.01])
 		
-		Example use for any custom file (a file type not generated by the database, parseMIXCR function, parseIgblast function, parseIGFFT function, or IMGT)::
-
+		Example use for any custom file (a file type not generated by the database, parseMIXCR function, parseIgblast function, parseIGFFT function, or IMGT):
 			list_of_files = a list of strings providing the location of some CSV file that we have not seen before 
 			In this example, this CSV (not TAB) file only contains CDR3 nucleotide information. So every other field provided will be treated as blank for the program and not considered. In the provided file, the CDR3 field is labeled as CDR3 Nt and the sequence header is labeled as, Miseq header
-			
-			field_mappings = { key = name of the field we need in the program, value = name of the field in the provided file 
+			field_mappings = { #key = name of the field we need in the program, value = name of the field in the provided file 
 				'cdr3_nt':	'CDR3 Nt',
 				'seq_header':Miseq header'
 			}
-			list_of_files = [fie1.txt,file2.txt,file3.txt]			
+			list_of_files = [fie1.txt,file2.txt,file3.txt]
+			
 			RunPairing(annotated_file_paths = list_of_files,analysis_method = custom, output_folder_path='paired_seq_data.txt,prefix_output_files='MYCUSTOMPAIRINGEXP',annotated_file_formats='CSV',field_names=field_mappings,cluster_cutoff=[0.85,0.96,0.01])
 			
 			
-		**REQUIRED FIELDS**
-
-			1) annotated_file_paths = a list of files that you want to run pairing with 
-			2) analysis_method:
-			
-				A string defining which annotation program generated the results 
-				IF an annotation program is not defined in this script (variable above) yet, then use 'CUSTOM'
-				
-				.. note:: if analysis_method == 'CUSTOM' OR not in the predefined list, then the parameter,field_names, is required 
+		#REQUIRED FIELDS###
+		#annotated_file_paths = a list of files that you want to run pairing with 
+		#analysis_method:
+			#A string defining which annotation program generated the results 
+			#IF an annotation program is not defined in this script (variable above) yet, then use 'CUSTOM'
+			#note: if analysis_method == 'CUSTOM' OR not in the predefined list, then the parameter,field_names, is required 
 		
-		**OPTIONAL FIELDS**
-			1) annotated_file_formats
-				
-				accepts three possible formats: 
-				
-					None => do not define file type, let program guess 
-					list of file types => the file type FOR EACH PROVIDED FILE 
-					SINGLE STRING => THIS MEANS ALL INPUTED FILES ARE OF THE SAME TYPE 
+		#OPTIONAL FIELDS###
+		#annotated_file_formats: 
+			#accepts three possible formats: 
+				#=> None => do not define file type, let program guess 
+				#=> list of file types => the file type FOR EACH PROVIDED FILE 
+				#=> SINGLE STRING => THIS MEANS ALL INPUTED FILES ARE OF THE SAME TYPE 
 		
-			2) field_names
-
-				A dictionary defining which fields in the file correspond to the fields required for this program 
+		#field_names: 
+			#A dictionary defining which fields in the file correspond to the fields required for this program 
+			#IMPORTANT: If analysis_method == CUSTOM! then you must define field_names in the file. Program will raise exception otherwise
+			#if provided, the structure of field names is as follows: 
+				#keys of variable: 'vgene','jgene','dgene','raw_seq_nt','cdr3_nt','seq_header','shm','full_len_ab_aa'
+				#values => for each key,provide the field name in the file that corresponds to the key 
 				
-				.. important::
-					If analysis_method == CUSTOM! then you must define field_names in the file. Program will raise exception otherwise
-					if provided, the structure of field names is as follows: 
-					keys of variable: 'vgene','jgene','dgene','raw_seq_nt','cdr3_nt','seq_header','shm','full_len_ab_aa'
-					values => for each key,provide the field name in the file that corresponds to the key
-
-				
-			3) output_folder_path => path of output folder. If empty, then a new folder is created. If folder path does not exist, then creates a new folder using provided folder path
-			4) prefix_output_files => prefix string to use for naming output files
-			5) cluster_cutoff => clustering cutoff for determining clustered pairs  (cluster=0.96 #heavy chain clustering percent (0.96 = 96%))
-			6) files_from_igrep_database => indicates whether the provided files were downloaded from the database (this is important because files from the database will have the same field names regardless of the annotation type. Therefore, we need to use these files from database
+		#output_folder_path => path of output folder. If empty, then a new folder is created. If folder path does not exist, then creates a new folder using provided folder path
+		#prefix_output_files => prefix string to use for naming output files
+		#cluster_cutoff => clustering cutoff for determining clustered pairs  (cluster=0.96 #heavy chain clustering percent (0.96 = 96%))
+		#files_from_igrep_database => indicates whether the provided files were downloaded from the database (this is important because files from the database will have the same field names regardless of the annotation type. Therefore, we need to use these files from database
 		
 	"""						
 	if use_low_memory==False:
@@ -1881,12 +1844,7 @@ def RunPairing(annotated_file_paths,analysis_method,output_folder_path='',prefix
 	
 	#THIS IS THE ACTUAL CODE FOR RUNNING PAIRING (THIS CALLS ALL THE FUNCTIONS FOR PAIRING)	
 	#first create the variables 'codeDict' and 'collapsedDict' which will store information regarding R1/R2 pairs from the annotation files 
-	#if use_low_memory:		
 	[total_seqs,passed_filter,no_result,no_cdr3_error,not_productive,invalid_chain,successful_pair,Hchain_pairing_error,Lchain_pairing_error,nonpaired_len,num_unique_cdrh3_l3_pair,num_unique_cdrh3_l3_pair_above1,locus_pairing_error,annotated_file_lists,mapping_dict] = add_to_dict_memory_safe(annotated_file_paths,annotated_file_formats,required_field_names,productivity_function,parent_dir,analysis_method)		
-	#else:
-		#this function stores results in codeDict and collapsedDict. It is memory hungry but should run faster than above function
-		#this function is now deprecated
-	#	[total_seqs,passed_filter,no_result,no_cdr3_error,not_productive,invalid_chain,successful_pair,Hchain_pairing_error,Lchain_pairing_error,nonpaired_len,num_unique_cdrh3_l3_pair,num_unique_cdrh3_l3_pair_above1,locus_pairing_error,annotated_file_lists,mapping_dict] = add_to_dict(annotated_file_paths,annotated_file_formats,required_field_names,productivity_function,analysis_method)
 				
 	number_of_clusters = []
 	for c in cluster_cutoff:
@@ -1966,665 +1924,3 @@ def RunPairing(annotated_file_paths,analysis_method,output_folder_path='',prefix
 	#summary_file
 	print('All paired clustering complete')
 	return {'annotation_files':[annotated_file['filename'] for annotated_file in annotated_file_lists],'analysis_files':analysis_files_to_report}
-
-
-
-
-"""
-THIS FUNCTION IS NOW DEPRECATED
-IT HAS BEEN REPLACED WITH add_to_dict_memory_safe
-
-
-
-
-#THIS FUNCTION WILL READ THROUGH THE LIST OF FILES PROVIDED
-#1) EACH LINE FROM EACH FILE WILL BE READ IN EVERY ITERATION OF THE LOOP (SO THE FIRST LINE FROM ALL FILES WILL BE READ IN THE FIRST ITERATION , THEN THE SECODN LINE FROM ALL FILES
-	#WE DO THIS BECAUSE AS WE FIND HEADER LINES THAT ARE THE SAME (VH-VL PAIRS FROM SAME MISEQ R1-R2 READ) WE REMOVE THE PAIRS FROM THE DICTIONARY. THIS HELPS WITH MEMORY AS THE DICTIONARY DOES NOT GET AS LARGE AS JUST LOADING ALL HEADER LINES FROM A SINGLE FILE
-#2) THIS FUNCTION NOW COMBINES info from the previous 'collapsereads' function 
-#3) ONCE WE FIND THE PROPER R1-R2 PAIRED READ, WE REMOVE THE SEQUENCE FROM CODEDICT VARIABLE, AND THEN WE ADD THIS VH-VL PAIR TO THE COLLAPSED DICT VARIABLE
-def add_to_dict(list_of_files,list_of_filetypes,required_field_names,productivity_function_call,analysis_method):	
-	#get global files names for opening files to write/use in this function 
-	global dict_summary
-	global codeDict_output_dict
-	global collapsed_output_dict
-	global error_file
-	global usearch_cluster_file
-	global collapsed_output_file
-	global annotation_path
-	
-	#set global variables for field names we require to run analysis 
-	global vgene_field
-	global jgene_field
-	global dgene_field
-	global seq_field
-	global cdr3_field
-	global header_field
-	global mut_field
-	global functionality_field
-	global full_aa_field
-	global full_nt_field
-	
-	required_field_names = defaultdict(str,required_field_names) #convert this to default dict so that not all fields have to be explicitly defined
-	
-	#keys to that refer to field names. these are the key values we use for reading files 
-	vgene_field = required_field_names['vgene']
-	jgene_field = required_field_names['jgene']
-	dgene_field = required_field_names['dgene']
-	seq_field = required_field_names['raw_seq_nt']
-	cdr3_field = required_field_names['cdr3_nt']
-	isotype_field = required_field_names['isotype']
-	header_field = required_field_names['seq_header']
-	mut_field = required_field_names['shm']
-	functionality_field = required_field_names['functionality']
-	full_aa_field = required_field_names['full_len_ab_aa']
-	full_nt_field = required_field_names['full_len_ab_nt']
-	
-	
-	#this is a pointer to functions we use for guessing the productivity of the sequence
-	if productivity_function_call == None:
-		productivity_function_call = CDR3Productivity #GeneralProductivity
-	
-	#results are written to the following files 
-	write_dict_summary = open(dict_summary,'w')
-	codeDict_save=open(codeDict_output_dict,'w')
-	collapsed_save=open(collapsed_output_dict,'w')	
-	collapsed_output=open(collapsed_output_file,'wb')
-	error=open(error_file,'wb')
-	
-	#keep track of the following counters
-	counter=0 #keep track of counters			
-	nonpaired_len = 0 #length of unpaired sequences 		
-	no_cdr3_error = 0 #keep track of sequences which lack cdr3
-	invalid_chain = 0 #keep track of sequences which do not have a valid chain call based on the chain_call variable above 
-	not_productive = 0 #keep track of sequences which are determined to be 'unproductive'
-	total_seqs = 0 #keep track of all sequences
-	no_result = 0 #keep track of sequences that have no antibody information 	
-	passed_filter = 0 #keep track of sequences that pass the filters described above (no cdr3, unproductive, etc)	
-	locus_pairing_error = 0 #keep track of sequences whose recpetors in the R1/R2 read are different. For example if R1 read is an IGH whereas R2 read is TRB then their receptors (IG AND TR) are not the same 
-	Hchain_pairing_error = 0 #keep track of sequences containing H-H data rather than H-L 
-	Lchain_pairing_error = 0 #keep track of sequences containing L-L data rather than H-L 
-	successful_pair = 0 #keep track of sequences that were successfully paired 
-	bad_r1_pair = 0 #keep track of sequences whose R1/R2 pair read was unsuccessful (so it was a good read, but its misqe pair was not )		
-	num_unique_cdrh3_l3_pair = 0 #keep track of unique CDRH3-CDRL3 pairs 
-	num_unique_cdrh3_l3_pair_above1 = 0 #keep track of unique CDRH3-CDRL3 pairs above 1
-		
-	codeDict = {} #results from R1/R2 files are stored here 
-	collapsed_dict = {} #results for unique CDRH3/CDRL3 pairs are stored here 					
-	codeDict_badSeqs = {} #anytime an R1/R2 read does not pass filters, its barcode/sequenceheader/fullcode gets stored in this dict. Therefore, when we identify its R1/R2 pair in a seperate file, we know not to add it to the dictionary codeDict	
-	
-	print('Reading all files at once and collapsing identical CDRH3-CDRL3 pairs into collapsed dict')
-	codeDict_save.write('{')#we will save the variable codeDict as a JSON var to file. JSON files start with { and end with }. ',' will be used to save each R1-R2 pair
-	
-	num_r1_r2_found = 0	
-	at_least_one_file_open = True
-	
-	[list_of_file_reading,annotation_file_writing] = initialize_input_files(analysis_method,list_of_filetypes,list_of_files)
-	
-	#key = > a H/L pair ID (the variable fullcode from miseq reads), value = a 'CDRH3-CDRL3' pair 
-	mapping_dict = {}
-	
-	# we will read each of the files simultaneously (open all the files at once and read line by line)
-	while at_least_one_file_open:		
-	#while counter<200000:
-		counter+=1
-		if total_seqs%100000==0:
-			print 'Processed '+str(total_seqs)+' sequences'#: '+str(counter)			
-		
-		#keep track of how many files have been completely read
-		num_eof = 0 		
-		#read each file line by line
-		for fnum,reader in enumerate(list_of_file_reading): 						
-			#this file has been completely read through
-			if reader.IFclass.eof:
-				num_eof+=1
-				continue										
-			#read the next line in the file 
-			my_line = reader.IFclass.read()							
-			if not my_line:#probably end of file or just empty line			
-				continue
-			
-			my_line = defaultdict(str,my_line)
-			h = my_line[header_field]				
-			if not h:				
-				annotation_file_writing[fnum]['buffer'].write('\t'.join(['',my_line[seq_field],my_line[idIdentifier],'',''])+'\n')
-				print 'Error type 0: no sequence header'
-				continue
-			
-			[header,id] = GetHeaderInfo(my_line,header_field)
-			
-			#get miseq code/read info 
-			fullcode = ':'.join(header.replace(' ','_').split(':')[3:7]).split('_')[0]															
-			
-			header_to_write = header 
-			seq_to_write = my_line[seq_field]
-			seq = my_line[seq_field]
-			total_seqs+=1						
-			
-			#no amino acid sequence found 
-			if not my_line[full_aa_field]:			
-				
-				if not my_line[full_nt_field]:
-					#no nucleotide sequence found either 
-					#do not save this sequences results to file 
-					#write to temperoary file annotation file, store that there is no full length sequence for this sequence, so no need to save its 
-					#paired annotation information 
-					annotation_file_writing[fnum]['buffer'].write('\t'.join([header,seq,id,'','',''])+'\n')						
-					no_result+=1
-					continue
-				else:
-					#aminoa acid sequence was not proviided, but a nucleotide sequence was provided 
-					#translate nucloetid to amino acid..this can result in some potential problems with PRODUCTIVITY determination IF using GENERAL PRODUCTIVTY function rule 
-					try:
-						end = (len(my_line[full_nt_field])/3)*3
-						my_line[full_aa_field] = str(Seq(my_line[full_nt_field][:end],generic_dna).translate())
-					except:
-						print('Error type 2: problem translating amino acid => '+str(my_line[full_nt_field]))
-						annotation_file_writing[fnum]['buffer'].write('\t'.join([header,seq,id,'','',''])+'\n')						
-						no_result+=1
-						continue
-						
-						
-			Vgene = my_line[vgene_field].split(',')[0]
-			Jgene = my_line[jgene_field].split(',')[0]
-			
-			Dgene = my_line[dgene_field].split(',')[0]
-			
-			#figure out locus using vgene call 
-			if len(Vgene.split(' '))>1:				
-				for subv in Vgene.split(' '):
-					if '*' in subv or '-' in subv:						
-						Vgene = subv.split('*')[0]
-						break
-			else:
-				Vgene = Vgene.split('*')[0]
-				
-			
-			if Dgene:
-				#figure out locus using vgene call 
-				if len(Dgene.split(' '))>1:
-					for subd in Dgene.split(' '):
-						if '*' in subd or '-' in subd:						
-							Dgene = subd.split('*')[0]
-							break
-				else:
-					Dgene = Dgene.split('*')[0]				
-			
-			if Jgene:				
-				if len(Jgene.split(' '))>1:
-					for subj in Jgene.split(' '):
-						if '*' in subj or '-' in subj:						
-							Jgene = subj.split('*')[0]
-							break
-				else:
-					Jgene = Jgene.split('*')[0]				
-			
-			if Vgene:
-				#use vgene to determine locus 
-				locus = Vgene[:3].upper()						
-			elif Jgene:
-				#if no vgene is present, then use jgene
-				locus = Jgene[:3].upper()
-			else:
-				locus=''
-			
-			chain = 'N/A'			
-			#shoudl return 'VDJ' or 'VJ' based on LOCUS var
-			for possible_chains,values in chain_call.iteritems():			
-				if locus in values:
-					chain = possible_chains.upper()
-					break		
-			
-			#chain could not be determind with provided locus 
-			if chain == 'N/A':										
-				invalid_chain+=1
-				print 'Error type 1' #isotype is mislabeled				
-				print locus
-				print Vgene 
-				print Jgene
-				#print my_line		
-				print chain_call
-				codeDict_badSeqs[fullcode] = 0
-				#remvoe its potential corresponding read from the codeDict var
-				corresponding_r_data = codeDict.pop(fullcode,None)
-				rtype=''
-				if corresponding_r_data:
-					bad_r1_pair+=1
-					if corresponding_r_data[ab_field_loc['CHAIN_CALL']] == 'VDJ':						
-						#write this R1-R2 pair, in json format, to the codeDict_save file 									
-						codeDict_save.write('\t"'+fullcode+'":'+json.dumps([corresponding_r_data,[]*num_elem_stored,'CORRESPONDING READ FILE HAD INVALID CHAIN'])+',\n')						
-						rtype='VJ'
-					elif corresponding_r_data[ab_field_loc['CHAIN_CALL']] == 'VJ':							
-						#write this R1-R2 pair, in json format, to the codeDict_save file 									
-						codeDict_save.write('\t"'+fullcode+'":'+json.dumps([[]*num_elem_stored,corresponding_r_data,'CORRESPONDING READ FILE HAD INVALID CHAIN'])+',\n')
-						rytpe='VDJ'
-				annotation_file_writing[fnum]['buffer'].write('\t'.join([header,my_line[seq_field],id,rtype,fullcode,''])+'\n')						
-				continue
-			
-			rtype=chain
-			#unproductive
-			if productivity_function_call(my_line)==False:								
-				codeDict_badSeqs[fullcode] = 0				
-				#remvoe its potential corresponding read from the codeDict var
-				corresponding_r_data = codeDict.pop(fullcode,None)
-				if corresponding_r_data:					
-					bad_r1_pair+=1
-					if corresponding_r_data[ab_field_loc['CHAIN_CALL']] == 'VDJ':											
-						#write this R1-R2 pair, in json format, to the codeDict_save file 
-						codeDict_save.write('\t"'+fullcode+'":'+json.dumps([corresponding_r_data,[]*num_elem_stored,'CORRESPONDING READ FILE HAD UNPRODUCTIVE SEQUENCE'])+',\n')						
-					elif corresponding_r_data[ab_field_loc['CHAIN_CALL']] == 'VJ':						
-						#write this R1-R2 pair, in json format, to the codeDict_save file 									
-						codeDict_save.write('\t"'+fullcode+'":'+json.dumps([[]*num_elem_stored,corresponding_r_data,'CORRESPONDING READ FILE HAD UNPRODUCTIVE SEQUENCE'])+',\n')
-				#write to temperoary file 
-				annotation_file_writing[fnum]['buffer'].write('\t'.join([header,my_line[seq_field],id,rtype,fullcode,''])+'\n')						
-				not_productive+=1
-				continue
-			
-			#no cdr3 found 
-			if not(my_line[cdr3_field]):							
-				codeDict_badSeqs[fullcode] = 0
-				corresponding_r_data = codeDict.pop(fullcode,None)
-				#remvoe its potential corresponding read from the codeDict var
-				if corresponding_r_data:	
-					bad_r1_pair+=1
-					if corresponding_r_data[ab_field_loc['CHAIN_CALL']] == 'VDJ':						
-						#write this R1-R2 pair, in json format, to the codeDict_save file 									
-						codeDict_save.write('\t"'+fullcode+'":'+json.dumps([corresponding_r_data,[]*num_elem_stored,'CORRESPONDING READ FILE LACKED CDR3'])+',\n')						
-					elif corresponding_r_data[ab_field_loc['CHAIN_CALL']] == 'VJ':					
-						#write this R1-R2 pair, in json format, to the codeDict_save file 									
-						codeDict_save.write('\t"'+fullcode+'":'+json.dumps([[]*num_elem_stored,corresponding_r_data,'CORRESPONDING READ FILE LACKED CDR3'])+',\n')
-				#write to temperoary file 
-				annotation_file_writing[fnum]['buffer'].write('\t'.join([header,my_line[seq_field],id,rtype,fullcode,''])+'\n')						
-				no_cdr3_error+=1
-				continue
-												
-			CDR3 = my_line[cdr3_field].upper()
-			Len = len(CDR3)/3
-			#get SHM info 
-			try:
-				Mut = round(float(my_line[mut_field]),3)
-			except:
-				if '(' in my_line[mut_field]:
-					try:
-						Mut = round(float(my_line[mut_field].split('(')[0].strip()),3)
-					except:
-						Mut = 'none'
-				else:				
-					Mut = 'none'		
-			
-			isotype = my_line[isotype_field].strip()
-
-			seq=my_line[seq_field]
-						
-			passed_filter+=1
-			
-			annotation_file_writing[fnum]['buffer'].write('\t'.join([header,my_line[seq_field],id,rtype,fullcode,''])+'\n')						
-			
-			#no need to put data in codeDict since we already know that its R1/R2 pair data did not work 
-			if fullcode in codeDict_badSeqs:	
-				bad_r1_pair+=1				
-				codeDict_badSeqs.pop(fullcode)		
-				
-				#save results to file, but dont add it to codeDict
-				temp_array = [None]*num_elem_stored
-				temp_array[ab_field_loc['CDR3_SEQ']] = CDR3
-				temp_array[ab_field_loc['VGENE']]=Vgene
-				temp_array[ab_field_loc['DGENE']]=Dgene
-				temp_array[ab_field_loc['JGENE']]=Jgene
-				temp_array[ab_field_loc['LOCUS']]=locus
-				temp_array[ab_field_loc['MUT']]=Mut
-				temp_array[ab_field_loc['CDR3_LEN']]=Len
-				temp_array[ab_field_loc['AB_SEQ']]=seq
-				temp_array[ab_field_loc['CHAIN_CALL']]=chain
-				temp_array[ab_field_loc['ISOTYPE']] = isotype
-
-				
-				if chain=='VDJ':				
-					codeDict_save.write('\t"'+fullcode+'":'+json.dumps([temp_array,[]*num_elem_stored,'CORRESPONDING READ FILE DID NOT PASS FILTERS'])+',\n')						
-				else:
-					codeDict_save.write('\t"'+fullcode+'":'+json.dumps([[]*num_elem_stored,temp_array,'CORRESPONDING READ FILE DID NOT PASS FILTERS'])+',\n')						
-				
-				continue
-						
-			
-			if fullcode not in codeDict:												
-				#this is the first time an R1/R2 read for a particular sequence was found that passed above filters 				
-				
-				#stores all the relevant fields for pairing 
-				#ab_field_loc=> points to the index location in each array for each field sstored. i.e. CDR3 is always stored in 0 position of array 				
-				temp_array = [None]*num_elem_stored
-				temp_array[ab_field_loc['CDR3_SEQ']] = CDR3
-				temp_array[ab_field_loc['VGENE']]=Vgene
-				temp_array[ab_field_loc['DGENE']]=Dgene
-				temp_array[ab_field_loc['JGENE']]=Jgene
-				temp_array[ab_field_loc['LOCUS']]=locus
-				temp_array[ab_field_loc['MUT']]=Mut
-				temp_array[ab_field_loc['CDR3_LEN']]=Len
-				temp_array[ab_field_loc['AB_SEQ']]=seq
-				temp_array[ab_field_loc['CHAIN_CALL']]=chain 									
-				temp_array[ab_field_loc['ISOTYPE']] = isotype
-					
-				codeDict[fullcode] = temp_array													
-			else:				
-				#we found an R1/R2 pair that passed filters 
-				num_r1_r2_found+=1
-				
-				#lets just pop the data/remove data from the codeDict variable because we have found the H/L pair 
-				pair_data = codeDict.pop(fullcode)
-				
-				#SEPARETE VDJ(HEAVY) AND VJ(LIGHT) DATA 				
-				pair_error = False								
-				
-				temp_array = [None]*num_elem_stored
-				temp_array[ab_field_loc['CDR3_SEQ']] = CDR3
-				temp_array[ab_field_loc['VGENE']]=Vgene
-				temp_array[ab_field_loc['DGENE']]=Dgene
-				temp_array[ab_field_loc['JGENE']]=Jgene
-				temp_array[ab_field_loc['LOCUS']]=locus
-				temp_array[ab_field_loc['MUT']]=Mut
-				temp_array[ab_field_loc['CDR3_LEN']]=Len
-				temp_array[ab_field_loc['AB_SEQ']]=seq	
-				temp_array[ab_field_loc['CHAIN_CALL']]=chain 		
-				temp_array[ab_field_loc['ISOTYPE']] = isotype
-
-				
-				error_string = ''
-				if chain == 'VDJ': # the current sequence is heavy 					
-					#the receptor call (IG/TR) of the R1/R2 reads did not match, we assume thsi cannot happen 				
-					if locus[:2]!=pair_data[ab_field_loc['LOCUS']][:2]: 
-						locus_pairing_error+=1
-						#pair_data.append('ReceptorError')		
-						error_string = 'ReceptorError'
-						error.write('Receptors calls for R1/R2 reads do not match: %s\n' %(fullcode))
-													
-
-						vdj = temp_array
-						vj = pair_data#[:-1]	
-						pair_error = True					
-					#already have heavy data for this sequence 
-					elif pair_data[ab_field_loc['CHAIN_CALL']]=='VDJ':#='none': #VDJ!=None:
-						error.write('Heavy chain overlap: %s\n' %(fullcode)) #there are multiple heavy chains with the same NGS barcode
-						Hchain_pairing_error+=1
-						pair_error = True
-						error_string = 'OverlapError'
-						#pair_data.append('OverlapError')
-						vdj = pair_data
-						vj = []					
-					else:
-						#stores all the relevant fields for pairing 
-						#ab_field_loc=> points to the index location in each array for each field sstored. i.e. CDR3 is always stored in 0 position of array 
-						temp_array = [None]*num_elem_stored
-						temp_array[ab_field_loc['CDR3_SEQ']] = CDR3
-						temp_array[ab_field_loc['VGENE']]=Vgene
-						temp_array[ab_field_loc['DGENE']]=Dgene
-						temp_array[ab_field_loc['JGENE']]=Jgene
-						temp_array[ab_field_loc['LOCUS']]=locus
-						temp_array[ab_field_loc['MUT']]=Mut
-						temp_array[ab_field_loc['CDR3_LEN']]=Len
-						temp_array[ab_field_loc['AB_SEQ']]=seq	
-						temp_array[ab_field_loc['CHAIN_CALL']]=chain 									
-						temp_array[ab_field_loc['ISOTYPE']] = isotype
-		
-						vdj = temp_array
-						vj = pair_data#[:-1]	
-						temp_array=[]
-				
-				elif (chain=='VJ'):		
-					#the receptor call (IG/TR) of the R1/R2 reads did not match, we assume thsi cannot happen 				
-					if locus[:2]!=pair_data[ab_field_loc['LOCUS']][:2]: #the locus of the R1/R2 reads did not match, we assume thsi cannot happen 				
-						locus_pairing_error+=1
-						#pair_data.append('ReceptorError')	
-						error_string = 'ReceptorError'
-
-						error.write('Receptors calls for R1/R2 reads do not match: %s\n' %(fullcode))
-						pair_error = True
-						
-						temp_array = [None]*num_elem_stored
-						temp_array[ab_field_loc['CDR3_SEQ']] = CDR3
-						temp_array[ab_field_loc['VGENE']]=Vgene
-						temp_array[ab_field_loc['DGENE']]=Dgene
-						temp_array[ab_field_loc['JGENE']]=Jgene
-						temp_array[ab_field_loc['LOCUS']]=locus
-						temp_array[ab_field_loc['MUT']]=Mut
-						temp_array[ab_field_loc['CDR3_LEN']]=Len
-						temp_array[ab_field_loc['AB_SEQ']]=seq
-						temp_array[ab_field_loc['CHAIN_CALL']]=chain 									
-						temp_array[ab_field_loc['ISOTYPE']] = isotype
-
-
-						vj = temp_array
-						vdj = pair_data#[:-1]
-					
-					elif pair_data[ab_field_loc['CHAIN_CALL']]=='VJ': 				
-						error.write('Light chain overlap: %s\n' %(fullcode)) #there are multiple light chains with the same NGS barcode
-						Lchain_pairing_error+=1
-						pair_error = True
-						error_string = 'OverlapError'
-						#pair_data.append('OverlapError')		
-						vdj = []
-						vj = pair_data		
-					
-					else:
-						temp_array = [None]*num_elem_stored
-						temp_array[ab_field_loc['CDR3_SEQ']] = CDR3
-						temp_array[ab_field_loc['VGENE']]=Vgene
-						temp_array[ab_field_loc['DGENE']]=Dgene
-						temp_array[ab_field_loc['JGENE']]=Jgene
-						temp_array[ab_field_loc['LOCUS']]=locus
-						temp_array[ab_field_loc['MUT']]=Mut
-						temp_array[ab_field_loc['CDR3_LEN']]=Len
-						temp_array[ab_field_loc['AB_SEQ']]=seq
-						temp_array[ab_field_loc['CHAIN_CALL']]=chain 									
-						temp_array[ab_field_loc['ISOTYPE']] = isotype
-
-						
-						vdj = pair_data#[:-1]
-						vj = temp_array						
-				
-				
-				#write this R1-R2 pair, in json format, to the codeDict_save file 				
-				codeDict_save.write('\t"'+fullcode+'":'+json.dumps([vdj,vj,error_string])+',\n')
-				
-				#add a CDRH3-CDRL3 pair to the collapsed dict var 
-				if pair_error==False:	
-					#for writing line by line json results of paired sequences
-					write_dict_summary.write(json.dumps([{field:vdj[index_val] for field,index_val in ab_field_loc.iteritems()},{field:vj[index_val] for field,index_val in ab_field_loc.iteritems()}])+'\n')						
-
-					#write_dict_summary.write(json.dumps([vdj,vj])+'\n')
-					successful_pair+=1
-					barcode = vdj[ab_field_loc['CDR3_SEQ']]+':'+vj[ab_field_loc['CDR3_SEQ']]					
-					barcode_aa = str(Seq(vdj[ab_field_loc['CDR3_SEQ']],generic_dna).translate())+':'+str(Seq(vj[ab_field_loc['CDR3_SEQ']],generic_dna).translate())
-					if barcode not in collapsed_dict:
-						vdj.extend([0,0,0])
-						vj.extend([0,0,0])																		
-						collapsed_dict[barcode] = [vdj,vj,0]
-					
-					#add barcode to collapsed_dict. also include information for MEAN SHM and VARIANCE SHM
-					if vdj[ab_field_loc['MUT']] != 'none':						
-						collapsed_dict[barcode][0][-3] +=1 #add to the number of sequences contianing SHM data 
-						collapsed_dict[barcode][0][-2] +=vdj[ab_field_loc['MUT']] #add to SUM SHM 
-						collapsed_dict[barcode][0][-1] +=pow(vdj[ab_field_loc['MUT']],2) #add to SUM SHM^2							
-											
-					if vj[ab_field_loc['MUT']] != 'none':						
-						collapsed_dict[barcode][1][-3] +=1 #add to the number of sequences contianing SHM data 
-						collapsed_dict[barcode][1][-2] +=vj[ab_field_loc['MUT']] #add to SUM SHM 
-						collapsed_dict[barcode][1][-1] +=pow(vj[ab_field_loc['MUT']],2) #add to SUM SHM^2																																
-					
-					collapsed_dict[barcode][-1]+=1
-					mapping_dict[fullcode] = barcode
-				
-		if num_eof==len(list_of_files):#all files have been read through
-			at_least_one_file_open=False 
-				
-	
-	#any sequences remaining in codeDict were sequencse whose R1/R2 paired read was missing 
-	nonpaired_len = len(codeDict)
-	
-	for non_paired_keys in codeDict.keys():
-		chain_data = codeDict.pop(non_paired_keys)
-		
-		if chain_data[ab_field_loc['CHAIN_CALL']]=='VDJ':
-			codeDict_save.write('\t"'+fullcode+'":'+json.dumps([chain_data,[]*num_elem_stored,'A corresponding r1/r2 read was not found'])+',\n')
-		else:
-			codeDict_save.write('\t"'+fullcode+'":'+json.dumps([[]*num_elem_stored,chain_data,'A corresponding r1/r2 read was not found'])+',\n')			
-		del chain_data			
-	
-	#FINISH off saving of codeDict. have to do this to ensure that json.load function will work on file lateron
-	if num_r1_r2_found>0:
-		codeDict_save.seek(-2,os.SEEK_END) #search for last character in file 
-		codeDict_save.truncate() #remove the last character (should be a ',')
-		codeDict_save.write('\n}')#replace last characer with a }
-	else:
-		codeDict_save.write('\n}')#replace last characer with a }
-	
-	#save collapsed_dict var to file 
-	#stores collapsed dict into a json file
-	print "Saving collapsed dictionary.\n"
-	json.dump(collapsed_dict, collapsed_save)
-	
-	#Collapsing identical reads
-	print 'Compiling collapsed reads file.\n'
-	
-	clustered_input=open(usearch_cluster_file,'w')
-			
-	num_unique_cdrh3_l3_pair=len(collapsed_dict)
-	
-	#sort keys in collapsed_dict by their counts (element 2)
-	sorted_keys = sorted(collapsed_dict, key=lambda i:collapsed_dict[i][2], reverse=True)
-	summed_counts=0
-	s2=0
-	for key in sorted_keys:
-		#first element of row = > heavy chain data 
-		#second element of row => light chain data 
-		#third element => counts
-		row = collapsed_dict.pop(key)		
-		
-		#the variable ab_field_loc stores the index position for each antibody region in the array 
-		CDRH3=row[0][ab_field_loc['CDR3_SEQ']]
-		VHgene=row[0][ab_field_loc['VGENE']]
-		DHgene=row[0][ab_field_loc['DGENE']]
-		JHgene=row[0][ab_field_loc['JGENE']]		
-		CDRL3=row[1][ab_field_loc['CDR3_SEQ']]#[4]
-		VLgene=row[1][ab_field_loc['VGENE']]#[5]
-		JLgene=row[1][ab_field_loc['JGENE']]#[6]
-		IgH=row[0][ab_field_loc['LOCUS']]#[7]
-		IgL=row[1][ab_field_loc['LOCUS']]#[8]
-							
-		HLen=row[0][ab_field_loc['CDR3_LEN']]
-		LLen=row[1][ab_field_loc['CDR3_LEN']]
-		
-		h_iso = row[0][ab_field_loc['ISOTYPE']]
-		l_iso = row[1][ab_field_loc['ISOTYPE']]			
-		counts=row[2]
-		summed_counts+=counts
-		
-		
-		if row[0][-3]>0:					
-			Hmut_sum = row[0][-2]
-			Hmut_sum_sq = row[0][-1]
-			Hmut_count = row[0][-3]
-			
-			#average shm
-			Hmut_avg = round(Hmut_sum/Hmut_count,3)
-			#shm variance -> sum of squares formulat => sum(vals^2)-(sum(vals)^2/counts)
-			if Hmut_count>1:
-				Hmut_var = round(pow((Hmut_sum_sq-(pow(Hmut_sum,2)/Hmut_count))/(Hmut_count-1),0.5),3)
-			else:
-				Hmut_var = 'none'
-			
-		else:
-			Hmut_avg = 'none'
-			Hmut_var = 'none'
-			Hmut_sum = 0
-			Hmut_sum_sq = 0
-			Hmut_count = 0			
-			
-		if row[1][-3]>0:			
-			Lmut_sum = row[1][-2]
-			Lmut_sum_sq = row[1][-1]
-			Lmut_count = row[1][-3]
-			
-			Lmut_avg = round(Lmut_sum/Lmut_count,3)
-			#shm variance -> sum of squares formulat => sum(vals^2)-(sum(vals)^2)/counts)
-			if Lmut_count>1:
-				Lmut_var = round(pow((Lmut_sum_sq-(pow(Lmut_sum,2))/Lmut_count)/(Lmut_count-1),0.5),3)
-			else:
-				Lmut_var = 'none'
-			
-		else:
-			Lmut_avg= 'none'
-			Lmut_var= 'none'
-			Lmut_sum = 0
-			Lmut_sum_sq = 0
-			Lmut_count = 0
-						
-		try: 
-			CDRH3_trans=str((Seq(CDRH3,generic_dna)).translate())
-		except Exception as e: 
-			CDRH3= 'translation error'
-			print 'Error translating: '+str(e)		
-		try: 
-			CDRL3_trans=str((Seq(CDRL3,generic_dna)).translate())
-		except Exception as e: 
-			CDRL3= 'translation error'
-			print 'Error translating: '+str(e)		
-				
-		
-		results = [counts,CDRH3_trans,CDRL3_trans,CDRH3,CDRL3,VHgene,DHgene,JHgene,VLgene,JLgene,IgH,IgL,Hmut_avg,Hmut_var,Lmut_avg,Lmut_var,HLen,LLen,h_iso,l_iso,Hmut_sum,Hmut_sum_sq,Hmut_count,Lmut_sum,Lmut_sum_sq,Lmut_count]
-		results = [str(r) for r in results]
-		
-		collapsed_output.write("\t".join(results)+'\n')
-
-		if counts>1: #drop all sequences that are never repeated - this reduces PCR error
-			num_unique_cdrh3_l3_pair_above1+=1
-			header=":".join(results)
-			clustered_input.write(">%s\n%s\n" %(header,CDRH3))			
-			s2+=counts										
-		del row	
-	
-	#trying to free memory..but doesnt work 
-	collapsed_dict = {}
-	#del collapsed_dict	
-	for k in codeDict_badSeqs.keys():
-		a = codeDict_badSeqs.pop(k)
-		del a
-	del codeDict_badSeqs
-	del codeDict
-	gc.collect()
-	gc.collect()
-	gc.collect()
-
-	
-	#close all input files
-	write_dict_summary.close()
-	codeDict_save.close()
-	clustered_input.close()
-	collapsed_save.close()
-	error.close()
-	
-	nonpaired_len+=bad_r1_pair
-		
-	print 'Summary: '
-	print 'Parsed through {0} sequences'.format(str(total_seqs))
-	print '{0} ({1}%) sequences did not pass filters: '.format(str(total_seqs-passed_filter),str( round(float(  (100*(total_seqs-passed_filter))/total_seqs),1)) if total_seqs>0 else '0' )
-	print '		{0} sequences did not have an antibody sequence'.format(str(no_result))
-	print '		{0} sequences did not have a cdr3'.format(str(no_cdr3_error))
-	print '		{0} sequences were not productive'.format(str(not_productive))
-	print '		{0} sequences had an unidentifiable chain type'.format(str(invalid_chain))
-	
-	print '{0} ({1}%) sequences were not paired successfully: '.format(str(passed_filter-2*successful_pair),str( round(float(  100* ((passed_filter-2*successful_pair))  /total_seqs) ,1)) if total_seqs>0 else '0')
-	print '		{0} sequences had different LOCUS calls'.format(str(2*locus_pairing_error))
-	print '		{0} sequences were paired as VH-VH'.format(str(2*Hchain_pairing_error))
-	print '		{0} sequences were paired as VL-VL'.format(str(2*Lchain_pairing_error))		
-	print '		{0} sequences did not have a corresponding R1-R2 pair read'.format(str(nonpaired_len))
-	#print '		{0} sequences did not have a corresponding R1-R2 pair read that passed filters'.format(str(bad_r1_pair))
-	
-	print '{0} ({1}%) sequences were successfully paired: '.format(str(2*successful_pair),str( round(float(100*(2*successful_pair)/total_seqs),1)) if total_seqs>0 else '0')
-	print 'This leaves {0} identified VH-VL sequence-pairs: '.format(str(successful_pair))
-	print 'VH-VL sequence-pairs were collapsed into {0} sequences containing unique CDRH3-CDRL3 pairs: '.format(str(num_unique_cdrh3_l3_pair))
-	print '{0} ({1}%) of these unique pairs were observed more than once'.format(num_unique_cdrh3_l3_pair_above1,str(round(float(100*num_unique_cdrh3_l3_pair_above1/num_unique_cdrh3_l3_pair),1)) if num_unique_cdrh3_l3_pair>0 else '0')
-	
-	for anot_files in annotation_file_writing:
-		anot_files['buffer'].close()
-	
-	return [total_seqs,passed_filter,no_result,no_cdr3_error,not_productive,invalid_chain,successful_pair,Hchain_pairing_error,Lchain_pairing_error,nonpaired_len,num_unique_cdrh3_l3_pair,num_unique_cdrh3_l3_pair_above1,locus_pairing_error,annotation_file_writing,mapping_dict]		
-"""

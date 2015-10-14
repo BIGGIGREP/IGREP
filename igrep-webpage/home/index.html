@@ -9,8 +9,11 @@
         
     <title>BIGG Data Analysis</title>
 	
-    <!-- <script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script> -->
-    <script src="//code.jquery.com/jquery-1.11.3.js"></script>
+  	<script src="//code.jquery.com/jquery-1.11.3.js"></script>
+    <!--
+    	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>     	
+    -->
+
 
 	<link rel="stylesheet" type="text/css" href="/styles/bootstrap/css/bootstrap.min.css">	 
     <link rel="stylesheet" type="text/css" href="/styles/dashboard.css">	
@@ -125,7 +128,9 @@
 		}
 	</style>
 	<script>
-	function MakeAppSidebar(app_dictionary, preferred_name_order,previous_class) {
+	
+		//generate html text for the side bar after having searched for all available apps in the server
+		function MakeAppSidebar(app_dictionary, preferred_name_order,previous_class) {
 			if (previous_class == undefined)
 				previous_class = ""
 
@@ -165,6 +170,8 @@
 			html_element += "</ul>"
 			return html_element
 		}
+
+		//based on the app web-pages found on server, generate a series of panes to populate the main page
 		function PopulateAppLists(app_list,preferred_name_order){
 			//bootstrap_panel_colors = ["#337ab7","#ddd","#d6e9c6","#bce8f1","#faebcc"]
 			//more_panel_colors = ["#D4D8D1","#A8A8A1","#AA9A66","#B74934","#577492","#67655D","#332C2F",]
@@ -258,27 +265,29 @@
 			
 		}
 		function ClearPage(){
-		
-			$('#main-app-page').html('<div class="alert alert-danger" role="alert">Oops! There was an error processing the app request</div>')
-		
+			$('#main-app-page').html('<div class="alert alert-danger" role="alert">Oops! There was an error processing the app request</div>')		
 		}
+
+		//make an ajax call. ask server to return all html pages in the apps page
 		function GetApps(){
 			params = {
 				'module':'get_apps_list',
 				'args':[]
 			}
-			opts = get_ajax_params(params)
-			opts.success = function (res) {
-				InitializePage(res)
+			more_opts = {
+				success: function (res) {
+					InitializePage(res)
+				},
+				complete: function(){
+				},
+				error: 	function (jqXHR, textStatus, errorThrown) {
+					alert(jqXHR.responseText);
+					ClearPage();
+				}
 			}
-			opts.complete = function(){
-			}				
-			opts.error = function (jqXHR, textStatus, errorThrown) {
-				alert(jqXHR.responseText);
-				ClearPage();
-			}		
-			xhr = $.ajax(opts);
+			run_ajax_call(params,more_opts)								
 		}
+
 		$(document).ready(function(){
 			/*folder = {
 				"Automated Pipelines": {
@@ -300,13 +309,16 @@
 				$('.bs-docs-sidebar').find('ul ul').children('li').hide()												
 				var c = $('.bs-docs-sidebar').find('a.active')
 				c.closest('li.main-node').find('li').show()
-			}*/
+			}*/			
 			GetApps()
 						
-			//only_show_active()
+			//important for the navbar!
+			//get the current username
+			current_username = readCookie("username")
+			//use username to fill in html for right side of header/nav bar			
+			$('#logout-nav').find('span.text').html(current_username)
 			
-			
-			
+
 			$('.bs-docs-sidebar').on('click','li a',function(){
 				$(this).closest('.bs-docs-sidebar').find('.active').removeClass('active');				
 				$(this).addClass('active')
@@ -321,6 +333,14 @@
 				}) 				
 				//only_show_active()
 			});
+
+			//loguser out of the page when they click the button
+			$('li.logout').on('click',function(){
+				eraseCookie("username")
+				eraseCookie("key")
+				var host_location = String(window.location.protocol)+'//'+String(window.location.host)
+				window.location.assign(host_location+"/igrep-webpage/login")
+			})
 		})
 		
 	</script>
@@ -339,11 +359,11 @@
 							<span class="icon-bar"></span>
 						</button>    				
 						<ul class="dropdown-menu pull-right" aria-labelledby="navbar-modal-options">
-							<li><a href="#">Running Jobs</a></li>
-							<li><a href="#">Completed Jobs</a></li>
-							<li><a href="#">Data</a></li>
-							<li><a href="#">Env</a></li>
-							<li><a href="#">Logout</a></li>
+							<li><a href="/jobs">Running Jobs</a></li>
+							<li><a href="">Completed Jobs</a></li>
+							<li><a href="">Data</a></li>
+							<li><a href="">Env</a></li>
+							<li><a href="">Logout</a></li>
 						</ul>
 					</div>
 				</div>
@@ -354,15 +374,16 @@
 			<div class="navbar-collapse collapse">
 				<ul class="nav navbar-nav navbar-left">
 					<li class="active"><a>Apps</a></li>
-					<li class=""><a href="#">Running Jobs</a></li>
+					<li class=""><a href="/jobs">Running Jobs</a></li>
 					<li><a href="#">Completed Jobs</a></li>
 					<li><a href="#">Data</a></li>
 					<li><a href="#">Env</a></li>
 				</ul>
 				
 				<ul id='logout-nav' class="nav navbar-nav navbar-right">					
-					<li class='current-user' title='logout'><a href="#"><span class="username glyphicon glyphicon-user"></span> test</a></li>													
-					<li class='logout' title='logout'><a href="#"><span class="username glyphicon glyphicon-log-out"></span> test</a></li>													
+					<!-- document get cookies , delete cookies -->
+					<li class='current-user' title='logout'><a href="#"><span class="username glyphicon glyphicon-user"></span><span class='text'></span></a></li>													
+					<li class='logout' title='logout'><a href="#"><span class="username glyphicon glyphicon-log-out"></span><span class='text'></span></a></li>													
 					<!--<li title='logout' class='logout'>
 						
 						<a href="/igrep-webpage/login">

@@ -1,4 +1,4 @@
-from immunogrep_immunogrepfile import immunogrepFile
+from immunogrep_read_file import immunogrepFile
 from Bio.Seq import Seq 
 from Bio.Alphabet import generic_dna
 import re
@@ -244,8 +244,8 @@ def match_sequence(input_seq,mixcr_seq):
 
 def GetFullAA(content,missing_fields):
 	#our productiviety rules: 
-		#if stop codong => no 
-		#if there are no stop codons but we did not find all of the annotated regions or there is a potential indel, we say mabe 
+		#if stop codon => no 
+		#if there are no stop codons but we did not find all of the annotated regions or there is a potential indel, we say maybe 
 		#all other situations, we say yes
 	fields_to_concatenate = ['FR1','CDR1','FR2','CDR2','FR3','CDR3','FR4']# ['AA. seq. FR1','AA. seq. CDR1','AA. seq. FR2','AA. seq. CDR2','AA. seq. FR3','AA. seq. CDR3','AA. seq. FR4']
 	
@@ -257,6 +257,7 @@ def GetFullAA(content,missing_fields):
 	for f in range(starting_translation,len(fields_to_concatenate)):
 		aa_region = content['AA. seq. '+fields_to_concatenate[f]]
 		if not aa_region:			
+			#once we hit a 'non-annotated' region of the antibody, stop adding to the amino acid sequence. For example if they return only FR1, FR2, FR4 then return FR1,FR2
 			break		
 		aa+=aa_region
 	
@@ -293,7 +294,7 @@ def return_full_nt(content):
 	if five_prime and three_prime:
 		index_pos_five = all_regions.index(five_prime)
 		index_pos_three = all_regions.index(three_prime)		
-		for inbetween in range(index_pos_five,index_pos_three):		
+		for inbetween in range(index_pos_five,index_pos_three+1):		
 			region = content['N. Seq. '+all_regions[inbetween]]
 			
 			if not region:				

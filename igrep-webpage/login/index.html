@@ -3,55 +3,92 @@
 <head>
 	<meta charset="utf-8" />
 	<title></title>
+	
+	
+	<!-- this code for loading jquery locally
+	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>	
+	-->
+	<!-- this code for loading jquery from web -->
+	<script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+	<script type="text/javascript" src="/scripts/igrep.script.tools.js"></script>			
+	
 	<link rel="stylesheet" type="text/css" href="/styles/immunogrep_stylesheet.css">
-	<script type="text/javascript" src="/scripts/jquery-1.11.3.min.js"></script>
-	<script type="text/javascript" src="/scripts/igrep.script.tools.js"></script>		
 	<style>
 		
 	</style>
 	
 	<script type="text/javascript">
+		
 		//make an ajax call to confirm user
 		$(document).ready(function(){
-			$("#submitButton").click(function () {
-				$("#authentication-error").hide()
-				authenticate()
+			$("#login-form").submit( function() {
+				
+				$("#authentication-error").hide()				
+				authenticate($(this).find("input[name='username']").val(),$(this).find("input[name='password']").val(),$(this).find("button") )
+				return false;
 			});
+			//always re-enable login button when loading page
+			$('#login-form button').prop('disabled',false)
+
 		});
-		function authenticate() {			
-			if ($('#session_name').val() == "" || $('#session_password').val() == "") {
+
+		function authenticate(username,password,submit_button) {			
+			if (username == "" || password== "") {
 				$("#form-usernamepassword-error").html("<span class='errors'>Please enter a valid username and password</span>")
 				return
 			}
 			else {				
-				$('#submitButton').prop('disabled',true)
+				submit_button.prop('disabled',true)
 				$("#form-usernamepassword-error").html("")
+				
 				//call the http_service proxy and see if username/password match computer
 				params = {
 					'module':'authenticate',
 					'args':[$('#session_name').val(),$('#session_password').val()]
-				}
-				opts = get_ajax_params(params)
-				opts.success = function (res) {
-					authenticate_answer(res)
-				}
-				opts.complete = function(){
-					$('#submitButton').prop('disabled',false)
 				}				
-				opts.error = function (jqXHR, textStatus, errorThrown) {
-					alert(jqXHR.responseText);
-				}		
-				xhr = $.ajax(opts);
+				more_opts = {
+					success: function (res) {						
+						authenticate_answer(res)						
+						submit_button.prop('disabled',false)
+					},
+					error: 	function (jqXHR, textStatus, errorThrown) {
+						alert(jqXHR.responseText);						
+						submit_button.prop('disabled',false)
+					}					
+				}
+				run_ajax_call(params,more_opts)								
 			}
 		}
 
 		//do this event after ajax response
 		function authenticate_answer(authenticated) {
-			if(authenticated){
-				$("#authentication-error").hide()
-				var host_location = String(window.location.host)			
-				//in the future we will use cookies to see which page to redirect to 
-				window.location.assign("http://"+host_location+"/igrep-webpage/home/")			
+			if(authenticated.success){				
+				$("#authentication-error").hide()				
+				var host_location = String(window.location.protocol)+'//'+String(window.location.host)
+				
+				/*
+				var expiration_date = new Date();
+				var cookie_string = '';
+				expiration_date.setFullYear(expiration_date.getFullYear() + 1);
+				document.cookie="username="+authenticated.username+"; expires="+expiration_date.toGMTString()+"; path=/";
+				document.cookie="key="+authenticated.key+"; expires="+expiration_date.toGMTString()+"; path=/";*/
+				createCookie("username",authenticated.username,365)
+				createCookie("key",authenticated.key,365)
+				//Two ways to redirect pages..
+				//either redirect the page to the homepage => //window.location.assign(host_location+"/igrep-webpage/home/")			
+				window.location.assign(host_location+"/igrep-webpage/home")
+				
+				//OR reload THIS CURRENT PAGE as login if its not the, login page...location.reload()...
+					//if we do this, this current code should be improved
+				/*if(String(window.location.pathname)=="/igrep-webpage/login"||String(window.location.pathname)=="/igrep-webpage/login/index.html"){
+					//window.location.assign(host_location+"/igrep-webpage/home")
+				}
+				else{
+					//window.location.reload()
+				}*/
+				//
+				
+
 			}
 			else{
 				$("#authentication-error").show()
@@ -82,14 +119,14 @@
 		</div>
 		-->
 		<div id="username_password_div">
-			<form action="" onsubmit="authenticate()">				
+			<form id="login-form" >				
 				<div id="authentication-error" class="hidden errors space_down authentication-fail">
 					Authentication Failed
 				</div>
 				<input id="session_name" name="username" placeholder="Username" size="30" value="" type="text">
 				<input id="session_password" name="password" placeholder="Password" size="30" type="password">
 				<div align="center">
-					<button type="button" class="button" id="submitButton" value="Log in">Log in</button>
+					<button type="submit" class="button" id="submitButton" value="Log in">Log in</button>
 				</div>
 				<div align='center' id="form-usernamepassword-error" class="errors space_up_down">
 				</div>

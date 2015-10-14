@@ -8,58 +8,45 @@ import traceback
 import subprocess
 from collections import MutableMapping
 
-
-
 dna_codes = {
-		'A':'T',
-		'C':'G',
-		'G':'C',
-		'T':'A',
-		'N':'N',
-		'X':'X',
-		'-':'-',
-		'U':'A',
-		'W':'W',
-		'M':'K',
-		'K':'M',
-		'S':'S',
-		'R':'Y',
-		'Y':'R',
-
-		'a':'t',
-		'c':'g',
-		'g':'c',
-		't':'a',
-		'u':'a',
-		'w':'w',
-		'n':'n',
-		'm':'k',
-		'k':'m',
-		's':'s',
-		'r':'y',
-		'x':'x',
-		'y':'r'
-	}
+	'A': 'T',
+	'C': 'G',
+	'G': 'C',
+	'T': 'A',
+	'N': 'N',
+	'X': 'X',
+	'-': '-',
+	'U': 'A',
+	'W': 'W',
+	'M': 'K',
+	'K': 'M',
+	'S': 'S',
+	'R': 'Y',
+	'Y': 'R',
+	'a': 't',
+	'c': 'g',
+	'g': 'c',
+	't': 'a',
+	'u': 'a',
+	'w': 'w',
+	'n': 'n',
+	'm': 'k',
+	'k': 'm',
+	's': 's',
+	'r': 'y',
+	'x': 'x',
+	'y': 'r'
+}
 
 
 def get_stdout(bash_command):
 	"""
 		Python wrapper for running python subprocess.call function
 		Returns the output from command
-    """
-	output = subprocess.check_output(bash_command,shell=True)
-	#time=str(datetime.now()).replace(' ','').replace(':','').replace('/','').replace('\\','').replace('-','')
-	#temp_file_name = 'scratch/stdout'+time+'.txt'
-	#os.system(bash_command +" > {0}".format(temp_file_name))
-	#subprocess.call(bash_command +" > {0}".format(temp_file_name),shell=True)
-	#if os.path.isfile(temp_file_name):
-	#	with open(temp_file_name) as e:
-	#		output = e.read().strip()
-	#	os.remove(temp_file_name)
-		#os.system("rm '{0}'".format(temp_file_name))
-	#else:
-	#	output = ""
+	"""
+	output = subprocess.check_output(bash_command, shell=True)
 	return output
+
 
 def file_line_count(filepath):
 	"""
@@ -67,7 +54,7 @@ def file_line_count(filepath):
 
 		.. warning::
 			If path is not found, raises an error
-    """
+	"""
 	if os.path.isfile(filepath):
 		filepath = os.path.abspath(filepath)
 		value = get_stdout("wc -l '{0}'".format(filepath)).split()[0]
@@ -75,89 +62,87 @@ def file_line_count(filepath):
 			return int(value)
 		else:
 			return 0
-		#return int()# int(subprocess.check_output(['wc', '-l', filepath]).split()[0]) => subprocess.check_output creates zombie processes, so want to avoid that?
 	else:
-		raise Exception('File does not exist: '+filepath)
+		raise Exception('File does not exist: ' + filepath)
 
 
 def Reverse_Complement(x):
 	"""
 		Takes in sequence x and returns its complement (?)
-    """
-	rc_list = [dna_codes[c] if c in dna_codes else 'N' if ord(c) <91 else 'n' for c in reversed(x)]
+	"""
+	rc_list = [dna_codes[c] if c in dna_codes else 'N' if ord(c) < 91 else 'n' for c in reversed(x)]
 	return ''.join(rc_list)
 
 
-#we will use this function for splitting a single file into multiple little files.
-#this will be useufl for multithreading purposes
-#filepath => input file
-#num_files_to_make => number of split files to create
-#number_lines_per_seq => number of lines that correspond to a single sequence (fastq files = 4, fastqfiles = 2)
-#contains_header_row => IMPORTANT, WE CANNOT JUST USE THE SPLIT COMMAND, INSTEAD WE HAVE TO USE AWK COMMAND THIS IS BECAUSE WE NEED TO CARRY OVER LINES TO EACH SPLIT FILE
-def split_files_by_seq(filepath,num_files_to_make,number_lines_per_seq,contains_header_row):
+def get_parent_dir(path):
+	"""
+		Uses os.path to return the parent directory of a file
+	"""
+	return os.path.dirname(os.path.abspath(path))
+
+
+def split_files_by_seq(filepath, num_files_to_make, number_lines_per_seq, contains_header_row):
 	"""
 		This function is used for splitting a single file into multiple little files. This will be useful for multithreading purposes.
 
-        	.. note:: First make sure files do not start with any documentation fields
+		.. note:: First make sure files do not start with any documentation fields
 
-	        =====================   =====================
-	        **Input**               **Description**
-	        ---------------------   ---------------------
-	        filepath                input file
-	        num_files_to_make       number of split files to create
-	        number_lines_per_seq    number of lines that correspond to a single sequence (fastq files = 4, fasta files =2)
-	        contains_header_row     True/False for whether the file contains a header row (i.e. TSV or CSV files have header rows)
-	        =====================   =====================
+		Parameters
+		----------
+		filepath : string
+			Location of the input file
+		num_files_to_make : int
+			Defines the number of smaller files you want to create
+		number_lines_per_seq : int
+			Defines the number of lines that correspond to a single sequence
+			i.e. fastq files = 4 & fasta files = 2
+		contains_header_row : boolean
+			Defines whether or not the input file contains a header row (i.e. CSV or TAB files)
 
-	        .. important::
-	             We cannot just use the split command, instead we have to use awk command. This is because we need to copy header lines and IGREP documentation lines to each split file.
-    """
-
+		.. important::
+			We cannot just use the split command, instead we have to use awk command. This is because we need to copy header lines and IGREP documentation lines to each split file.
+	"""
 	num_doc_fields = 0
-	#open file and make sure it does not start with documentation
 	header_lines = ''
 
-	with open(filepath,'r') as i:
+	with open(filepath, 'r') as i:
 		while True:
 			line = i.readline()
 			if line.startswith(descriptor_symbol):
-				num_doc_fields+=1
-				header_lines+=line
+				num_doc_fields += 1
+				header_lines += line
 			else:
 				if contains_header_row:
-					num_doc_fields+=1
-					#NOW read the top header line
-					header_lines+=line
+					num_doc_fields += 1
+					# NOW read the top header line
+					header_lines += line
 				break
 
-
-	parent_path = '/'.join(filepath.split('/')[:-1])
-
-	if num_doc_fields>0:
-		my_temp_file = parent_path+'/header_rows_'+str(datetime.now()).replace(' ','')
-		with open(my_temp_file,'w') as e:
+	parent_path = get_parent_dir(filepath)
+	if num_doc_fields > 0:
+		my_temp_file = os.path.join(parent_path, 'header_rows_' + str(datetime.now()).replace(' ', ''))
+		with open(my_temp_file, 'w') as e:
 			e.write(header_lines)
 
-
-	#first get the number of lines in the file
+	# First get the number of lines in the file
 	num_lines = file_line_count(filepath)
-	#make sure the number of lines per seq matches what would be expected from num_lines
-	if(num_lines%number_lines_per_seq!=0):
-		raise Exception('Number of lines in file is not divisible by the number of lines for each sequence: {0}/{1}!=0'.format(str(num_lines),str(number_lines_per_seq)))
+	# Make sure the number of lines per seq matches what would be expected from num_lines
+	if(num_lines % number_lines_per_seq != 0):
+		raise Exception('Number of lines in file is not divisible by the number of lines for each sequence: {0}/{1}!=0'.format(str(num_lines), str(number_lines_per_seq)))
 
-	num_seqs = num_lines/number_lines_per_seq
-	#determine how many lines to split the file by
-	#round down, division THEN add 1
-	#we add a 1 to ensure that the num_files_to_make is the max number of files made
-	num_lines_in_split_files = (int(num_seqs/num_files_to_make)+1)*number_lines_per_seq
+	num_seqs = num_lines / number_lines_per_seq
+	# Determine how many lines to split the file by
+	# Round down, division THEN add 1
+	# We add a 1 to ensure that the num_files_to_make is the max number of files made
+	num_lines_in_split_files = (int(num_seqs / num_files_to_make) + 1) * number_lines_per_seq
 
-	#make a temp folder
-	subfolder = parent_path+'/'+str(datetime.today()).replace(' ','_').replace(':','').replace('.','')
+	# Make a temp folder
+	subfolder = os.path.join(parent_path, str(datetime.today()).replace(' ', '_').replace(':', '').replace('.', ''))
 	os.makedirs(subfolder)
 
-	#ok THERE are header lines at the top fo the file that we dont watn to split so we need to ignore these lines
-	if num_doc_fields>0:
-		#the final '-' is IMPORTANT when combining with tail
+	# Ok THERE are header lines at the top fo the file that we dont watn to split so we need to ignore these lines
+	if num_doc_fields > 0:
+		# The final '-' is IMPORTANT when combining with tail
 		system_command = "tail -n +{5} '{1}'| split -l {0} -a {4} - '{2}/{3}'".format(str(num_lines_in_split_files),filepath,subfolder,os.path.basename(filepath+'.'),num_files_to_make/10+1,num_doc_fields+1)
 	else:
 		system_command = "split -l {0} -a {4} '{1}' '{2}/{3}'".format(str(num_lines_in_split_files),filepath,subfolder,os.path.basename(filepath+'.'),num_files_to_make/10+1)
@@ -221,33 +206,12 @@ def merge_multiple_files(file_list, num_header_lines=1,outfile=None):
 	output = subprocess.check_output(awk,shell=True)# call(awk)
 	return outfile
 
-
-
-
-
-#--- The code is included here for prototyping porpoises.
-#function deprecated
-#def flatten_dictionary_old(d):
-#	"""Input: a dictionary (only a useful function if it's a nested dictionary).
-#	Output: a flattened dictionary, where nested keys are represented in the flat structure with a . separating them.
-#	{a: 1, b: {c: 2, d: 3}} --> {a: 1, b.c: 2, b.c: 3}
-#	"""
-#	flattened_dict = {}
-#	def _interior_loop(d, parent_key):
-#		for key, value in d.items():
-#			parent_key = parent_key + [key]
-#			if isinstance(value, dict):
-#				for item in _interior_loop(value, parent_key[:]):
-#					yield item
-#				parent_key.pop()
-#			else:
-#				yield {'.'.join(parent_key): value}
-#				parent_key.pop()
-
-#	for key_value in _interior_loop(d, []):
-#		flattened_dict.update(key_value)
-#	return flattened_dict
-
+try:
+	from bson.objectid import ObjectId
+	oid_type = type(ObjectId())
+except:
+	print('Cannot convert objectid to str. install pymongo')
+	oid_type = str
 
 def flatten_dictionary(d,val={},p='',start=True):
 	"""
@@ -284,8 +248,8 @@ def flatten_dictionary(d,val={},p='',start=True):
 		val = {}
 	for k,v in d.iteritems():
 		if isinstance(v, dict):
-			flatten_dictionary(v,val,p+k+'.',False)
-		elif isinstance(v,test):
+			flatten_dictionary(v,val,p + k + '.', False)
+		elif isinstance(v,oid_type):
 			val[p+k]=str(v)
 		else:
 			val[p+k] = v

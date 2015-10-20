@@ -3707,7 +3707,7 @@ class RunQuery(object):
 			self.query_results = [self.query_results]
 		generate_fasta(self.query_results)
 
-	def save_as_fastq(self, prefix_file_path=None, file_ext='fastq', sequence_key='SEQUENCE', header_var=['SEQUENCE_HEADER'], keep_all_info=False, split_results_by=[], save_by_exp_name=False, save_by_filename=False, include_header_row=False, null_quality=40):
+	def save_as_fastq(self, prefix_file_path=None, file_ext='fastq', sequence_key='SEQUENCE', header_var=['SEQUENCE_HEADER'], keep_all_info=False, split_results_by=[], save_by_exp_name=False, save_by_filename=False, include_header_row=False, null_quality=30):
 		'''
 			Exports the results of a query to a FASTQ file
 			Once this function is called, the query cursor will be exhausted.
@@ -3735,31 +3735,36 @@ class RunQuery(object):
 				When true, results are seperated into different files based on their respective experiment name
 			include_header_row : boolean, default = False
 				When true, a header row, prepended by '#', is output to the top of each created file. All field names defined by header_var are reported in this line
-			null_quality : char or integer, default = 40
+			null_quality : char or integer, default = 30
 				This is used for documents that do not have fields for the sequence quality score.
 				For example if sequences from a FASTA file were inserted into the database, then they have no quality information. So when saving these sequences as a FASTQ file,
 				we will use this null_quality value as the default value of quality for each base. i.e. when null_quality is 40, the quality information wil be ')' for each sequence. ('@ACTGG' will be have quality ')))))')
+				.. note::
+					Assumes Sanger phred scoring system
 
 			.. note::
 				The field corresponding to the sequencey_key and the 'QUALITY_SCORE' field will always be removed from the header_var variable
 		'''
-		min_valid_quality_scores = 33
-		max_valid_quality_score = 126
-		default_quality_score = 40
+		min_valid_quality_scores = 0
+		max_valid_quality_score = 93
+		default_quality_score = 30
+		# Sanger shift
+		shift = 33
 		if null_quality:
 			if type(null_quality) is int:
 				if null_quality < min_valid_quality_scores or null_quality > max_valid_quality_score:
 					raise Exception('Default quality score must be between: {0} and {1} '.format(str(min_valid_quality_scores, max_valid_quality_score)))
-				default_char = chr(null_quality)
+				default_char = chr(null_quality + shift)
 			elif (type(null_quality) is str or type(null_quality) is unicode) and len(null_quality) == 1:
 				ascii = ord(null_quality)
-				if ascii < min_valid_quality_scores or ascii > max_valid_quality_score:
+				phred = ascii - shift
+				if phred < min_valid_quality_scores or phred > max_valid_quality_score:
 					raise Exception('Default quality score must be between: {0} and {1}. Parameter passed was an ascii value of {2}'.format(str(min_valid_quality_scores), str(max_valid_quality_score), str(ascii)))
 				default_char = null_quality
 			else:
 				raise Exception('Invalid ascii value passed to null_quality parameter')
 		else:
-			default_char = chr(default_quality_score)
+			default_char = chr(default_quality_score + shift)
 
 		if not(header_var):
 			# Just use a JSON document to dump results to sequence header; it won't look pretty but user didnt define a value to use a sequence header and changed default value

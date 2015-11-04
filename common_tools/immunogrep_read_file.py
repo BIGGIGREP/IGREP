@@ -136,6 +136,32 @@ imgt_db_translator = {
 	}
 }
 
+def convert_gglab_format(filepath, translator_tuple_list, filetype=None, output_file_name=None):
+	translator = { val[0] : val[1] for val in translator_tuple_list}
+	fields = [ val[0] for val in translator_tuple_list ]
+	remove_from_aa = ['\_','\.']
+	if not output_file_name:
+		output_file_name = filepath+'.converted.txt'
+	
+	with open(output_file_name, 'w') as out:
+		out.write('\t'.join(fields) + '\n')
+		for lines in readfile.immunogrepFile(filepath, filetype).read():
+			lines = defaultdict(lines)
+			if not lines:
+				continue				
+			lines[translator['PREDICTED_AB_SEQ.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['PREDICTED_AB_SEQ.AA']])
+			lines[translator['VREGION.CDR1.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.CDR1.AA']])
+			lines[translator['VREGION.CDR2.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.CDR2.AA']])
+			lines[translator['VREGION.FR1.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR1.AA']])
+			lines[translator['VREGION.FR2.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR2.AA']])
+			lines[translator['VREGION.FR3.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR3.AA']])
+			lines[translator['CDR3.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['CDR3.AA']])
+			lines[translator['VREGION.FR4.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR4.AA']])
+			out.write('\t'.join([str(lines[translator[x]]) for x in fields])
+	return output_file_name
+
+
+
 
 # ++++++++++++++++++++++++++++++++
 # ++++Default Decorator values++++

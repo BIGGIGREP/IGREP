@@ -501,7 +501,7 @@ def modifying_seqs_collection_queries():
 		'DATA.VREGION.VGENE_SCORES', 'DATA.JREGION.JGENE_SCORES', 'DATA.DREGION.DGENE_SCORES',
 		'DATA.ISOTYPE.SCORES', 'DATA.ISOTYPE.PER_ID'
 	]
-	fields_that_should_query_using_floats = {field: lambda x: float(x) for field in fields_with_floats}
+	fields_that_should_query_using_floats = {field: lambda x: float(x) for field in fields_with_floats}	
 
 	# this will modify any queries on the following fields by making them into int
 	fields_with_ints = [
@@ -1281,21 +1281,16 @@ class RunQuery(object):
 
 		Examples
 		--------
-		.. note::
-			Every query must be executed at the end using ._run(). This allows users to build upon 'processes/different functions' they want to do on the query.
-
 		Query for experiments whose experiment name is Demo 1, return the project name for each experiment
 
 		>>> myquery = RunQuery(('biotseq.icmb.utexas.edu','someadminuser','somepassword'),'cchrysostomou')
-		>>> myquery.query_exps_collection(q={'EXPERIMENT_NAME':'Demo 1'},p={'PROJECT_NAME':1})._run()
+		>>> exp_results = [exp for exp in myquery.query_exps_collection(exps_query={'EXPERIMENT_NAME':'Demo 1'},project_fields={'PROJECT_NAME':1})]
 
 		Query for sequences from experiments whose experiment name is Demo 1, annotated by IMGT, and whose VGENE is IGHV3-2; Convert the results into FASTQ format, and save the results to a file
-
-		>>> myquery.query_seqs_collection(metadata_query={'EXPERIMENT_NAME':'Demo 1'},analysis_name = ['IMGT'], query={'DATA.VREGION.VGENES':'IGHV3-2'}).convert_to_fastq()._run(filename='testquery.fastq')
+		>>> myquery.query_seqs_collection(exps_query={'EXPERIMENT_NAME':'Demo 1'},analysis_name = ['IMGT'], seqs_query={'DATA.VREGION.VGENES':'IGHV3-2'}).save_as_fastq(prefix_file_path='tesetquery')
 
 		Get the amino acid CDR3 length distribution for the experiment, Demo 1, of sequences annotated by IMGT and containing the VGENE IGHV3-2
-
-		>>> myquery.cdr3_length_distribution(feature='AA', analysis_name='IMGT', metadata_query = {'EXPERIMENT_NAME':'Demo 1'}, filter_by_query={'DATA.VREGION.VGENES':'IGHV3-2'})._run(file_prefix='cdr3dist',file_ext='txt')
+		>>> myquery.cdr3_length_distribution(feature='AA', analysis_name='IMGT', metadata_query = {'EXPERIMENT_NAME':'Demo 1'}, filter_by_query={'DATA.VREGION.VGENES':'IGHV3-2'}).save_as_json(prefix_file_path='cdr3dist')
 
 		See also
 		--------
@@ -1347,7 +1342,7 @@ class RunQuery(object):
 		self.logged_output.write('{1}: User {0} has accessed database\n'.format(dbuser, str(datetime.now())))
 
 		# Get all metadata user has access to
-		self.exp_metadata = self.query_exp_docs_with_read_access()
+		self.exp_metadata = self._query_exp_docs_with_read_access()
 		# Get a list of experiments user has access to
 		self.allowed_experiment_ids = [ObjectId(id) for id in self.exp_metadata]
 
@@ -1449,7 +1444,7 @@ class RunQuery(object):
 				When True, all documents from a query will be flattened so that they are not nested:
 				i.e. 'VREGION':{CDR1:{AA:'ACT'}} becomes 'VREGION.CDR1.AA': 'ACT'
 
-			yields
+			Yields
 			------
 			dict
 				1) If self.query_results is equal to a dict (i.e. from a find_one command)
@@ -1457,7 +1452,7 @@ class RunQuery(object):
 			int, float, complex, long
 				If self.query_results is equal to a number (i.e. from a count command)
 			list
-				If self.query_results is equal to a list (i.e. output from allowed_experiment_ids)			
+				If self.query_results is equal to a list (i.e. output from allowed_experiment_ids)
 		'''
 		if flatten_documents:
 			if isinstance(self.query_results, (list, basestring, int, long, float, complex)):
@@ -1538,6 +1533,10 @@ class RunQuery(object):
 				When performing the count, consider limit and skip settings.
 				For example, if a limit of 100 was set on the query, and you perform a count where with_limit_and_skip is True,
 				then this function will return 100; If False it would ignore any limit or skip settings set and count the entire query.
+
+			Returns
+			-------
+			self
 		'''
 		try:
 			self.query_results = self.query_results.count(with_limit_and_skip)
@@ -1554,6 +1553,10 @@ class RunQuery(object):
 			limit : integer
 				.. note::
 					A limit of 0 is the same as not setting a limit
+
+			Returns
+			-------
+			self
 		'''
 		try:
 			self.query_results = self.query_results.limit(limit)
@@ -1568,6 +1571,10 @@ class RunQuery(object):
 			Parameters
 			----------
 			num_skip : integer
+
+			Returns
+			-------
+			self
 		'''
 		try:
 			self.query_results = self.query_results.skip(num_skip)
@@ -1585,6 +1592,10 @@ class RunQuery(object):
 			sort_tuples : list of tuples
 				A list of (key, direction) pairs specifying the sort order for this query.
 				Direction is 1 for ascending or -1 for descending (or pymongo.ascending/descending)
+
+			Returns
+			-------
+			self
 		'''
 		try:
 			self.query_results = self.query_results.sort(sort_tuples)
@@ -1595,7 +1606,14 @@ class RunQuery(object):
 	# For debugging mongo queries debugging
 	def explain(self):
 		'''
-			Returns a dictionary explaining the query performance
+			Gets a dict explaining the query performance
+
+			.. note::
+			Refer to mongodb explain function
+
+			Returns
+			-------
+			self
 		'''
 		try:
 			self.query_results = self.query_results.explain()
@@ -1610,6 +1628,11 @@ class RunQuery(object):
 			Parameters
 			----------
 			field_name : a string defining what field we want to find distinct values for
+
+			Returns
+			-------
+			self
+
 		'''
 		try:
 			self.query_results = self.query_results.distinct(field_name)
@@ -1629,6 +1652,10 @@ class RunQuery(object):
 			Datatype returned to self.query_results : list of dicts
 				This function returns a list of dictionaries to the query results attribute, self.query_results
 				At a minimum, each dictionary will contain the following keys: _id, user, name, lab
+
+			Returns
+			-------
+			self
 		'''
 		db = self.db_path.users
 
@@ -1650,6 +1677,10 @@ class RunQuery(object):
 			Datatype returned to self.query_results : dict
 				This function returns a single dictionary to the query results attribute, self.query_results
 				The dictionary will contain the following keys: username, name, administrator, curator, write_access, lab, email
+
+			Returns
+			-------
+			self
 		'''
 		self.query_results = copy.deepcopy(self.user)
 		if self.no_user_found:
@@ -1657,7 +1688,7 @@ class RunQuery(object):
 		self.delim_file_headers = ['username', 'name', 'administrator', 'curator', 'write_access', 'lab', 'email']
 		return self
 
-	# QUERIES ON metadat/exps COLLECTION# ###############################################################
+	# QUERIES ON metadata/exps COLLECTION# ###############################################################
 	'''
 		The following methods correspond to queries performed on the exps collection
 	'''
@@ -1671,18 +1702,27 @@ class RunQuery(object):
 
 			Datatype returned to self.query_results : list of strings
 				This function returns a list of object ids converted to strings to the query results attribute, self.query_results
+
+			Returns
+			-------
+			self
 		'''
 		self.query_results = [str(id) for id in self.allowed_experiment_ids]
 		self.delim_file_headers = ['EXPERIMENT_IDS']
 		self.list_to_gen()
 		return self
 
-	def get_exp_ids_owned_by_current_user(self):
+	def query_exp_ids_owned_by_current_user(self):
 		'''
 			Return a list of all experiment ids where the user is explicity defined as an 'owner of the experiment'
 
 			.. note::
 				ObjectIds are converted into strings
+
+			Returns
+			-------
+			self
+
 		'''
 		exp_data = copy.deepcopy(self.exp_metadata)
 		write_access_exps = [str(id) for id in exp_data if self.user['user'].lower() in exp_data[id]['OWNERS_OF_EXPERIMENT']]
@@ -1697,30 +1737,43 @@ class RunQuery(object):
 
 			.. note::
 				ObjectIds are converted into strings
+
+			Returns
+			-------
+			self
 		'''
 		if self.user['administrator']:
 			# Return all allowed experiments
 			self.query_results = [str(id) for id in self.allowed_experiment_ids]
 		else:
 			# Only return experiments with write access
-			self.get_exp_ids_owned_by_current_user()
+			self.query_exp_ids_owned_by_current_user()
 		self.delim_file_headers = ['EXPERIMENT_IDS']
 		self.list_to_gen()
 		return self
 
-	'''
-		The following methods run queries on the exps collection in the database
-	'''
-	#return experiment metadata of experiments with read access
-	#write_access = only return documents with write access	
-	#administrators will recieve all experiment metadata
-	#object_id_list => filter experiment metadata to return by experiment id
-	def get_exp_docs(self,object_id_list = [], write_access_only = False):				
-		
-		if object_id_list:			
-			object_id_list = list(set(self.allowed_experiment_ids)&set([convert_to_objectid(o) for o in object_id_list]))
+	def query_exp_docs(self, object_id_list=[], write_access_only=False):
+		'''
+			Queries for all metadata from exps collection that the user has read-access to
+
+			Parameters
+			----------
+			object_id_list : list of strings
+				Filters results such that only experiments whose '_id' is listed in this list is considered
+			write_access_only : boolean
+				When true, filters results by only considering experiments where user is listed as one of the 'OWNERS_OF_EXPERIMENT'
+
+			Datatype returned to self.query_results : list of dicts
+				This function returns a list of documents to the query results attribute, self.query_results
+
+			Returns
+			-------
+			self
+		'''
+		if object_id_list:
+			object_id_list = list(set(self.allowed_experiment_ids) & set([convert_to_objectid(o) for o in object_id_list]))
 		else:
-			object_id_list = self.allowed_experiment_ids			
+			object_id_list = self.allowed_experiment_ids
 		if self.user['administrator']:
 			self.query_results = [self.exp_metadata[ids] for ids in self.exp_metadata if ObjectId(ids) in object_id_list]
 		else:
@@ -1731,297 +1784,359 @@ class RunQuery(object):
 		self.delim_file_headers = []
 		for each_doc in self.query_results:
 			self.delim_file_headers.extend(each_doc.keys())
-		self.delim_file_headers=list(set(self.delim_file_headers))		
-		
+		self.delim_file_headers = list(set(self.delim_file_headers))
 		self.list_to_gen()
+		return self
 
-		return self
-	
-	#return experiment metadata of experiments a user included in the field 'OWNERS_OF_EXPERIMENT'
-	#similar to previous function with write_access_only = True, except will also only return write_acces_exps for administrators
-	def get_exp_docs_with_ownership(self,object_id_list=[]):
+	def query_exp_docs_with_ownership(self, object_id_list=[]):
+		'''
+			Queries for all metadata from exps collection that the user has write access to/is listed as one of the 'OWNERS_OF_EXPERIMENT'
+
+			.. note::
+			This function is identical to the preceeding function query_exp_docs where write_access_only is True
+
+			Parameters
+			----------
+			object_id_list : list of strings
+				Filters results such that only experiments whose '_id' is listed in this list is considered
+
+			Datatype returned to self.query_results : list of dicts
+				This function returns a list of documents to the query results attribute, self.query_results
+
+			Returns
+			-------
+			self
+		'''
 		if object_id_list:
-			object_id_list = list(set(self.allowed_experiment_ids)&set([convert_to_objectid(o) for o in object_id_list]))
+			object_id_list = list(set(self.allowed_experiment_ids) & set([convert_to_objectid(o) for o in object_id_list]))
 		else:
-			object_id_list = self.allowed_experiment_ids			
+			object_id_list = self.allowed_experiment_ids
 		self.query_results = [self.exp_metadata[ids] for ids in self.exp_metadata if ObjectId(ids) in object_id_list and self.user['user'].lower() in self.exp_metadata[ids]['OWNERS_OF_EXPERIMENT']]
-		
 		self.delim_file_headers = []
 		for each_doc in self.query_results:
 			self.delim_file_headers.extend(each_doc.keys())
-		self.delim_file_headers=list(set(self.delim_file_headers))		
+		self.delim_file_headers = list(set(self.delim_file_headers))
 		self.list_to_gen()
 		return self
-	
-	
-	#if analyses is empty, then returns only documents with sequences in experiment
-	#if analyses is not empty, then returns only documents with squences containing annotation info from provided experiments 
-	def get_exp_docs_containing_sequences(self,write_access_only=False,analyses = []):
-		db = self.db_path	
-		object_id_list = self.allowed_experiment_ids
-		query = {'_id':{'$in':object_id_list},'SEQ_COUNT':{'$gt':0}}
-		if write_access_only and self.user['administrator']==False:
-			query['OWNERS_OF_EXPERIMENT'] = self.user['user'].lower()
-		if analyses and analyses is not list:			
-			analyses = [analyses]
-		for a in analyses:			
-			query['ANALYSES_COUNT.{0}'.format(a.upper())] = {'$gt':0}
-		self.query_results = [exp for exp in db.exps.find(query,{'DUPLICATED_FIELDS':0})]
-	
-		self.delim_file_headers = []
-		for each_doc in self.query_results:
-			self.delim_file_headers.extend(each_doc.keys())
-		self.delim_file_headers=list(set(self.delim_file_headers))		
-		self.list_to_gen()
-		return self
-		
-	#QUERY experiment collections using standard pymongo .find function
-	#exp_id = > filter results by experiemnts with ObjectId listed in exp_id
-	#fields for query are defined by 'q'
-	#p => what fields should be projected	
-	def query_exps_collection(self, exp_id = None, exps_query={},project_fields={'DUPLICATED_FIELDS':0},include_duplicated_fields = False):		
-		
-		
-		if exp_id == None:
-			#default var which means undefined, so pass in allowed_experiment_ids
-			#basically assume that user does not knwo what to search,so wants to search all avaialabe experiments 
-			exp_id = self.allowed_experiment_ids
-		
-		if not isinstance(exp_id,list):
-			exp_id = [exp_id]
-			
-		#logged_output.write('The following query in function "Query_Exps_Collection" was desired: {0}\n'.format(str(q)))
+
+	def query_exp_docs_containing_sequences(self, write_access_only=False, analyses=[]):
+		'''
+			Queries for all metadata from all experiments in exps collection that contain sequences in the seqs collection
+			(Queries for experiments where SEQ_COUNT is > 0)
+
+			Parameters
+			----------
+			write_access_only : boolean
+				When true, filters results by only considering experiments where user is listed as one of the 'OWNERS_OF_EXPERIMENT'
+			analyses : list of strings
+				When not empty, then this parameter will filter results by only returning documents that contain annotated information listed in the list
+				i.e. when analyses = ['IMGT','IBLAST'], will only return experiments that contain annotation information from either IMGT or IGBLAST
+
+			Datatype returned to self.query_results : list of dicts
+				This function returns a list of documents to the query results attribute, self.query_results
+
+			Returns
+			-------
+			self
+		'''
 		db = self.db_path
-		
-		#modify the query to improve success of a match 
-		#redirect select fieldname to fields created by server to imporve queries
-		#ensure that the format of the values provided to the field matches the format of the field put in database			
-		
-		q = Parse_Mongo_Query_Expression(exps_query, dict_defining_value_transformation=fields_for_queries_exps_collection,redirection_fields = redirect_exp_collection_fields,modify_query_values_to_follow_db_schema=self.modify_query_values_to_follow_db_schema,redirect_fields_for_improved_queries=self.redirect_fields_for_improved_queries)
-	
-	
-		
-		#we will always add a range query on '_id' for each query (this ensures that it only searches allowed experiments)		
-		q['_id'] = GetIdIntersection([self.allowed_experiment_ids,exp_id],q.pop('_id',None))
-		
-		self.logged_output.write('Query was modified to: {0}\n'.format(str(q)))							
+		object_id_list = self.allowed_experiment_ids
+		query = {'_id': {'$in': object_id_list}, 'SEQ_COUNT': {'$gt': 0}}
+		if write_access_only and self.user['administrator'] is False:
+			query['OWNERS_OF_EXPERIMENT'] = self.user['user'].lower()
+		if analyses and analyses is not list:
+			analyses = [analyses]
+		for a in analyses:
+			query['ANALYSES_COUNT.{0}'.format(a.upper())] = {'$gt': 0}
+		self.query_results = [exp for exp in db.exps.find(query, {'DUPLICATED_FIELDS': 0})]
+
+		self.delim_file_headers = []
+		for each_doc in self.query_results:
+			self.delim_file_headers.extend(each_doc.keys())
+		self.delim_file_headers = list(set(self.delim_file_headers))
+		self.list_to_gen()
+		return self
+
+	def query_exps_collection(self, exp_id=None, exps_query={}, project_fields={'DUPLICATED_FIELDS': 0}, include_duplicated_fields=False):
+		'''
+			Runs a general query on the exps collection using a standard mongo query .find() function
+
+			Parameter
+			----------
+			exp_id : list of strings, defaut = None
+				Filters results such that only experiments whose '_id' is listed in this list is considered
+			exps_query : dict, default = {}
+				A mongo query using mongo operators
+			project_fields : dict, default = {'DUPLICATED_FIELDS': 0}
+				A mongo projection query. Fields to project are represented as keys, and values are 0 or 1 depending on whether to suppress or include field
+			include_duplicated_fields : boolean, default = False
+				If true, then will include the added in field DUPLICATED_FIELDS to the projection query
+
+			Datatype returned to self.query_results : list of dicts
+				This function returns a list of documents to the query results attribute, self.query_results
+
+			Returns
+			-------
+			self
+		'''
+		if exp_id is None:
+			# Default var which means undefined, so pass in allowed_experiment_ids
+			# Basically assume that user does not knwo what to search,so wants to search all avaialabe experiments
+			exp_id = self.allowed_experiment_ids
+		if not isinstance(exp_id, list):
+			exp_id = [exp_id]
+		db = self.db_path
+		# Modify the query to improve success of a match
+		# 1) Redirect select fieldname to fields created by server to imporve queries
+		# 2) Ensure that the format of the values provided to the field matches the format of the field put in database
+		q = Parse_Mongo_Query_Expression(exps_query, dict_defining_value_transformation=fields_for_queries_exps_collection, redirection_fields=redirect_exp_collection_fields, modify_query_values_to_follow_db_schema=self.modify_query_values_to_follow_db_schema, redirect_fields_for_improved_queries=self.redirect_fields_for_improved_queries)
+		# We will always add a range query on '_id' for each query (this ensures that it only searches allowed experiments)
+		q['_id'] = GetIdIntersection([self.allowed_experiment_ids, exp_id], q.pop('_id', None))
+
+		self.logged_output.write('Query was modified to: {0}\n'.format(str(q)))
 		project = copy.deepcopy(project_fields)
 
 		if project:
 			allTrue = sum(project.values())
-			if allTrue==len(project): #the user projected fields using '1'. they listed select fields to project
-				project['_id'] = 1 #also always project '_id' field 
+			if allTrue == len(project):  # The user projected fields using '1'. they listed select fields to project
+				project['_id'] = 1  # Also always project '_id' field
 				if include_duplicated_fields:
 					project['DUPLICATED_FIELDS'] = 1
-			elif allTrue==0:#the user suppressed feilds using '0'
+			elif allTrue == 0:  # The user suppressed feilds using '0'
 				if not(include_duplicated_fields):
 					project['DUPLICATED_FIELDS'] = 0
 				else:
-					#just incase user explicityl said to include_duplicated_fields
-					project.pop('DUPLICATED_FIELDS',None)
+					# Just incase user explicityl said to include_duplicated_fields
+					project.pop('DUPLICATED_FIELDS', None)
 		else:
 			project = None
-		
 		self.logged_output.write('The following values will be projected: {0}\n'.format(str(project)))
-		
 		if type(q) is not dict:
-			raise Exception("ERROR: query_command must be a dictionary for query experiment collection")																
-		#if q:
-		query = {f:v for f,v in q.iteritems()}# copy.deepcopy(q) ==> just in case re.expression is in there? 
-		self.query_results =db.exps.find(query,project)
-		
-		
+			raise Exception("ERROR: query_command must be a dictionary for query experiment collection")
+
+		query = {f: v for f, v in q.iteritems()}
+		self.query_results = db.exps.find(query, project)
 		return self
-		
-		#just incase the query was innaccurate, go through the metadat results and enusre '_id' returned is within allowed_experiment_ids
-		
-		#return self.query_results
-		
-		#else:
-			
-			#no query passed, so simply return metadata for all experiments 
-		#	self.query_results = [self.exp_metadata[ids] for ids in self.exp_metadata]
-		
-	#RETURNS distinct values from fields within experiment collection
-	#ONLY returns values from CURATED experiment documents
-	#DOES not return unique values from all experiments if requested field (unique_fields) is not found within allow_unique_metadata	
-	#unique_fields => list of fields the user wants to show distinct values for 
-	def get_distinct_exp_collection_values(self,unique_fields=[]):
-		db = self.db_path	
-		allow_unique_metadata = ['PAIRING_TECHNIQUE','CELL_MARKERS_USED','LIST_OF_POLYMERASES_USED','POST_SEQUENCING_PROCESSING: PHI_X_FILTER', 
-						'POST_SEQUENCING_PROCESSING: QUALITY_FILTER', 'POST_SEQUENCING_PROCESSING: PROCESS_R1_R2_FILE',
-						'SPECIES','SEQUENCING_PLATFORM','CHAIN_TYPES_SEQUENCED','CELL_TYPES_SEQUENCED','ISOTYPES_SEQUENCED',
-						'TEMPLATE_TYPE','REVERSE_PRIMER_USED_IN_RT_STEP']
-		all_experiments_metadata = db.exps.find({'CURATED':True}) 
-		#self.query_exp_collection({'_id':{'$in':self.allowed_experiment_ids},'CURATED':True})# db.expreal.find({ self.get_exp_ids_for_current_user()
-		allowed_experiments_metadata = db.exps.find({'_id':{'$in':self.allowed_experiment_ids},'CURATED':True})
+
+	def query_distinct_exp_collection_values(self, unique_fields=[]):
+		'''
+			Returns distinct values for select fields from CURATED experiments in the exps collection
+
+			.. note::Filtered results
+			If the current user is not an administrator, then it only returns distinct values from fields found within experiments user has read access to.
+
+			Datatype returned to self.query_results : list of dicts
+				This function returns a list of documents to the query results attribute, self.query_results
+
+
+			Parameters
+			----------
+			unique_fields : dict
+				The keys of the dict corresponds to fields defined by unique_fields, and the values of each key is a list of unique values for that field in curated experiments
+
+			Returns
+			-------
+			self
+		'''
+		db = self.db_path
+		allow_unique_metadata = [
+			'PAIRING_TECHNIQUE', 'CELL_MARKERS_USED', 'LIST_OF_POLYMERASES_USED', 'POST_SEQUENCING_PROCESSING: PHI_X_FILTER',
+			'POST_SEQUENCING_PROCESSING: QUALITY_FILTER', 'POST_SEQUENCING_PROCESSING: PROCESS_R1_R2_FILE',
+			'SPECIES', 'SEQUENCING_PLATFORM', 'CHAIN_TYPES_SEQUENCED', 'CELL_TYPES_SEQUENCED', 'ISOTYPES_SEQUENCED',
+			'TEMPLATE_TYPE', 'REVERSE_PRIMER_USED_IN_RT_STEP'
+		]
+
+		# Get a list of curated experiments
+		all_experiments_metadata = db.exps.find({'CURATED': True})
+		# Determine which curated experiments current user has access to
+		allowed_experiments_metadata = db.exps.find({'_id': {'$in': self.allowed_experiment_ids}, 'CURATED': True})
 		if unique_fields:
 			if type(unique_fields) is not list:
-				unique_fields = [unique_fields]			
-			
+				unique_fields = [unique_fields]
 			if self.user['administrator']:
 				allow_unique_metadata = unique_fields
-								
-			self.query_results = {field:all_experiments_metadata.distinct(field) if field in allow_unique_metadata else allowed_experiments_metadata.distinct(field) for field in unique_fields}			
+			self.query_results = {field: all_experiments_metadata.distinct(field) if field in allow_unique_metadata else allowed_experiments_metadata.distinct(field) for field in unique_fields}
 		else:
 			self.query_results = None
-			
 		self.delim_file_headers = unique_fields
 		return self
-	
-	#PRIVATE FUNCTION..Cannot be used by user
-	def query_exp_docs_with_read_access(self):	#search in appsoma this function 
+
+	# PRIVATE FUNCTION...should not be used by user
+	def _query_exp_docs_with_read_access(self):
+		'''
+			Get all experiments user has read access to
+		'''
 		self.query_results = None
-		db = self.db_path				
+		db = self.db_path
 		if self.user['administrator']:
-			exp_docs = {str(exp['_id']):exp for exp in db.exps.find({})}				
+			exp_docs = {str(exp['_id']): exp for exp in db.exps.find({})}
 		else:
-			read_access_names = ['all'] + [self.user['user'].lower()] + ['lab_'+lab.lower() for lab in self.user['lab'] if lab]					
-			exp_docs = {str(exp['_id']):exp for exp in db.exps.find({'READ_ACCESS':{'$in':read_access_names}})}				
+			read_access_names = ['all'] + [self.user['user'].lower()] + ['lab_' + lab.lower() for lab in self.user['lab'] if lab]
+			exp_docs = {str(exp['_id']): exp for exp in db.exps.find({'READ_ACCESS': {'$in': read_access_names}})}
 		return exp_docs
-	
-	#PRIVATE FUNCTION..Cannot be used by user
-	def	query_exp_docs_with_write_access(self):	#search in appsoma this function 	
+
+	# PRIVATE FUNCTION...should not be used by user
+	def _query_exp_docs_with_write_access(self):
+		'''
+			Get all experiments user has write access to
+		'''
 		self.query_results = None
-		db = self.db_path		
+		db = self.db_path
 		if self.user['administrator']:
-			exp_docs = {str(exp['_id']):exp for exp in db.exps.find({})}				
+			exp_docs = {str(exp['_id']): exp for exp in db.exps.find({})}
 		else:
 			write_access_name = self.user['user'].lower()
-			exp_docs = {str(exp['_id']):exp for exp in db.exps.find({'OWNERS_OF_EXPERIMENT':write_access_name})}		
+			exp_docs = {str(exp['_id']): exp for exp in db.exps.find({'OWNERS_OF_EXPERIMENT': write_access_name})}
 		return exp_docs
-	
-	########SEQUENCE COLLECTION QUERIES#####							
-	
-	#GENERAL QUERY FUNCTION#
-	#QUERY seq collections using standard pymongo find function
-	#exp_id = > filter results by experiemnts with ObjectId listed in exp_id
-	#fields for query are defined by 'query'
-	#project => what fields should be projected
-	
-	#analysis_name => a list of analysis types to filter by. note -> more complex queries using analysis_name can be defined in the query field 
-	#recombination_type => a list of recombination_types to filter by. note -> more complex queries using recombination_type can be defined in the query field 
-	#metadata_query => in addition to explicity passing in a list of ObjectId's, a user can further filter experiemnts by querying teh exps collection/metadata
-		#for example, if metadata_query = {'PROJECT_NAME':'Demo'}, then first the this metadata will be queried to return exp_ids whose PROJECT_NAME contain 'Demo' 	
-	def query_seqs_collection(self,exp_id=None, analysis_name = [], recombination_type = [], query={},project={'QUERY_DATA':0},metadata_query={},include_original_ngs_seq=False,limit=0):
-		
+
+	# QUERIES ON seqs COLLECTION# ###############################################################
+	'''
+		The following methods correspond to queries performed on the seqs collection. It will query for NGS and annotated data.
+	'''
+
+	def query_seqs_collection(self, exp_id=None, analysis_name=[], recombination_type=[], seqs_query={}, project_fields={'QUERY_DATA': 0}, exps_query={}, include_original_ngs_seq=False, limit=0):
+		'''
+			Runs a general query on the seqs collection using a standard mongo query .find() function
+
+			Parameter
+			----------
+			exp_id : list of strings, defaut = None
+				Filters results such that only seqs results whose 'EXP_ID' is listed in this list is considered
+			analysis_name : list of strings, default = []
+				When not empty, filters results to only include documents whose ANALYSIS_NAME is within this list
+			recombination_type : list of strings, default = []
+				When not empty, filters results to only include documents whose RECOMBINATION_TYPE is within this list
+			seqs_query : dict, default = {}
+				A mongo query on the seqs collection using mongo operators
+			project_fields : dict, default = {'QUERY_DATA': 0}
+				A mongo projection query. Fields to project are represented as keys, and values are 0 or 1 depending on whether to suppress or include field
+			exps_query : dict, default = {}
+				A mongo query on the exps collection using mongo operators
+			include_original_ngs_seq : boolean,
+				When true, will also include the RAW NGS read and sequence header document for each queried document
+			limit : integer
+				Sets a limit on the number of documents to return. A limit of 0 is the same as not setting a limit.
+
+			Datatype returned to self.query_results : list of dicts
+				This function returns a list of documents to the query results attribute, self.query_results
+
+			Returns
+			-------
+			self
+
+			Examples
+			--------
+			Return the CDR3 field from of 100 IMGT documents from experiments in project Demo that contain the VGENE IGHV1-3
+			>>> query_seqs_collection(analysis_name['IMGT'], seqs_query={'DATA.VREGION.VGENES':'IGHV1-3'}, exps_query={'PROJECT_NAME':'Demo'}, project_fields={'DATA.CDR3':1}, limit=100)
+		'''
 		self.query_results = None
-		self.logged_output.write('The following query in function "Query_Seqs_Collection" was desired: {0}\n'.format(str({'experiments':exp_id,'query':query,'metadata_query':metadata_query})))		
-		db = self.db_path#db_reader						
-		
-		q = {f:v for f,v in query.iteritems()} #make a copy of query 
-		
-		fields_to_project = copy.deepcopy(project)		
+		self.logged_output.write('The following query in function "Query_Seqs_Collection" was desired: {0}\n'.format(str({'experiments': exp_id, 'seqs_query': seqs_query, 'exps_query': exps_query})))
+		db = self.db_path
+		q = {f: v for f, v in seqs_query.iteritems()}  # make a copy of query
+		fields_to_project = copy.deepcopy(project_fields)
 		if fields_to_project:
 			allTrue = 0
 			counts_in = 0
-			for p,v in fields_to_project.iteritems():
-				if isinstance(v,dict):
+			for p, v in fields_to_project.iteritems():
+				if isinstance(v, dict):
 					pass
 				elif v == 0:
-					counts_in+=1
+					counts_in += 1
 				else:
-					counts_in+=1
-					allTrue+=1		
-			
-			#allTrue = sum(fields_to_project.values())
-			if allTrue==counts_in: #the user projected fields using '1'. they listed select fields to project
-				allTrue=True
-				fields_to_project['_id'] = 1 #also always project '_id' field 
-				fields_to_project[idIdentifier] = 1 #also always project 'SEQ_ID' field 
-				fields_to_project[expIdentifier] = 1 #also always project 'EXP_ID' field 				
-				#fields_to_project['SETTINGS'] = 1 #also always project 'EXP_ID' field 				
-				fields_to_project['ANALYSIS_NAME'] = 1 #also always project 'EXP_ID' field 				
-				fields_to_project['RECOMBINATION_TYPE'] = 1 #also always project 'EXP_ID' field 				
-				#fields_to_project['DATE_UPDATED'] = 1 #also always project 'EXP_ID' field 				
-			elif allTrue==0:#the user suppressed feilds using '0'
-				allTrue=False
+					counts_in += 1
+					allTrue += 1
+
+			if allTrue == counts_in:
+				# The user projected fields using '1'. they listed select fields to project
+				allTrue = True
+				fields_to_project['_id'] = 1  # Also always project '_id' field
+				fields_to_project[idIdentifier] = 1  # Also always project 'SEQ_ID' field
+				fields_to_project[expIdentifier] = 1  # Also always project 'EXP_ID' field
+				fields_to_project['ANALYSIS_NAME'] = 1  # Also always project 'EXP_ID' field
+				fields_to_project['RECOMBINATION_TYPE'] = 1  # Also always project 'EXP_ID' field
+			elif allTrue == 0:
+				# The user suppressed feilds using '0'
+				allTrue = False
 				fields_to_project['QUERY_DATA'] = 0
 		else:
-			allTrue=True
+			allTrue = True
 			fields_to_project = None
-			
-		if exp_id == None: #if exp_id is passed in as empty, then make it self.allowed_experiment_ids
+
+		if exp_id is None:
+			# If exp_id is passed in as empty, then make it self.allowed_experiment_ids
 			exp_id = self.allowed_experiment_ids
-		elif not isinstance(exp_id,list):
+		elif not isinstance(exp_id, list):
 			exp_id = [exp_id]
-						
-		if metadata_query:		
-			#query exp_collection
-			#result of query will be stored in class name 'self.query_results'			
-			self.query_exps_collection(exp_id,q={f:v for f,v in metadata_query.iteritems()})				
+		if exps_query:
+			# Query exp_collection
+			# Result of query will be stored in class name 'self.query_results'
+			self.query_exps_collection(exp_id, q={f: v for f, v in exps_query.iteritems()})
 			if self.query_results:
-				self.exp_metadata = {str(exp['_id']):exp for exp in self.query_results if exp['_id'] in self.allowed_experiment_ids}
-				#erase metadata query 							
-				exp_id = [vals['_id'] for meta,vals in self.exp_metadata.iteritems()]
+				self.exp_metadata = {str(exp['_id']): exp for exp in self.query_results if exp['_id'] in self.allowed_experiment_ids}
+				# Erase metadata query
+				exp_id = [vals['_id'] for meta, vals in self.exp_metadata.iteritems()]
 				self.query_results = None
 			else:
 				self.exp_metadata = {}
-				#no experiments to searchby. no experiments were found !
-				exp_id = []			
-						
+				# No experiments to searchby. no experiments were found !
+				exp_id = []
 		if analysis_name:
-			if not isinstance(analysis_name,list):
-				q['ANALYSIS_NAME']=analysis_name
-			elif len(analysis_name)==1:
-				q['ANALYSIS_NAME']=analysis_name[0]
+			if not isinstance(analysis_name, list):
+				q['ANALYSIS_NAME'] = analysis_name
+			elif len(analysis_name) == 1:
+				q['ANALYSIS_NAME'] = analysis_name[0]
 			else:
-				q['ANALYSIS_NAME']={'$in':analysis_name}
-		
+				q['ANALYSIS_NAME'] = {'$in': analysis_name}
 		if recombination_type:
-			if not isinstance(recombination_type,list):
-				q['RECOMBINATION_TYPE']=recombination_type
-			elif len(recombination_type)==1:
-				q['RECOMBINATION_TYPE'] = recombination_type[0]			
+			if not isinstance(recombination_type, list):
+				q['RECOMBINATION_TYPE'] = recombination_type
+			elif len(recombination_type) == 1:
+				q['RECOMBINATION_TYPE'] = recombination_type[0]
 			else:
-				q['RECOMBINATION_TYPE']={'$in':recombination_type}
-				
-		
-		#modify the query to improve success of a match 
-		#redirect select fieldname to fields created by server to imporve queries
-		#ensure that the format of the values provided to the field matches the format of the field put in database			
-		q = Parse_Mongo_Query_Expression(q, dict_defining_value_transformation=fields_for_queries_seqs_collection,redirection_fields = redirect_seq_collection_fields,modify_query_values_to_follow_db_schema=self.modify_query_values_to_follow_db_schema,redirect_fields_for_improved_queries=self.redirect_fields_for_improved_queries)
-		
-		#we will always add a range query on '_id' for each query (this ensures that it only searches allowed experiments)
-		#there are exp_ids passed in by users OR found by the metadata_query above
-		#therefore, find the intersection between results and allowed id's		
-		#THIS WILL ALSO CONSIDER ANY TOP_LEVEL EXP_ID requests in the query field 
-		q[expIdentifier] = GetIdIntersection([self.allowed_experiment_ids,exp_id],q.pop(expIdentifier,None))
-		
-		
-		#based on the actual experiment IDs used in query, figure out which fields will be projected by using analysis schema in metadata
-		if isinstance(q[expIdentifier],dict): #the query is dictionary using '$in' command
+				q['RECOMBINATION_TYPE'] = {'$in': recombination_type}
+
+		# Modify the query to improve success of a match
+		# 1) redirect select fieldname to fields created by server to imporve queries
+		# 2) ensure that the format of the values provided to the field matches the format of the field put in database
+		q = Parse_Mongo_Query_Expression(q, dict_defining_value_transformation=fields_for_queries_seqs_collection, redirection_fields=redirect_seq_collection_fields, modify_query_values_to_follow_db_schema=self.modify_query_values_to_follow_db_schema, redirect_fields_for_improved_queries=self.redirect_fields_for_improved_queries)
+
+		# We will always add a range query on '_id' for each query (this ensures that it only searches allowed experiments)
+		# There are exp_ids passed in by users OR found by the metadata_query above
+		# Therefore, find the intersection between results and allowed id's
+		# THIS WILL ALSO CONSIDER ANY TOP_LEVEL EXP_ID requests in the query field
+		q[expIdentifier] = GetIdIntersection([self.allowed_experiment_ids, exp_id], q.pop(expIdentifier, None))
+
+		# Based on the actual experiment IDs used in query, figure out which fields will be projected by using analysis schema in metadata
+		if isinstance(q[expIdentifier], dict):  # The query is dictionary using '$in' command
 			possible_ids = q[expIdentifier]['$in']
 		else:
 			possible_ids = [q[expIdentifier]]
 		possible_metadata_fields = [self.exp_metadata[str(id)] for id in possible_ids]
-		[schema_fields,possible_analyses,possible_recombination_types] = Get_Schema_Details(possible_metadata_fields,fields_to_project,allTrue)
-		
-		if 'ANALYSIS_NAME' not in q and possible_analyses!=[]:
-			if len(possible_analyses)==1:
-				q['ANALYSIS_NAME']= possible_analyses[0]
+		[schema_fields, possible_analyses, possible_recombination_types] = Get_Schema_Details(possible_metadata_fields, fields_to_project, allTrue)
+
+		if 'ANALYSIS_NAME' not in q and possible_analyses != []:
+			if len(possible_analyses) == 1:
+				q['ANALYSIS_NAME'] = possible_analyses[0]
 			else:
-				q['ANALYSIS_NAME']={'$in': possible_analyses}
-		
-		if 'RECOMBINATION_TYPE' not in q and possible_recombination_types!=[]:
-			if len(possible_recombination_types)==1:
-				q['RECOMBINATION_TYPE']=possible_recombination_types[0]
+				q['ANALYSIS_NAME'] = {'$in': possible_analyses}
+		if 'RECOMBINATION_TYPE' not in q and possible_recombination_types != []:
+			if len(possible_recombination_types) == 1:
+				q['RECOMBINATION_TYPE'] = possible_recombination_types[0]
 			else:
-				q['RECOMBINATION_TYPE']={'$in': possible_recombination_types}
-												
-		self.logged_output.write('Query was modified to: {0}\n'.format(str(q)))							
+				q['RECOMBINATION_TYPE'] = {'$in': possible_recombination_types}
+
+		self.logged_output.write('Query was modified to: {0}\n'.format(str(q)))
 		self.logged_output.write('The following values will be projected: {0}\n'.format(str(fields_to_project)))
-	
 		self.delim_file_headers = schema_fields
-		self.query_results =db.seqs.find(q,fields_to_project).limit(limit)
-		
+		self.query_results = db.seqs.find(q, fields_to_project).limit(limit)
+
 		if include_original_ngs_seq:
 			self.delim_file_headers.extend(data_fields_for_raw_data)
-			#for every result in the query, also get the raw sequence data associated with result 
-			self.get_rawseq_info()		
-
+			# For every result in the query, also get the raw sequence data associated with result
+			self.get_rawseq_info()
 		return self
-	
+
+
 	#GENERAL AGGREGATION PIPELINE FUNCTION#
 	#QUERY seq collections using standard pymongo find function
 	#exp_id = > filter results by experiemnts with ObjectId listed in exp_id	

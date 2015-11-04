@@ -1,0 +1,776 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>VH-VL Pairing &mdash; IGREP 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="IGREP 1.0.0 documentation" href="index.html" />
+    <link rel="next" title="Antibody Database" href="ABDatabase.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ABDatabase.html" title="Antibody Database"
+             accesskey="N">next</a> |</li>
+        <li><a href="index.html">IGREP 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="vhvlpairing"></span><div class="section" id="vh-vl-pairing">
+<h1>VH-VL Pairing<a class="headerlink" href="#vh-vl-pairing" title="Permalink to this headline">¶</a></h1>
+<p>The following describes the current methods we use for analyzing our VH-VL Paired sequence data.</p>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#pairingfunc"><em>Pairing functions</em></a></li>
+<li><a class="reference internal" href="#singlechain"><em>Single VH chain clustering</em></a></li>
+<li>Examples for usage</li>
+</ul>
+<span class="target" id="module-immunogrep_gglab_pairing"><span id="pairingfunc"></span></span><div class="admonition note" id="singlechain">
+<p class="first admonition-title">Note</p>
+<p class="last">This analysis is a supplement to VH-VL pairing. It performs the same analysis as VH-VL clustering excepts omits light chain data.</p>
+</div>
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.CDR3Productivity">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">CDR3Productivity</tt><big>(</big><em>field_row</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#CDR3Productivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.CDR3Productivity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rule for CDR3 productivity.</p>
+<p>Function will return True or False based on rule 
+Input variable field_row: this will represent all antibody annotation field for a specific sequence the provided annotation file</p>
+<dl class="docutils">
+<dt>General steps:</dt>
+<dd><ol class="first last arabic">
+<li><p class="first">Extract the CDR3 nucleotide field</p>
+</li>
+<li><dl class="first docutils">
+<dt>If length of CDR3 is not a multiple of 3 or length of CDR3 &lt; 9</dt>
+<dd><p class="first last">=&gt; return false</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Translate CDR3 to amino acid</p>
+</li>
+<li><dl class="first docutils">
+<dt>If there is a stop codon (*) in sequence</dt>
+<dd><p class="first last">=&gt; return false</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">return true</p>
+</li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.Compile_Clusters">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">Compile_Clusters</tt><big>(</big><em>clustered_dict_raw</em>, <em>cluster_val</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#Compile_Clusters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.Compile_Clusters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a compiled output file summarizing which CDRH3 clusters were made. 
+Reports the cluster size and extra features such as diversity and dominance to determine whether clustering makes sense for H-L pair</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.DatabaseTranslator">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">DatabaseTranslator</tt><big>(</big><em>input_dictionary={}</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#DatabaseTranslator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.DatabaseTranslator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.FloatRange">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">FloatRange</tt><big>(</big><em>minv</em>, <em>maxv</em>, <em>step</em>, <em>num_dec=None</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#FloatRange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.FloatRange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.GeneralProductivity">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">GeneralProductivity</tt><big>(</big><em>field_row</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#GeneralProductivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.GeneralProductivity" title="Permalink to this definition">¶</a></dt>
+<dd><p>General function for determining if an entire Antibody amino acid sequence is productive or not</p>
+<p>Function will return True or False based on rule 
+Input variable field_row: this will represent all antibody annotation field for a specific sequence the provided annotation file</p>
+<dl class="docutils">
+<dt>General steps:</dt>
+<dd><p class="first">1) Extract the field referring to the amino acid sequence of the antibody                       
+4) If there is a stop codon (*) in sequence</p>
+<blockquote>
+<div>=&gt; return false</div></blockquote>
+<ol class="last arabic simple" start="5">
+<li>return true</li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.GenerateAnnotationFile">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">GenerateAnnotationFile</tt><big>(</big><em>annotated_file_lists</em>, <em>cluster_val</em>, <em>mapping_dict</em>, <em>usearch_output_file</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#GenerateAnnotationFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.GenerateAnnotationFile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.GetHeaderInfo">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">GetHeaderInfo</tt><big>(</big><em>file_data</em>, <em>header_var</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#GetHeaderInfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.GetHeaderInfo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.IGBLASTProductivity">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">IGBLASTProductivity</tt><big>(</big><em>field_row</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#IGBLASTProductivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.IGBLASTProductivity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.IGFFTProductivity">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">IGFFTProductivity</tt><big>(</big><em>field_row</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#IGFFTProductivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.IGFFTProductivity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.IMGTProductivity">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">IMGTProductivity</tt><big>(</big><em>field_row</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#IMGTProductivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.IMGTProductivity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.MIXCRProductivity">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">MIXCRProductivity</tt><big>(</big><em>field_row</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#MIXCRProductivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.MIXCRProductivity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.ProcessGene">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">ProcessGene</tt><big>(</big><em>gene</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#ProcessGene"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.ProcessGene" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the allele calls from genes</p>
+<p>Assumption:</p>
+<blockquote>
+<div><p>Multiple genes are seperated by &#8216;,&#8217;</p>
+<p>Alleles are seperated by &#8216;*&#8217;</p>
+<p>If a gene is seperated by multiple spaces, then the gene should be identified by a gene that contains either - or &#8216;*&#8217; 
+For example:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Imgt genes may be: </dt>
+<dd>Homo sapiens IGHV1-3*01
+We only want to isolate the word IGHV1-3</dd>
+</dl>
+</div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.RunPairing">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">RunPairing</tt><big>(</big><em>annotated_file_paths, analysis_method, output_folder_path='', prefix_output_files='', annotated_file_formats=None, field_names=None, cluster_cutoff=[0.96, 0.96, 0], annotation_cluster_setting=None, use_low_memory=False, files_from_igrep_database=False, productivity_function=None</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#RunPairing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.RunPairing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Brief Description</p>
+<p>This is the main function for pairing VH-VL antibody data using the Georgiou lab pipeline. The pairing function is not dependent on a specific file type/format and will pair sequences using any files passed into the field annotated_file_paths.
+Pairing of VH-VL antibodies is performed by grouping together sequences by their MISEQ header (Miseq id). This program should only be used to pair &#8216;paired end NGS data&#8217;. That is, we assume sequences come from MISEQ paired-end sequences containing complementary R1/R2 header names.</p>
+<p>General algorithm:</p>
+<dl class="docutils">
+<dt>The pairing program follows the following steps: </dt>
+<dd><dl class="first last docutils">
+<dt>Step A: Go through the provided AB annotated files (IMGT, parsed IGBLAST files, etc), and filter out sequences that lack good results </dt>
+<dd><ol class="first last arabic simple">
+<li>Loop through all sequences provided in all files</li>
+<li>Only select sequences that have a sequence header. Extract the MISEQ ID from the sequence header.</li>
+<li>Filter out sequences that do not have a cdr3 sequence</li>
+<li>Filter out sequences that are deemed &#8216;unproductive&#8217; using our Productivity Rules, or a custom productivity rule provided by user</li>
+</ol>
+</dd>
+<dt>Step B: Parse the filtered file </dt>
+<dd><ol class="first last arabic">
+<li><p class="first">Sort the generated outputfile by the MISEQ ID</p>
+</li>
+<li><p class="first">Only consider sequences where both the R1 and R2 read (sequences with identicals MISEQ ID) passed all filter steps in Step A</p>
+</li>
+<li><dl class="first docutils">
+<dt>Filter out sequences that:</dt>
+<dd><ol class="first last loweralpha simple">
+<li>are found to be VH-VH pairs</li>
+<li>are found to be VL-VL pairs</li>
+<li>are found to be pairs of calls from different loci (i.e. IGH-TRA )</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><p class="first">All sequences that pass the above rules are considered to be proper VH-VL paired antibodies. We store these MISEQ ids inside &#8216;annnotation files&#8217; that can be used to update the database with properly paired sequences</p>
+</li>
+</ol>
+</dd>
+<dt>Step C: Group together CDRH3-CDRL3 pairs</dt>
+<dd><ol class="first last arabic">
+<li><p class="first">We group together sequences with identical CDRH3-CDRL3 pairs from the filtered VH-VL paired sequences in Step B</p>
+</li>
+<li><dl class="first docutils">
+<dt>For each CDRH3-CDRL3 group, we calculate the following as extra information for the group: </dt>
+<dd><ol class="first last loweralpha simple">
+<li>average SHM (if an SHM field is provided) and standard deviation SHM</li>
+<li>mode of V,D, and J gene calls (if V, D, or J genes are provided). Mode of gene calls are based on top genes only (genes whose alignment scores are equal to the top alignment score)</li>
+<li>All observed unique isotypes (if isotypes are provided)</li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+<dt>Step D: Cluster CDRH3-CDRL3 pairs </dt>
+<dd><ol class="first last arabic">
+<li><p class="first">Unique CDRH3-CDRL3 paired sequences are sorted by their total counts (number of sequences containing respective CDRH3-CDRL3 pair)</p>
+</li>
+<li><dl class="first docutils">
+<dt>The results from each CDRH3-CDRL3, pair whose counts are found &gt; 1 time, are exported as a FASTA file. </dt>
+<dd><ol class="first last loweralpha simple">
+<li>The sequence header contains all of the data generated/information we are interested in for the H3-L3 pair.</li>
+<li>The sequence value for the FASTA is the nucleotide sequence of the CDRH3 (heavy chain) sequence only</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><p class="first">This FASTA file is used as an input file to the program USEARCH VERSION 7.</p>
+</li>
+<li><p class="first">We run the Usearch program for each cluster defined in the cluster_cutoff parameter defined in this function</p>
+</li>
+</ol>
+</dd>
+<dt>Step E: Summarize the output from each USEARCH cluster file </dt>
+<dd><ol class="first last arabic">
+<li><p class="first">For EACH cluster cutoff defined, USEARCH creates an output .uc file</p>
+</li>
+<li><p class="first">We parse this file and generate a finalized output file based on the CDRH3 seed/cluster</p>
+</li>
+<li><dl class="first docutils">
+<dt>For each seed we calculate the following</dt>
+<dd><ol class="first last loweralpha">
+<li><p class="first">The average SHM for all sequences which belong in the seed</p>
+</li>
+<li><p class="first">The V,D, and J call of the SEED sequence</p>
+</li>
+<li><p class="first">The Isotype call of the SEED sequence</p>
+</li>
+<li><dl class="first docutils">
+<dt>A &#8216;dominance&#8217; calculation =&gt; </dt>
+<dd><p class="first last">100*Unique CDRH3-L3 Count of the seed sequence/Unique CDRH3-L3 Count of the next largest H3-L3 group in the cluster</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>A &#8216;confidence&#8217; calculation =&gt; </dt>
+<dd><p class="first last">100*Unique CDRH3-L3 Count of the seed sequence/The total counts of all sequences in cluster</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Diversity of all members in seed using </dt>
+<dd><ol class="first last lowerroman simple">
+<li>shannon entropy</li>
+<li>simpsons index</li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+<dt>Step F: Generate an annotation file for the database </dt>
+<dd><ol class="first last arabic">
+<li><dl class="first docutils">
+<dt>We generate an &#8216;annotation&#8217; file that stores the following features/results in the Georgiou lab database:</dt>
+<dd><ol class="first last loweralpha simple">
+<li>the Miseq of ID of a successful VH-VL paired seqsuence</li>
+<li>the Cluster ID of all CDRH3-CDRL3 pairs whose count are above 2</li>
+<li>the Confidence score for each cluster</li>
+<li>the Dominance score for each cluster</li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>General usage:</p>
+<p>When calling this function, the most important feature for this program to run correctly is defining the type of file(s) you have submitted. While there is no uniform file type/format, we do need to know which field names in the file correspond to field names we use in the pairing program. 
+The variable, required_field_names, stores the fields we need to perform the analysis. From these fields, only the following fields are absolutely necessary (although providing all fields are ideal):</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>seq_header</li>
+<li>cdr3_nt</li>
+</ol>
+</div></blockquote>
+<p>We already know which field names are required for files that were generated using our common annotation methods: IMGT, IGFFT (in house program), MIXCR, IGBLAST. Therefore, if you are pairing files from one of these programs AND you have not modified the output of the files created by our python wrapper functions, there is no need to define the fields. 
+However, if the file being provided is a custom file or an annotation file we do not know about, then you need to define custom field names in the input variable: field_names</p>
+<dl class="docutils">
+<dt>Example usage for pairing IMGT files:                   </dt>
+<dd>list_of_imgt_files = a list of strings providing the location of all IMGT generated files for pairing. You do not need to select a specific IMGT file or differente the 11 files by experiment, we handle that in the function
+list_of_imgt_files = [1_summary_file1.txt,5_summary_file1.txt,1_summary_file2.txt,5_summary_file2.txt] (etc  etc for the files to pair)
+RunPairing(annotated_file_paths = list_of_imgt_files,analysis_method = IMGT, output_folder_path=&#8217;paired_seq_data.txt,prefix_output_files=&#8217;MYPAIRINGEXP&#8217;,annotated_file_formats=&#8217;IMGT&#8217;,field_names=None,cluster_cutoff=[0.85,0.96,0.01])</dd>
+<dt>Example use for pairing MIXCR files:</dt>
+<dd>list_of_mixcr_files = a list of strings providing the location of all MIXCR annotation files generated by the function ParseMIXCR
+list_of_mixcr_files = [file1.mixcr.annotation,file2.mixcr.annotation,file3.mixcr.annotation]
+RunPairing(annotated_file_paths = list_of_mixcr_files,analysis_method = MIXCR, output_folder_path=&#8217;paired_seq_data.txt,prefix_output_files=&#8217;MYPAIRINGEXP&#8217;,annotated_file_formats=&#8217;TAB&#8217;,field_names=None,cluster_cutoff=[0.85,0.96,0.01])</dd>
+<dt>Example use for any custom file (a file type not generated by the database, parseMIXCR function, parseIgblast function, parseIGFFT function, or IMGT):</dt>
+<dd><p class="first">list_of_files = a list of strings providing the location of some CSV file that we have not seen before 
+In this example, this CSV (not TAB) file only contains CDR3 nucleotide information. So every other field provided will be treated as blank for the program and not considered. In the provided file, the CDR3 field is labeled as CDR3 Nt and the sequence header is labeled as, Miseq header
+field_mappings = { #key = name of the field we need in the program, value = name of the field in the provided file</p>
+<blockquote>
+<div>&#8216;cdr3_nt&#8217;:      &#8216;CDR3 Nt&#8217;,
+&#8216;seq_header&#8217;:Miseq header&#8217;</div></blockquote>
+<p>}
+list_of_files = [fie1.txt,file2.txt,file3.txt]</p>
+<p class="last">RunPairing(annotated_file_paths = list_of_files,analysis_method = custom, output_folder_path=&#8217;paired_seq_data.txt,prefix_output_files=&#8217;MYCUSTOMPAIRINGEXP&#8217;,annotated_file_formats=&#8217;CSV&#8217;,field_names=field_mappings,cluster_cutoff=[0.85,0.96,0.01])</p>
+</dd>
+</dl>
+<p>#REQUIRED FIELDS###
+#annotated_file_paths = a list of files that you want to run pairing with 
+#analysis_method:</p>
+<blockquote>
+<div>#A string defining which annotation program generated the results 
+#IF an annotation program is not defined in this script (variable above) yet, then use &#8216;CUSTOM&#8217;
+#note: if analysis_method == &#8216;CUSTOM&#8217; OR not in the predefined list, then the parameter,field_names, is required</div></blockquote>
+<p>#OPTIONAL FIELDS###
+#annotated_file_formats:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>#accepts three possible formats: </dt>
+<dd>#=&gt; None =&gt; do not define file type, let program guess 
+#=&gt; list of file types =&gt; the file type FOR EACH PROVIDED FILE 
+#=&gt; SINGLE STRING =&gt; THIS MEANS ALL INPUTED FILES ARE OF THE SAME TYPE</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>#field_names: </dt>
+<dd><p class="first">#A dictionary defining which fields in the file correspond to the fields required for this program 
+#IMPORTANT: If analysis_method == CUSTOM! then you must define field_names in the file. Program will raise exception otherwise
+#if provided, the structure of field names is as follows:</p>
+<blockquote class="last">
+<div>#keys of variable: &#8216;vgene&#8217;,&#8217;jgene&#8217;,&#8217;dgene&#8217;,&#8217;raw_seq_nt&#8217;,&#8217;cdr3_nt&#8217;,&#8217;seq_header&#8217;,&#8217;shm&#8217;,&#8217;full_len_ab_aa&#8217;
+#values =&gt; for each key,provide the field name in the file that corresponds to the key</div></blockquote>
+</dd>
+</dl>
+<p>#output_folder_path =&gt; path of output folder. If empty, then a new folder is created. If folder path does not exist, then creates a new folder using provided folder path
+#prefix_output_files =&gt; prefix string to use for naming output files
+#cluster_cutoff =&gt; clustering cutoff for determining clustered pairs  (cluster=0.96 #heavy chain clustering percent (0.96 = 96%))
+#files_from_igrep_database =&gt; indicates whether the provided files were downloaded from the database (this is important because files from the database will have the same field names regardless of the annotation type. Therefore, we need to use these files from database</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.WriteSummaryFile">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">WriteSummaryFile</tt><big>(</big><em>annotated_file_paths</em>, <em>total_seqs</em>, <em>passed_filter</em>, <em>no_result</em>, <em>no_cdr3_error</em>, <em>not_productive</em>, <em>invalid_chain</em>, <em>successful_pair</em>, <em>Hchain_pairing_error</em>, <em>Lchain_pairing_error</em>, <em>nonpaired_len</em>, <em>num_unique_cdrh3_l3_pair</em>, <em>num_unique_cdrh3_l3_pair_above1</em>, <em>locus_pairing_error</em>, <em>cluster</em>, <em>num_clustered</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#WriteSummaryFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.WriteSummaryFile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.add_to_dict_memory_safe">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">add_to_dict_memory_safe</tt><big>(</big><em>list_of_files</em>, <em>list_of_filetypes</em>, <em>required_field_names</em>, <em>productivity_function_call</em>, <em>parent_dir</em>, <em>analysis_method</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#add_to_dict_memory_safe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.add_to_dict_memory_safe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.gene_hist">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">gene_hist</tt><big>(</big><em>d</em>, <em>filename</em>, <em>geneCall</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#gene_hist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.gene_hist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.get_ab_field_loc">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">get_ab_field_loc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#get_ab_field_loc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.get_ab_field_loc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.get_required_field_names">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">get_required_field_names</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#get_required_field_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.get_required_field_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.get_top_genes">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">get_top_genes</tt><big>(</big><em>gene_string</em>, <em>gene_scores</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#get_top_genes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.get_top_genes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of &#8216;top&#8217; unique genes
+Go through the reported list of genes and only report genes whose scores are equal to the top score</p>
+<dl class="docutils">
+<dt>Assumptions:    </dt>
+<dd>We err on the side of consider &#8216;more genes&#8217; than less
+1) If there is no score provided for a field, then consider all genes equally 
+2) If only a single gene score is provided, then again, assume all reported genes have equal alignment (i.e. IMGT reporting)
+3) For all other cases where there is more than one gene score provided, then traverse the scores and only report genes whose score = top score</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.initialize_input_files">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">initialize_input_files</tt><big>(</big><em>analysis_method</em>, <em>list_of_filetypes</em>, <em>list_of_files</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#initialize_input_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.initialize_input_files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.parse_sorted_paired_file">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">parse_sorted_paired_file</tt><big>(</big><em>pairing_temp_file</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#parse_sorted_paired_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.parse_sorted_paired_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for extracting the proper VH-VL pairs from an annotation results 
+We assume that the input file (pairing_temp_file) is a tab delimited file whose columns match the variable ab_field_loc
+the last column of the tab delimited file is equal to the fullcode field/the miseq id; we use this last column for sorting sequences into respective R1-R2 paired reads</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_gglab_pairing.populate_clusters">
+<tt class="descclassname">immunogrep_gglab_pairing.</tt><tt class="descname">populate_clusters</tt><big>(</big><em>filename</em>, <em>delimiter='\t'</em><big>)</big><a class="reference internal" href="_modules/immunogrep_gglab_pairing.html#populate_clusters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_gglab_pairing.populate_clusters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-immunogrep_singlechain_cdr3_cluster"></span><dl class="function">
+<dt id="immunogrep_singlechain_cdr3_cluster.CDR3Productivity">
+<tt class="descclassname">immunogrep_singlechain_cdr3_cluster.</tt><tt class="descname">CDR3Productivity</tt><big>(</big><em>field_row</em><big>)</big><a class="reference internal" href="_modules/immunogrep_singlechain_cdr3_cluster.html#CDR3Productivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_singlechain_cdr3_cluster.CDR3Productivity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rule for CDR3 productivity.</p>
+<p>Function will return True or False based on rule 
+Input variable field_row: this will represent all antibody annotation field for a specific sequence the provided annotation file</p>
+<dl class="docutils">
+<dt>General steps:</dt>
+<dd><ol class="first last arabic">
+<li><p class="first">Extract the CDR3 nucleotide field</p>
+</li>
+<li><dl class="first docutils">
+<dt>If length of CDR3 is not a multiple of 3 and length of cdr3 &lt; 9</dt>
+<dd><p class="first last">=&gt; return false</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Translate CDR3 to amino acid</p>
+</li>
+<li><dl class="first docutils">
+<dt>If there is a stop codon (*) in sequence</dt>
+<dd><p class="first last">=&gt; return false</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">return true</p>
+</li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_singlechain_cdr3_cluster.Compile_Clusters">
+<tt class="descclassname">immunogrep_singlechain_cdr3_cluster.</tt><tt class="descname">Compile_Clusters</tt><big>(</big><em>clustered_dict_raw</em>, <em>cluster_val</em><big>)</big><a class="reference internal" href="_modules/immunogrep_singlechain_cdr3_cluster.html#Compile_Clusters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_singlechain_cdr3_cluster.Compile_Clusters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a compiled output file summarizing which CDRH3 clusters were made. 
+Reports the cluster size and extra features such as diversity and dominance to determine whether clustering makes sense for H-L pair</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_singlechain_cdr3_cluster.GeneralProductivity">
+<tt class="descclassname">immunogrep_singlechain_cdr3_cluster.</tt><tt class="descname">GeneralProductivity</tt><big>(</big><em>field_row</em><big>)</big><a class="reference internal" href="_modules/immunogrep_singlechain_cdr3_cluster.html#GeneralProductivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_singlechain_cdr3_cluster.GeneralProductivity" title="Permalink to this definition">¶</a></dt>
+<dd><p>General function for determining if an entire Antibody amino acid sequence is productive or not</p>
+<p>Function will return True or False based on rule 
+Input variable field_row: this will represent all antibody annotation field for a specific sequence the provided annotation file</p>
+<dl class="docutils">
+<dt>General steps:</dt>
+<dd><p class="first">1) Extract the field referring to the amino acid sequence of the antibody                       
+4) If there is a stop codon (*) in sequence</p>
+<blockquote>
+<div>=&gt; return false</div></blockquote>
+<ol class="last arabic simple" start="5">
+<li>return true</li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_singlechain_cdr3_cluster.ProcessGene">
+<tt class="descclassname">immunogrep_singlechain_cdr3_cluster.</tt><tt class="descname">ProcessGene</tt><big>(</big><em>gene</em><big>)</big><a class="reference internal" href="_modules/immunogrep_singlechain_cdr3_cluster.html#ProcessGene"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_singlechain_cdr3_cluster.ProcessGene" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the allele calls from genes</p>
+<p>Assumption:</p>
+<blockquote>
+<div><p>Multiple genes are seperated by &#8216;,&#8217;</p>
+<p>Alleles are seperated by &#8216;*&#8217;</p>
+<p>If a gene is seperated by multiple spaces, then the gene should be identified by a gene that contains either - or &#8216;*&#8217; 
+For example:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Imgt genes may be: </dt>
+<dd>Homo sapiens IGHV1-3*01
+We only want to isolate the word IGHV1-3</dd>
+</dl>
+</div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_singlechain_cdr3_cluster.RunSingleChainClustering">
+<tt class="descclassname">immunogrep_singlechain_cdr3_cluster.</tt><tt class="descname">RunSingleChainClustering</tt><big>(</big><em>annotated_file_paths, analysis_method, output_folder_path='', prefix_output_files='', annotated_file_formats=None, field_names=None, include_vl_analysis=False, cluster_cutoff=[0.96, 0.96, 0], files_from_igrep_database=False, productivity_function=None</em><big>)</big><a class="reference internal" href="_modules/immunogrep_singlechain_cdr3_cluster.html#RunSingleChainClustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_singlechain_cdr3_cluster.RunSingleChainClustering" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Brief Description</p>
+<p>This function serves as an addition to the current function RunPairing found in immunogrep_gglab_pairing.py file.</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>This function preforms the same outlined steps and outputs the same information as the pairing program except it only considers the CDR3 of each chain seperately.</dt>
+<dd><p class="first">Whereas RunPairing function will group together sequences by their respective R1-R2 reads (VH-VL pairs), this function will consider each chain independently. 
+Clustering therefore only considers VH only generated libraries and VL only generated libraries.
+Clustering of CDR3 sequences is again performed using Usearch program, and the output file should match the format of the RunPairing program except excludes VH-VL pairs.</p>
+<p>General algorithm:</p>
+<dl class="docutils">
+<dt>The single chain analysis program follows the following steps: </dt>
+<dd><dl class="first last docutils">
+<dt>Step A: Go through the provided AB annotated files (IMGT, parsed IGBLAST files, etc), and filter out sequences that lack good results </dt>
+<dd><ol class="first last arabic simple">
+<li>Loop through all sequences provided in all files</li>
+<li>Only select sequences that have a sequence header.</li>
+<li>Filter out sequences that do not have a cdr3 sequence</li>
+<li>Filter out sequences that are deemed &#8216;unproductive&#8217; using our Productivity Rules, or a custom productivity rule provided by user</li>
+<li>Seperate VDJ annotated sequences from VJ annoated sequences into seperate files</li>
+<li>The user provided parameter (include_vl_analysis) which determine whether to cluster both the VDJ and VJ files. By default we only consider VDJ data.</li>
+</ol>
+</dd>
+<dt>Step B: Group together CDRH3 sequences for each VDJ and/or VJ file</dt>
+<dd><ol class="first last arabic">
+<li><p class="first">We group together sequences with identical CDRH3 sequences from the filtered sequences in Step B</p>
+</li>
+<li><dl class="first docutils">
+<dt>For each CDRH3-CDRL3 group, we calculate the following as extra information for the group: </dt>
+<dd><ol class="first last loweralpha simple">
+<li>average SHM (if an SHM field is provided) and standard deviation SHM</li>
+<li>mode of V,D, and J gene calls (if V, D, or J genes are provided). Mode of gene calls are based on top genes only (genes whose alignment scores are equal to the top alignment score)</li>
+<li>All observed unique isotypes (if isotypes are provided)</li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+<dt>Step D: Cluster CDRH3-CDRL3 pairs </dt>
+<dd><ol class="first last arabic">
+<li><p class="first">Unique CDRH3-CDRL3 paired sequences are sorted by their total counts (number of sequences containing respective CDRH3-CDRL3 pair)</p>
+</li>
+<li><dl class="first docutils">
+<dt>The results from each CDRH3-CDRL3, pair whose counts are found &gt; 1 time, are exported as a FASTA file. </dt>
+<dd><ol class="first last loweralpha simple">
+<li>The sequence header contains all of the data generated/information we are interested in for the H3-L3 pair.</li>
+<li>The sequence value for the FASTA is the nucleotide sequence of the CDRH3 (heavy chain) sequence only</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><p class="first">This FASTA file is used as an input file to the program USEARCH VERSION 7.</p>
+</li>
+<li><p class="first">We run the Usearch program for each cluster defined in the cluster_cutoff parameter defined in this function</p>
+</li>
+</ol>
+</dd>
+<dt>Step E: Summarize the output from each USEARCH cluster file </dt>
+<dd><ol class="first last arabic">
+<li><p class="first">For EACH cluster cutoff defined, USEARCH creates an output .uc file</p>
+</li>
+<li><p class="first">We parse this file and generate a finalized output file based on the CDRH3 seed/cluster</p>
+</li>
+<li><dl class="first docutils">
+<dt>For each seed we calculate the following</dt>
+<dd><ol class="first last loweralpha">
+<li><p class="first">The average SHM for all sequences which belong in the seed</p>
+</li>
+<li><p class="first">The V,D, and J call of the SEED sequence</p>
+</li>
+<li><p class="first">The Isotype call of the SEED sequence</p>
+</li>
+<li><dl class="first docutils">
+<dt>A &#8216;dominance&#8217; calculation =&gt; </dt>
+<dd><p class="first last">100*Unique CDR3 Count of the seed sequence/Unique CDR3 Count of the next largest CDR3 group in the cluster</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>A &#8216;confidence&#8217; calculation =&gt; </dt>
+<dd><p class="first last">100*Unique CDR3 Count of the seed sequence/The total counts of all sequences in cluster</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Diversity of all members in seed using </dt>
+<dd><ol class="first last lowerroman simple">
+<li>shannon entropy</li>
+<li>simpsons index</li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>General usage:</p>
+<p>When calling this function, the most important feature for this program to run correctly is defining the type of file(s) you have submitted. While there is no uniform file type/format, we do need to know which field names in the file correspond to field names we use in the pairing program. 
+The variable, required_field_names, stores the fields we need to perform the analysis. From these fields, only the following fields are absolutely necessary (although providing all fields are ideal):</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>seq_header</li>
+<li>cdr3_nt</li>
+</ol>
+</div></blockquote>
+<p>We already know which field names are required for files that were generated using our common annotation methods: IMGT, IGFFT (in house program), MIXCR, IGBLAST. Therefore, if you are pairing files from one of these programs AND you have not modified the output of the files created by our python wrapper functions, there is no need to define the fields. 
+However, if the file being provided is a custom file or an annotation file we do not know about, then you need to define custom field names in the input variable: field_names</p>
+<dl class="docutils">
+<dt>Example usage for pairing IMGT files:                   </dt>
+<dd>list_of_imgt_files = a list of strings providing the location of all IMGT generated files for pairing. You do not need to select a specific IMGT file or differente the 11 files by experiment, we handle that in the function
+list_of_imgt_files = [1_summary_file1.txt,5_summary_file1.txt,1_summary_file2.txt,5_summary_file2.txt] (etc  etc for the files to pair)
+RunPairing(annotated_file_paths = list_of_imgt_files,analysis_method = IMGT, output_folder_path=&#8217;paired_seq_data.txt,prefix_output_files=&#8217;MYPAIRINGEXP&#8217;,annotated_file_formats=&#8217;IMGT&#8217;,field_names=None,cluster_cutoff=[0.85,0.96,0.01])</dd>
+<dt>Example use for pairing MIXCR files:</dt>
+<dd>list_of_mixcr_files = a list of strings providing the location of all MIXCR annotation files generated by the function ParseMIXCR
+list_of_mixcr_files = [file1.mixcr.annotation,file2.mixcr.annotation,file3.mixcr.annotation]
+RunPairing(annotated_file_paths = list_of_mixcr_files,analysis_method = MIXCR, output_folder_path=&#8217;paired_seq_data.txt,prefix_output_files=&#8217;MYPAIRINGEXP&#8217;,annotated_file_formats=&#8217;TAB&#8217;,field_names=None,cluster_cutoff=[0.85,0.96,0.01])</dd>
+<dt>Example use for any custom file (a file type not generated by the database, parseMIXCR function, parseIgblast function, parseIGFFT function, or IMGT):</dt>
+<dd><p class="first">list_of_files = a list of strings providing the location of some CSV file that we have not seen before 
+In this example, this CSV (not TAB) file only contains CDR3 nucleotide information. So every other field provided will be treated as blank for the program and not considered. In the provided file, the CDR3 field is labeled as CDR3 Nt and the sequence header is labeled as, Miseq header
+field_mappings = { #key = name of the field we need in the program, value = name of the field in the provided file</p>
+<blockquote>
+<div>&#8216;cdr3_nt&#8217;:      &#8216;CDR3 Nt&#8217;,
+&#8216;seq_header&#8217;:Miseq header&#8217;</div></blockquote>
+<p>}
+list_of_files = [fie1.txt,file2.txt,file3.txt]</p>
+<p class="last">RunPairing(annotated_file_paths = list_of_files,analysis_method = custom, output_folder_path=&#8217;paired_seq_data.txt,prefix_output_files=&#8217;MYCUSTOMPAIRINGEXP&#8217;,annotated_file_formats=&#8217;CSV&#8217;,field_names=field_mappings,cluster_cutoff=[0.85,0.96,0.01])</p>
+</dd>
+</dl>
+<p>#REQUIRED FIELDS###
+#annotated_file_paths = a list of files that you want to run pairing with 
+#analysis_method:</p>
+<blockquote>
+<div>#A string defining which annotation program generated the results 
+#IF an annotation program is not defined in this script (variable above) yet, then use &#8216;CUSTOM&#8217;
+#note: if analysis_method == &#8216;CUSTOM&#8217; OR not in the predefined list, then the parameter,field_names, is required</div></blockquote>
+<p>#OPTIONAL FIELDS###
+#annotated_file_formats:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>#accepts three possible formats: </dt>
+<dd>#=&gt; None =&gt; do not define file type, let program guess 
+#=&gt; list of file types =&gt; the file type FOR EACH PROVIDED FILE 
+#=&gt; SINGLE STRING =&gt; THIS MEANS ALL INPUTED FILES ARE OF THE SAME TYPE</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>#field_names: </dt>
+<dd><p class="first">#A dictionary defining which fields in the file correspond to the fields required for this program 
+#IMPORTANT: If analysis_method == CUSTOM then you must define field_names in the file. Program will raise exception otherwise
+#if provided, the structure of field names is as follows:</p>
+<blockquote class="last">
+<div>#keys of variable: &#8216;vgene&#8217;,&#8217;jgene&#8217;,&#8217;dgene&#8217;,&#8217;raw_seq_nt&#8217;,&#8217;cdr3_nt&#8217;,&#8217;seq_header&#8217;,&#8217;shm&#8217;,&#8217;full_len_ab_aa&#8217;
+#values =&gt; for each key,provide the field name in the file that corresponds to the key</div></blockquote>
+</dd>
+</dl>
+<p>#output_folder_path =&gt; path of output folder. If empty, then a new folder is created. If folder path does not exist, then creates a new folder using provided folder path
+#prefix_output_files =&gt; prefix string to use for naming output files
+#cluster_cutoff =&gt; clustering cutoff for determining clustered pairs  (accepts a single number or a list of 3 numbers)</p>
+<blockquote>
+<div>If its a single number, i.e. cluster = 0.96, then only that clustering id cutoff is used 
+If a list is provided, then a range of clusters are attempted defined by the list [min cluster id, max cluster id, step increase of cluster id&#8217;s]</div></blockquote>
+<p class="last">#files_from_igrep_database =&gt; indicates whether the provided files were downloaded from the database (this is important because files from the database will have the same field names regardless of the annotation type. Therefore, we need to use these files from database</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_singlechain_cdr3_cluster.get_top_genes">
+<tt class="descclassname">immunogrep_singlechain_cdr3_cluster.</tt><tt class="descname">get_top_genes</tt><big>(</big><em>gene_string</em>, <em>gene_scores</em><big>)</big><a class="reference internal" href="_modules/immunogrep_singlechain_cdr3_cluster.html#get_top_genes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_singlechain_cdr3_cluster.get_top_genes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of &#8216;top&#8217; unique genes
+Go through the reported list of genes and only report genes whose scores are equal to the top score</p>
+<dl class="docutils">
+<dt>Assumptions:    </dt>
+<dd>We err on the side of consider &#8216;more genes&#8217; than less
+1) If there is no score provided for a field, then consider all genes equally 
+2) If only a single gene score is provided, then again, assume all reported genes have equal alignment (i.e. IMGT reporting)
+3) For all other cases where there is more than one gene score provided, then traverse the scores and only report genes whose score = top score</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_singlechain_cdr3_cluster.parse_sorted_paired_file">
+<tt class="descclassname">immunogrep_singlechain_cdr3_cluster.</tt><tt class="descname">parse_sorted_paired_file</tt><big>(</big><em>pairing_temp_file</em>, <em>suffix</em><big>)</big><a class="reference internal" href="_modules/immunogrep_singlechain_cdr3_cluster.html#parse_sorted_paired_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_singlechain_cdr3_cluster.parse_sorted_paired_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for collapsing by CDR3 sequence
+We assume that the input file (pairing_temp_file) is a tab delimited file whose columns match the variable ab_field_loc</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">VH-VL Pairing</a><ul>
+<li><a class="reference internal" href="#contents">Contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ABDatabase.html"
+                        title="next chapter">Antibody Database</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/VHVLPairing.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ABDatabase.html" title="Antibody Database"
+             >next</a> |</li>
+        <li><a href="index.html">IGREP 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Costas.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

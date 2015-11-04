@@ -1,0 +1,1264 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Antibody Database &mdash; IGREP 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="IGREP 1.0.0 documentation" href="index.html" />
+    <link rel="prev" title="VH-VL Pairing" href="VHVLPairing.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="VHVLPairing.html" title="VH-VL Pairing"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">IGREP 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="antibody-database">
+<span id="abdatabase"></span><h1>Antibody Database<a class="headerlink" href="#antibody-database" title="Permalink to this headline">¶</a></h1>
+<p>The following describes methods and classes used for interacting with the database.</p>
+<div class="section" id="queries">
+<h2>Queries<a class="headerlink" href="#queries" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#proxydb"><em>Querying the database via proxy (any user)</em></a></li>
+<li><a class="reference internal" href="#querydb"><em>Querying the database (admins)</em></a></li>
+</ul>
+<span class="target" id="querydb"><span id="proxydb"></span></span><dl class="class">
+<dt id="immunogrep_db_query_api.RunQuery">
+<em class="property">class </em><tt class="descclassname">immunogrep_db_query_api.</tt><tt class="descname">RunQuery</tt><big>(</big><em>db_connect_data=None</em>, <em>dbuser=None</em>, <em>modify_query_values_to_follow_db_schema=True</em>, <em>redirect_fields_for_improved_queries=True</em>, <em>to_file=True</em>, <em>file_prefix=None</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class for interacting with the BIGG Lab MongoDB database for NGS sequencing immunological repertoires.
+To run this query you need to define the path to the database with proper admin credentials,
+Optionally, you can define the name of the user requesting access to the database.
+If the name of the user is not provided, then it will automatically treat this person as an admin since the person accessing this class already knows admin privelages to the database.
+The name of the user requesting access to the database can be used to filter results from the database using the proxy query-class (See immunogrep_query_dbproxy_api.py)</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We assume that users directly using this class knows the admin username and password required to access the exps and seqs collections of the database.</p>
+</div>
+<p>If this is not true, then users need to access the database via the proxy. Refer to module immunogrep_query_dbproxy_api.py</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>db_connect_data</strong> : three element tuple. Mandatory.</p>
+<blockquote>
+<div><p>The tuple defines how to connect to the mongodb instance: (username with access to seqs and exps collections, username password, path to database)</p>
+</div></blockquote>
+<p><strong>dbuser</strong> : string. Optional. default = None</p>
+<blockquote>
+<div><p>This string should refer to a specific database user. If this string is defined, then all requested queries will be filtered based on experiments this user has access to.
+This is how the proxy (see immunogrep_query_dbproxy_api) handles requests from different users.
+.. important:</p>
+<div class="highlight-python"><div class="highlight"><pre>If it is equal to None then it will assume that the user is an administrator
+</pre></div>
+</div>
+<p>If it is equal to an empty string then it will assume that the user is a public user (basically has the minimium access to the database)</p>
+</div></blockquote>
+<p><strong>modify_query_values_to_follow_db_schema</strong> : boolean. Optional. default = True</p>
+<blockquote>
+<div><p>When set to true, this will ensure that any queries on fields we define in our default schema are in the proper format. For example, if a user
+queries for &#8216;VREGION.VGENE_SCORES&#8217;: {$gt:&#8216;3&#8217;} where &#8216;3&#8217; is a string, when set to true, it will modify the query to ensure that it is a number =&gt; &#8216;VREGION.VGENE_SCORES&#8217;: {$gt:3}</p>
+</div></blockquote>
+<p><strong>redirect_fields_for_improved_queries</strong> : boolean. Optional. default = True</p>
+<blockquote class="last">
+<div><p>When set to true, this will modify some queries to use fields optimized to return better results. For example, if a user wants to query for experiments whose name is
+&#8216;Experiment 1 test&#8217;, then they would write &#8216;EXPERIMENT_NAME&#8217;:&#8217;Experment 1 test&#8217;. However, if it actually exists in the database as Experiment_1_test or Experiment 1 Test, then their
+query will not work. When creating experiments, we add extra fields for common fields that may have idiosyncracies in spacing and case sensitivity; these duplicated fields are stored in a new field called &#8216;DUPLICATED_FIELDS&#8217;
+Therefore, when set to true, the query above will become &#8216;DUPLICATED_FIELDS.EXPERIMENT_NAME&#8217;:&#8217;Experiment 1 test&#8217;. In this situation, the query would work.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><tt class="xref py py-obj docutils literal"><span class="pre">immunogrep_query_dbproxy_api</span></tt></p>
+</div>
+<p class="rubric">Examples</p>
+<p>Query for experiments whose experiment name is Demo 1, return the project name for each experiment</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">myquery</span> <span class="o">=</span> <span class="n">RunQuery</span><span class="p">((</span><span class="s">&#39;biotseq.icmb.utexas.edu&#39;</span><span class="p">,</span><span class="s">&#39;someadminuser&#39;</span><span class="p">,</span><span class="s">&#39;somepassword&#39;</span><span class="p">),</span><span class="s">&#39;cchrysostomou&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">exp_results</span> <span class="o">=</span> <span class="p">[</span><span class="n">exp</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">myquery</span><span class="o">.</span><span class="n">query_exps_collection</span><span class="p">(</span><span class="n">exps_query</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;EXPERIMENT_NAME&#39;</span><span class="p">:</span><span class="s">&#39;Demo 1&#39;</span><span class="p">},</span><span class="n">project_fields</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;PROJECT_NAME&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">})]</span>
+</pre></div>
+</div>
+<p>Query for sequences from experiments whose experiment name is Demo 1, annotated by IMGT, and whose VGENE is IGHV3-2; Convert the results into FASTQ format, and save the results to a file
+&gt;&gt;&gt; myquery.query_seqs_collection(exps_query={&#8216;EXPERIMENT_NAME&#8217;:&#8217;Demo 1&#8217;},analysis_name = [&#8216;IMGT&#8217;], seqs_query={&#8216;DATA.VREGION.VGENES&#8217;:&#8217;IGHV3-2&#8217;}).save_as_fastq(prefix_file_path=&#8217;tesetquery&#8217;)</p>
+<p>Get the amino acid CDR3 length distribution for the experiment, Demo 1, of sequences annotated by IMGT and containing the VGENE IGHV3-2
+&gt;&gt;&gt; myquery.cdr3_length_distribution(feature=&#8217;AA&#8217;, analysis_name=&#8217;IMGT&#8217;, metadata_query = {&#8216;EXPERIMENT_NAME&#8217;:&#8217;Demo 1&#8217;}, filter_by_query={&#8216;DATA.VREGION.VGENES&#8217;:&#8217;IGHV3-2&#8217;}).save_as_json(prefix_file_path=&#8217;cdr3dist&#8217;)</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="7%" />
+<col width="93%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>query_results</td>
+<td>(int, list, dict, db cursor, generator) This attribute stores the result from the latest query run. Iterating through the class, saving results to file, or running get_results, will return values stored in this attribute. The format of query_results will vary depending on the type of query run by the user.</td>
+</tr>
+<tr class="row-even"><td>db_path</td>
+<td>(mongodb path to collections) Stores the current mongodb connection to the database. Access to the exps, seqs, and users collections can be provided from this attribute i.e. db_path.seqs, db_path.exps, etc..</td>
+</tr>
+<tr class="row-odd"><td>user</td>
+<td>(dict defining current user querying database) Using the value from dbuser, this is a dict containing all information about that db_user. keys for this attribute are: &#8216;user&#8217;, &#8216;administrator&#8217;, &#8216;write_access&#8217;, &#8216;curator&#8217;, &#8216;email&#8217;</td>
+</tr>
+<tr class="row-even"><td>allowed_experiment_ids</td>
+<td>(list of strings) A list containing the _id of all experiments the user has access to</td>
+</tr>
+<tr class="row-odd"><td>exp_metadata</td>
+<td>(dict) A dictionary storing all experiment metadata the user has read access to. Key of dictionary = the _id field of each experiment in the exps collection</td>
+</tr>
+<tr class="row-even"><td>delim_file_headers</td>
+<td>(list of strings) This will store all fields from the most current query that can be reported as columns to a delimited file. We use this attribute when saving results to a delimited file</td>
+</tr>
+<tr class="row-odd"><td>default_filename</td>
+<td>(string) A string representing a default filename to use for saving query results to a file when not defined by user</td>
+</tr>
+<tr class="row-even"><td>to_file</td>
+<td>(boolean) A boolean keeping track of whether a query was saved to a file or not (currently not used)</td>
+</tr>
+<tr class="row-odd"><td>files_created</td>
+<td>(Write_Files object) This creates a default_dict for keeping track of all files currently created when saving results from queries</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">aggregate_seqs_collection</span></tt>([exp_id,&nbsp;...])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">cdr3_length_distribution</span></tt>([exp_id,&nbsp;feature,&nbsp;...])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.count" title="immunogrep_db_query_api.RunQuery.count"><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt></a>([with_limit_and_skip])</td>
+<td>Count the number of results in a query</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_unique_values_of_field</span></tt>(group_by_field_name)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.distinct" title="immunogrep_db_query_api.RunQuery.distinct"><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt></a>(field_name)</td>
+<td>Adds a distinct function to the query.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.explain" title="immunogrep_db_query_api.RunQuery.explain"><tt class="xref py py-obj docutils literal"><span class="pre">explain</span></tt></a>()</td>
+<td>Gets a dict explaining the query performance</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.get_accessible_exp_ids" title="immunogrep_db_query_api.RunQuery.get_accessible_exp_ids"><tt class="xref py py-obj docutils literal"><span class="pre">get_accessible_exp_ids</span></tt></a>()</td>
+<td>Queries for a list of all experiment ids where the current user has read access</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.get_created_files" title="immunogrep_db_query_api.RunQuery.get_created_files"><tt class="xref py py-obj docutils literal"><span class="pre">get_created_files</span></tt></a>()</td>
+<td>Returns the filenames of all queries saved to a file</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.get_db_user_list_info" title="immunogrep_db_query_api.RunQuery.get_db_user_list_info"><tt class="xref py py-obj docutils literal"><span class="pre">get_db_user_list_info</span></tt></a>()</td>
+<td>Queries users collection for a list of documents containing information of all users currently registered with the database</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">get_distinct_values_from_experiment</span></tt>(field_name)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">get_rawseq_info</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.get_results" title="immunogrep_db_query_api.RunQuery.get_results"><tt class="xref py py-obj docutils literal"><span class="pre">get_results</span></tt></a>([chunk_size,&nbsp;flatten_documents])</td>
+<td>Method for return results from a query.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">get_sequences_from_experiment</span></tt>([exp_id,&nbsp;...])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.get_user_access_info" title="immunogrep_db_query_api.RunQuery.get_user_access_info"><tt class="xref py py-obj docutils literal"><span class="pre">get_user_access_info</span></tt></a>()</td>
+<td>Queries users collection for a dictionary containing information about the current user i.e.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.get_write_accessible_exp_ids" title="immunogrep_db_query_api.RunQuery.get_write_accessible_exp_ids"><tt class="xref py py-obj docutils literal"><span class="pre">get_write_accessible_exp_ids</span></tt></a>()</td>
+<td>Return a list of all experiment ids the user has write access to</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">group_documents_by_seq_id</span></tt>([limit,&nbsp;same_document])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.iterresults" title="immunogrep_db_query_api.RunQuery.iterresults"><tt class="xref py py-obj docutils literal"><span class="pre">iterresults</span></tt></a>([flatten_documents])</td>
+<td>Iterator function for parsing results from the query results attribute: self.query_results</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">j_allele_usage</span></tt>([exp_id,&nbsp;analysis_name,&nbsp;...])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.limit" title="immunogrep_db_query_api.RunQuery.limit"><tt class="xref py py-obj docutils literal"><span class="pre">limit</span></tt></a>(limit)</td>
+<td>Sets a limit for the number of documents to return.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">list_to_gen</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.query_distinct_exp_collection_values" title="immunogrep_db_query_api.RunQuery.query_distinct_exp_collection_values"><tt class="xref py py-obj docutils literal"><span class="pre">query_distinct_exp_collection_values</span></tt></a>([...])</td>
+<td>Returns distinct values for select fields from CURATED experiments in the exps collection</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.query_exp_docs" title="immunogrep_db_query_api.RunQuery.query_exp_docs"><tt class="xref py py-obj docutils literal"><span class="pre">query_exp_docs</span></tt></a>([object_id_list,&nbsp;...])</td>
+<td>Queries for all metadata from exps collection that the user has read-access to</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.query_exp_docs_containing_sequences" title="immunogrep_db_query_api.RunQuery.query_exp_docs_containing_sequences"><tt class="xref py py-obj docutils literal"><span class="pre">query_exp_docs_containing_sequences</span></tt></a>([...])</td>
+<td>Queries for all metadata from all experiments in exps collection that contain sequences in the seqs collection</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.query_exp_docs_with_ownership" title="immunogrep_db_query_api.RunQuery.query_exp_docs_with_ownership"><tt class="xref py py-obj docutils literal"><span class="pre">query_exp_docs_with_ownership</span></tt></a>([object_id_list])</td>
+<td>Queries for all metadata from exps collection that the user has write access to/is listed as one of the &#8216;OWNERS_OF_EXPERIMENT&#8217;</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.query_exp_ids_owned_by_current_user" title="immunogrep_db_query_api.RunQuery.query_exp_ids_owned_by_current_user"><tt class="xref py py-obj docutils literal"><span class="pre">query_exp_ids_owned_by_current_user</span></tt></a>()</td>
+<td>Return a list of all experiment ids where the user is explicity defined as an &#8216;owner of the experiment&#8217;</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.query_exps_collection" title="immunogrep_db_query_api.RunQuery.query_exps_collection"><tt class="xref py py-obj docutils literal"><span class="pre">query_exps_collection</span></tt></a>([exp_id,&nbsp;exps_query,&nbsp;...])</td>
+<td>Runs a general query on the exps collection using a standard mongo query .find() function</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.query_seqs_collection" title="immunogrep_db_query_api.RunQuery.query_seqs_collection"><tt class="xref py py-obj docutils literal"><span class="pre">query_seqs_collection</span></tt></a>([exp_id,&nbsp;...])</td>
+<td>Runs a general query on the seqs collection using a standard mongo query .find() function</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.save_as_csv" title="immunogrep_db_query_api.RunQuery.save_as_csv"><tt class="xref py py-obj docutils literal"><span class="pre">save_as_csv</span></tt></a>([prefix_file_path,&nbsp;file_ext,&nbsp;...])</td>
+<td>Exports the results of a query to a CSV file.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.save_as_delim" title="immunogrep_db_query_api.RunQuery.save_as_delim"><tt class="xref py py-obj docutils literal"><span class="pre">save_as_delim</span></tt></a>(delimiter[,&nbsp;prefix_file_path,&nbsp;...])</td>
+<td>Exports the results of a query to a delimited file.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.save_as_fasta" title="immunogrep_db_query_api.RunQuery.save_as_fasta"><tt class="xref py py-obj docutils literal"><span class="pre">save_as_fasta</span></tt></a>([prefix_file_path,&nbsp;file_ext,&nbsp;...])</td>
+<td>Exports the results of a query to a FASTA file                         Once this function is called, the query cursor will be exhausted.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.save_as_fastq" title="immunogrep_db_query_api.RunQuery.save_as_fastq"><tt class="xref py py-obj docutils literal"><span class="pre">save_as_fastq</span></tt></a>([prefix_file_path,&nbsp;file_ext,&nbsp;...])</td>
+<td>Exports the results of a query to a FASTQ file                         Once this function is called, the query cursor will be exhausted.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.save_as_flatjson" title="immunogrep_db_query_api.RunQuery.save_as_flatjson"><tt class="xref py py-obj docutils literal"><span class="pre">save_as_flatjson</span></tt></a>([prefix_file_path,&nbsp;...])</td>
+<td>Exports the results of a query to a FLAT JSON document Once this function is called, the query cursor will be exhausted.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.save_as_json" title="immunogrep_db_query_api.RunQuery.save_as_json"><tt class="xref py py-obj docutils literal"><span class="pre">save_as_json</span></tt></a>([prefix_file_path,&nbsp;file_ext,&nbsp;...])</td>
+<td>Exports the results of a query as JSON.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.save_as_tab" title="immunogrep_db_query_api.RunQuery.save_as_tab"><tt class="xref py py-obj docutils literal"><span class="pre">save_as_tab</span></tt></a>([prefix_file_path,&nbsp;file_ext,&nbsp;...])</td>
+<td>Exports the results of a query to a TAB delimited file.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.skip" title="immunogrep_db_query_api.RunQuery.skip"><tt class="xref py py-obj docutils literal"><span class="pre">skip</span></tt></a>(num_skip)</td>
+<td>Skips the first set of documents in a query</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#immunogrep_db_query_api.RunQuery.sort" title="immunogrep_db_query_api.RunQuery.sort"><tt class="xref py py-obj docutils literal"><span class="pre">sort</span></tt></a>(sort_tuples)</td>
+<td>Sorts documents in a query by a set of tuples</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">v_allele_usage</span></tt>([exp_id,&nbsp;analysis_name,&nbsp;...])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">vj_allele_usage</span></tt>([exp_id,&nbsp;analysis_name,&nbsp;...])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.count">
+<tt class="descname">count</tt><big>(</big><em>with_limit_and_skip=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.count"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Count the number of results in a query</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>with_limit_and_skip</strong> : boolean, default = False</p>
+<blockquote>
+<div><p>When performing the count, consider limit and skip settings.
+For example, if a limit of 100 was set on the query, and you perform a count where with_limit_and_skip is True,
+then this function will return 100; If False it would ignore any limit or skip settings set and count the entire query.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">self</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.distinct">
+<tt class="descname">distinct</tt><big>(</big><em>field_name</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.distinct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.distinct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a distinct function to the query. This will collapse the results into a list of distinct values based on a field_name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>field_name</strong> : a string defining what field we want to find distinct values for</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.explain">
+<tt class="descname">explain</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.explain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.explain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a dict explaining the query performance</p>
+<p>Refer to mongodb explain function</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.get_accessible_exp_ids">
+<tt class="descname">get_accessible_exp_ids</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.get_accessible_exp_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.get_accessible_exp_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries for a list of all experiment ids where the current user has read access</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">ObjectIds are converted into strings</p>
+</div>
+<dl class="docutils">
+<dt>Datatype returned to self.query_results <span class="classifier-delimiter">:</span> <span class="classifier">list of strings</span></dt>
+<dd>This function returns a list of object ids converted to strings to the query results attribute, self.query_results</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.get_created_files">
+<tt class="descname">get_created_files</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.get_created_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.get_created_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the filenames of all queries saved to a file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">list of dict</p>
+<blockquote class="last">
+<div><p>Each element in the list represents a file that was created
+[{&#8216;filename&#8217;: path_of_files_created, &#8216;doc_count&#8217;: documents per file}]</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.get_db_user_list_info">
+<tt class="descname">get_db_user_list_info</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.get_db_user_list_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.get_db_user_list_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries users collection for a list of documents containing information of all users currently registered with the database</p>
+<dl class="docutils">
+<dt>Datatype returned to self.query_results <span class="classifier-delimiter">:</span> <span class="classifier">list of dicts</span></dt>
+<dd>This function returns a list of dictionaries to the query results attribute, self.query_results
+At a minimum, each dictionary will contain the following keys: _id, user, name, lab</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.get_results">
+<tt class="descname">get_results</tt><big>(</big><em>chunk_size=None</em>, <em>flatten_documents=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.get_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.get_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for return results from a query. This will return results, from the query results
+attribute self.query_results, to memory and not to a file.
+Results can be returned in chunks, or once at a time</p>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">If you would like to save results to a file please see the &#8216;save_as_*&#8217; functions below</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The DATA key will always be removed from the query results (DATA.VREGION becomes just VREGION)</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The database cursor from a query will be exhausted when running this function because we do not use iter tools tee</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>chunk_size</strong> : int, default=None</p>
+<blockquote>
+<div><p>This defines how to return results back
+When chunk_size is None, then results are returned based on their format in self.query_results</p>
+<blockquote>
+<div><p>i.e. If a dict, returns a dict; if a cursor returns a cursor, if a list returns list</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>When chunk_size is an integer, then results are loaded into chunks inside a list.</dt>
+<dd><p class="first">When chunk_size is 1, each iterator of generator will return [result1]
+When chunk_size is 5, each iterator of generator will return [result1,result2,result3,result4,result5]
+When chunk_size is 0, then all results will be returned one-by-one but NOT inside of a list
+.. warning:</p>
+<div class="last highlight-python"><div class="highlight"><pre>a chunk_size of 0 will NOT yield results in a list
+</pre></div>
+</div>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>flatten_documents</strong> : boolean, default=False</p>
+<blockquote>
+<div><p>When True, all documents from a query will be flattened so that they are not nested:
+i.e. &#8216;VREGION&#8217;:{CDR1:{AA:&#8217;ACT&#8217;}} becomes &#8216;VREGION.CDR1.AA&#8217;: &#8216;ACT&#8217;</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">int, long, float, complex</p>
+<blockquote>
+<div><p>Returns a single number when self.query_results is a number (i.e. when using count function) and chunk_size is None</p>
+</div></blockquote>
+<p>dict</p>
+<blockquote>
+<div><p>Returns a dictionary (flattened if flatten_documents is true) when self.query_results is a dict and chunk_size is None</p>
+</div></blockquote>
+<p>generator</p>
+<blockquote class="last">
+<div><ol class="arabic">
+<li><p class="first">Returns a generator when self.query_results is a db cursor or a generator and chunk_size is none</p>
+</li>
+<li><p class="first">Returns a generator for iterating through self.query_results when chunk_size is 0</p>
+</li>
+<li><p class="first">Returns a generator for any format of self.query_results when chunk_size &gt; 0.</p>
+<blockquote>
+<div><div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">List of results</p>
+</div>
+<p>In this case (chunk_size &gt; 0), all results from this generator will be yielded inside a list</p>
+</div></blockquote>
+</li>
+</ol>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">immunogrep_db_query_api</span> <span class="kn">as</span> <span class="nn">query</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">myquery</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">RunQuery</span><span class="p">((</span><span class="n">user</span><span class="p">,</span><span class="n">password</span><span class="p">,</span><span class="s">&#39;biotseq.icmb.utexas.edu&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">results</span> <span class="ow">in</span> <span class="n">myquery</span><span class="o">.</span><span class="n">get_user_access_info</span><span class="p">()</span><span class="o">.</span><span class="n">get_results</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.get_user_access_info">
+<tt class="descname">get_user_access_info</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.get_user_access_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.get_user_access_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries users collection for a dictionary containing information about the current user
+i.e. returns the following in key-value of user: {username:, name:, administrator:, curator:, write_access:, lab:, email:, }</p>
+<dl class="docutils">
+<dt>Datatype returned to self.query_results <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>This function returns a single dictionary to the query results attribute, self.query_results
+The dictionary will contain the following keys: username, name, administrator, curator, write_access, lab, email</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.get_write_accessible_exp_ids">
+<tt class="descname">get_write_accessible_exp_ids</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.get_write_accessible_exp_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.get_write_accessible_exp_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of all experiment ids the user has write access to</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">ObjectIds are converted into strings</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.iterresults">
+<tt class="descname">iterresults</tt><big>(</big><em>flatten_documents=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.iterresults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.iterresults" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterator function for parsing results from the query results attribute: self.query_results
+This function returns a generator that can be iterated in a for loop</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The DATA key will always be removed from the query results (DATA.VREGION becomes just VREGION)</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The database cursor from a query will be exhausted when running this function because we do not use iter tools tee</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>flatten_documents</strong> : boolean, default=False</p>
+<blockquote class="last">
+<div><p>When True, all documents from a query will be flattened so that they are not nested:
+i.e. &#8216;VREGION&#8217;:{CDR1:{AA:&#8217;ACT&#8217;}} becomes &#8216;VREGION.CDR1.AA&#8217;: &#8216;ACT&#8217;</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.limit">
+<tt class="descname">limit</tt><big>(</big><em>limit</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.limit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a limit for the number of documents to return.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>limit</strong> : integer</p>
+<blockquote>
+<div><div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">A limit of 0 is the same as not setting a limit</p>
+</div>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">self</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.query_distinct_exp_collection_values">
+<tt class="descname">query_distinct_exp_collection_values</tt><big>(</big><em>unique_fields=[]</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.query_distinct_exp_collection_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.query_distinct_exp_collection_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns distinct values for select fields from CURATED experiments in the exps collection</p>
+<p>If the current user is not an administrator, then it only returns distinct values from fields found within experiments user has read access to.</p>
+<dl class="docutils">
+<dt>Datatype returned to self.query_results <span class="classifier-delimiter">:</span> <span class="classifier">list of dicts</span></dt>
+<dd>This function returns a list of documents to the query results attribute, self.query_results</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>unique_fields</strong> : dict</p>
+<blockquote>
+<div><p>The keys of the dict corresponds to fields defined by unique_fields, and the values of each key is a list of unique values for that field in curated experiments</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">self</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.query_exp_docs">
+<tt class="descname">query_exp_docs</tt><big>(</big><em>object_id_list=[]</em>, <em>write_access_only=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.query_exp_docs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.query_exp_docs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries for all metadata from exps collection that the user has read-access to</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>object_id_list</strong> : list of strings</p>
+<blockquote>
+<div><p>Filters results such that only experiments whose &#8216;_id&#8217; is listed in this list is considered</p>
+</div></blockquote>
+<p><strong>write_access_only</strong> : boolean</p>
+<blockquote>
+<div><p>When true, filters results by only considering experiments where user is listed as one of the &#8216;OWNERS_OF_EXPERIMENT&#8217;</p>
+</div></blockquote>
+<p><strong>Datatype returned to self.query_results</strong> : list of dicts</p>
+<blockquote>
+<div><p>This function returns a list of documents to the query results attribute, self.query_results</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">self</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.query_exp_docs_containing_sequences">
+<tt class="descname">query_exp_docs_containing_sequences</tt><big>(</big><em>write_access_only=False</em>, <em>analyses=[]</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.query_exp_docs_containing_sequences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.query_exp_docs_containing_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries for all metadata from all experiments in exps collection that contain sequences in the seqs collection
+(Queries for experiments where SEQ_COUNT is &gt; 0)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>write_access_only</strong> : boolean</p>
+<blockquote>
+<div><p>When true, filters results by only considering experiments where user is listed as one of the &#8216;OWNERS_OF_EXPERIMENT&#8217;</p>
+</div></blockquote>
+<p><strong>analyses</strong> : list of strings</p>
+<blockquote>
+<div><p>When not empty, then this parameter will filter results by only returning documents that contain annotated information listed in the list
+i.e. when analyses = [&#8216;IMGT&#8217;,&#8217;IBLAST&#8217;], will only return experiments that contain annotation information from either IMGT or IGBLAST</p>
+</div></blockquote>
+<p><strong>Datatype returned to self.query_results</strong> : list of dicts</p>
+<blockquote>
+<div><p>This function returns a list of documents to the query results attribute, self.query_results</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">self</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.query_exp_docs_with_ownership">
+<tt class="descname">query_exp_docs_with_ownership</tt><big>(</big><em>object_id_list=[]</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.query_exp_docs_with_ownership"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.query_exp_docs_with_ownership" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries for all metadata from exps collection that the user has write access to/is listed as one of the &#8216;OWNERS_OF_EXPERIMENT&#8217;</p>
+<p>This function is identical to the preceeding function query_exp_docs where write_access_only is True</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>object_id_list</strong> : list of strings</p>
+<blockquote>
+<div><p>Filters results such that only experiments whose &#8216;_id&#8217; is listed in this list is considered</p>
+</div></blockquote>
+<p><strong>Datatype returned to self.query_results</strong> : list of dicts</p>
+<blockquote>
+<div><p>This function returns a list of documents to the query results attribute, self.query_results</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">self</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.query_exp_ids_owned_by_current_user">
+<tt class="descname">query_exp_ids_owned_by_current_user</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.query_exp_ids_owned_by_current_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.query_exp_ids_owned_by_current_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of all experiment ids where the user is explicity defined as an &#8216;owner of the experiment&#8217;</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">ObjectIds are converted into strings</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.query_exps_collection">
+<tt class="descname">query_exps_collection</tt><big>(</big><em>exp_id=None</em>, <em>exps_query={}</em>, <em>project_fields={'DUPLICATED_FIELDS': 0}</em>, <em>include_duplicated_fields=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.query_exps_collection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.query_exps_collection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs a general query on the exps collection using a standard mongo query .find() function</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.query_seqs_collection">
+<tt class="descname">query_seqs_collection</tt><big>(</big><em>exp_id=None</em>, <em>analysis_name=[]</em>, <em>recombination_type=[]</em>, <em>seqs_query={}</em>, <em>project_fields={'QUERY_DATA': 0}</em>, <em>exps_query={}</em>, <em>include_original_ngs_seq=False</em>, <em>limit=0</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.query_seqs_collection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.query_seqs_collection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs a general query on the seqs collection using a standard mongo query .find() function</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>exp_id</strong> : list of strings, defaut = None</p>
+<blockquote>
+<div><p>Filters results such that only seqs results whose &#8216;EXP_ID&#8217; is listed in this list is considered</p>
+</div></blockquote>
+<p><strong>analysis_name</strong> : list of strings, default = []</p>
+<blockquote>
+<div><p>When not empty, filters results to only include documents whose ANALYSIS_NAME is within this list</p>
+</div></blockquote>
+<p><strong>recombination_type</strong> : list of strings, default = []</p>
+<blockquote>
+<div><p>When not empty, filters results to only include documents whose RECOMBINATION_TYPE is within this list</p>
+</div></blockquote>
+<p><strong>seqs_query</strong> : dict, default = {}</p>
+<blockquote>
+<div><p>A mongo query on the seqs collection using mongo operators</p>
+</div></blockquote>
+<p><strong>project_fields</strong> : dict, default = {&#8216;QUERY_DATA&#8217;: 0}</p>
+<blockquote>
+<div><p>A mongo projection query. Fields to project are represented as keys, and values are 0 or 1 depending on whether to suppress or include field</p>
+</div></blockquote>
+<p><strong>exps_query</strong> : dict, default = {}</p>
+<blockquote>
+<div><p>A mongo query on the exps collection using mongo operators</p>
+</div></blockquote>
+<p><strong>include_original_ngs_seq</strong> : boolean,</p>
+<blockquote>
+<div><p>When true, will also include the RAW NGS read and sequence header document for each queried document</p>
+</div></blockquote>
+<p><strong>limit</strong> : integer</p>
+<blockquote>
+<div><p>Sets a limit on the number of documents to return. A limit of 0 is the same as not setting a limit.</p>
+</div></blockquote>
+<p><strong>Datatype returned to self.query_results</strong> : list of dicts</p>
+<blockquote>
+<div><p>This function returns a list of documents to the query results attribute, self.query_results</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">self</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>Return the CDR3 field from of 100 IMGT documents from experiments in project Demo that contain the VGENE IGHV1-3</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">query_seqs_collection</span><span class="p">(</span><span class="n">analysis_name</span><span class="p">[</span><span class="s">&#39;IMGT&#39;</span><span class="p">],</span> <span class="n">seqs_query</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;DATA.VREGION.VGENES&#39;</span><span class="p">:</span><span class="s">&#39;IGHV1-3&#39;</span><span class="p">},</span> <span class="n">exps_query</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;PROJECT_NAME&#39;</span><span class="p">:</span><span class="s">&#39;Demo&#39;</span><span class="p">},</span> <span class="n">project_fields</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;DATA.CDR3&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">},</span> <span class="n">limit</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.save_as_csv">
+<tt class="descname">save_as_csv</tt><big>(</big><em>prefix_file_path=None</em>, <em>file_ext='txt'</em>, <em>header_var=[]</em>, <em>keep_all_info=False</em>, <em>split_results_by=[]</em>, <em>save_by_filename=False</em>, <em>save_by_exp_name=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.save_as_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.save_as_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports the results of a query to a CSV file. Once this function is called, the query cursor will be exhausted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>prefix_file_path</strong> : string , default=None</p>
+<blockquote>
+<div><p>All exported files will start with this path. The prefix should also include parent folder paths (i.e scratch/query/myquery)
+If None, then function will default prefix as, &#8216;current folder/&#8217;+default_query_name</p>
+</div></blockquote>
+<p><strong>file_ext</strong> : string, default=&#8217;txt&#8217;</p>
+<blockquote>
+<div><p>Save files using this extension</p>
+</div></blockquote>
+<p><strong>header_var</strong> : list of strings, dict, or list of tuples default = []</p>
+<blockquote>
+<div><p>This variable allows user to manually define exactly how they want fields to appear in the delimited file.
+When format is a list of strings: Fields will appear in order based on the list of strings. i.e. [&#8216;SEQUENCE&#8217;,&#8217;SEQUENCE_HEADER&#8217;]
+When format is a dict: Fields will be renamed based on key value pairs where key is field name and value is new field name. i.e. {&#8216;SEQUENCE&#8217;:&#8217;raw read&#8217;,&#8217;SEQUENCE_HEADER&#8217;:&#8217;miseqread&#8217;}
+When format is a list of tuples: Fields will appear in order based on list, and also be renamed based on (fieldname, new field name). i.e. [(&#8216;SEQUENCE_HEADER&#8217;,&#8217;miseqread&#8217;),(&#8216;SEQUENCE&#8217;,&#8217;raw read&#8217;)]</p>
+</div></blockquote>
+<p><strong>keep_all_info</strong> : boolean, default = False</p>
+<blockquote>
+<div><p>This variable defines whether to report all results from a query/projection or only report those fields defined in the variable &#8216;header_var&#8217;.
+If False, then only those fields explicitly reported by &#8216;header_var&#8217; will appear in the file. If True, then all fields not included in &#8216;header_var&#8217; will
+appear afterwards in the order defined by &#8216;default_sorting_order&#8217;</p>
+</div></blockquote>
+<p><strong>split_results_by</strong> : list of strings, default = []</p>
+<blockquote>
+<div><p>This variable defines how to seperate results into multiple files by specific field names. For example, if you wanted each file to only include sequences with
+a unique CDR3 AA sequence, you would set split_results_by = [&#8216;CDR3.AA&#8217;]. In this sitation, each new CDR3 instance would create a new file with the path: filepath+&#8217;.&#8217;+cdr3_name</p>
+</div></blockquote>
+<p><strong>save_by_filename</strong> : boolean, default = False</p>
+<blockquote>
+<div><p>When true, results are seperated into different files based on the original filename of the sequences uploaded to the database. For example, if R1/R2 files from MIseq were uploaded, this
+function will seperate sequences based on either R1/R2 file location.</p>
+</div></blockquote>
+<p><strong>save_by_exp_name</strong> : boolean, default = False</p>
+<blockquote class="last">
+<div><p>When true, results are seperated into different files based on their respective experiment name</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.save_as_delim">
+<tt class="descname">save_as_delim</tt><big>(</big><em>delimiter</em>, <em>prefix_file_path=None</em>, <em>file_ext='txt'</em>, <em>header_var=[]</em>, <em>keep_all_info=False</em>, <em>split_results_by=[]</em>, <em>save_by_filename=False</em>, <em>save_by_exp_name=False</em>, <em>avoid_commas_in_string_output=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.save_as_delim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.save_as_delim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports the results of a query to a delimited file. Once this function is called, the query cursor will be exhausted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>delimiter</strong> : character</p>
+<blockquote>
+<div><p>This defines what character should be used to delimit file</p>
+</div></blockquote>
+<p><strong>prefix_file_path</strong> : string , default=None</p>
+<blockquote>
+<div><p>All exported files will start with this path. The prefix should also include parent folder paths (i.e scratch/query/myquery)
+If None, then function will default prefix as, &#8216;current folder/&#8217;+default_query_name</p>
+</div></blockquote>
+<p><strong>file_ext</strong> : string, default=&#8217;txt&#8217;</p>
+<blockquote>
+<div><p>Save files using this extension</p>
+</div></blockquote>
+<p><strong>header_var</strong> : list of strings, dict, or list of tuples default = []</p>
+<blockquote>
+<div><p>This variable allows user to manually define exactly how they want fields to appear in the delimited file.
+When format is a list of strings: Fields will appear in order based on the list of strings. i.e. [&#8216;SEQUENCE&#8217;,&#8217;SEQUENCE_HEADER&#8217;]
+When format is a dict: Fields will be renamed based on key value pairs where key is field name and value is new field name. i.e. {&#8216;SEQUENCE&#8217;:&#8217;raw read&#8217;,&#8217;SEQUENCE_HEADER&#8217;:&#8217;miseqread&#8217;}
+When format is a list of tuples: Fields will appear in order based on list, and also be renamed based on (fieldname, new field name). i.e. [(&#8216;SEQUENCE_HEADER&#8217;,&#8217;miseqread&#8217;),(&#8216;SEQUENCE&#8217;,&#8217;raw read&#8217;)]</p>
+</div></blockquote>
+<p><strong>keep_all_info</strong> : boolean, default = False</p>
+<blockquote>
+<div><p>This variable defines whether to report all results from a query/projection or only report those fields defined in the variable &#8216;header_var&#8217;.
+If False, then only those fields explicitly reported by &#8216;header_var&#8217; will appear in the file. If True, then all fields not included in &#8216;header_var&#8217; will
+appear afterwards in the order defined by &#8216;default_sorting_order&#8217;</p>
+</div></blockquote>
+<p><strong>split_results_by</strong> : list of strings, default = []</p>
+<blockquote>
+<div><p>This variable defines how to seperate results into multiple files by specific field names. For example, if you wanted each file to only include sequences with
+a unique CDR3 AA sequence, you would set split_results_by = [&#8216;CDR3.AA&#8217;]. In this sitation, each new CDR3 instance would create a new file with the path: filepath+&#8217;.&#8217;+cdr3_name</p>
+</div></blockquote>
+<p><strong>save_by_filename</strong> : boolean, default = False</p>
+<blockquote>
+<div><p>When true, results are seperated into different files based on the original filename of the sequences uploaded to the database. For example, if R1/R2 files from MIseq were uploaded, this
+function will seperate sequences based on either R1/R2 file location.</p>
+</div></blockquote>
+<p><strong>save_by_exp_name</strong> : boolean, default = False</p>
+<blockquote>
+<div><p>When true, results are seperated into different files based on their respective experiment name</p>
+</div></blockquote>
+<p><strong>avoid_commas_in_string_output</strong> : boolean, default = False</p>
+<blockquote class="last">
+<div><p>When set to True, this will try to avoid using commas to convert fields to strings. For examples, lists will not be saved as strings using &#8216;,&#8217;.join. Instead it will use &#8216;|&#8217;.join.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.save_as_fasta">
+<tt class="descname">save_as_fasta</tt><big>(</big><em>prefix_file_path=None, file_ext='fasta', sequence_key='SEQUENCE', header_var=['SEQUENCE_HEADER'], keep_all_info=False, split_results_by=[], save_by_exp_name=False, save_by_filename=False, include_header_row=True</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.save_as_fasta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.save_as_fasta" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Exports the results of a query to a FASTA file
+Once this function is called, the query cursor will be exhausted.</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>prefix_file_path</strong> : string , default=None</p>
+<blockquote>
+<div><blockquote>
+<div><p>All exported files will start with this path. The prefix should also include parent folder paths (i.e scratch/query/myquery)
+If None, then function will default prefix as, &#8216;current folder/&#8217;+default_query_name</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>file_ext <span class="classifier-delimiter">:</span> <span class="classifier">string, default=&#8217;txt&#8217;</span></dt>
+<dd><p class="first last">Save files using this extension</p>
+</dd>
+<dt>sequence_key <span class="classifier-delimiter">:</span> <span class="classifier">string, default = &#8216;SEQUENCE&#8217;</span></dt>
+<dd><p class="first last">This field will be used as the sequence for a fasta file (i.e. &gt;header</p>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>sequence)</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>header_var <span class="classifier-delimiter">:</span> <span class="classifier">list of strings, default = [&#8216;SEQUENCE_HEADER&#8217;]</span></dt>
+<dd><p class="first last">These fields will be used to form the sequence header for a faster file. All fields in this list will be seperated by | (i.e. &gt;header field 1 | header field 2 | header field 3</p>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>sequence)</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>keep_all_info <span class="classifier-delimiter">:</span> <span class="classifier">boolean, default = False</span></dt>
+<dd><p class="first last">When True then all other fields not explicity defined in &#8216;header_var&#8217; will be exported in json format to the sequence header (i.e. &gt;header field 1 &lt;{field 2: value, field 3: value}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>sequence)</strong></p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>split_results_by <span class="classifier-delimiter">:</span> <span class="classifier">list of strings, default = []</span></dt>
+<dd><p class="first last">This variable defines how to seperate results into multiple files by specific field names. For example, if you wanted each file to only include sequences with
+a unique CDR3 AA sequence, you would set split_results_by = [&#8216;CDR3.AA&#8217;]. In this sitation, each new CDR3 instance would create a new file with the path: filepath+&#8217;.&#8217;+cdr3_name</p>
+</dd>
+<dt>save_by_filename <span class="classifier-delimiter">:</span> <span class="classifier">boolean, default = False</span></dt>
+<dd><p class="first last">When true, results are seperated into different files based on the original filename of the sequences uploaded to the database. For example, if R1/R2 files from MIseq were uploaded, this
+function will seperate sequences based on either R1/R2 file location.</p>
+</dd>
+<dt>save_by_exp_name <span class="classifier-delimiter">:</span> <span class="classifier">boolean, default = False</span></dt>
+<dd><p class="first last">When true, results are seperated into different files based on their respective experiment name</p>
+</dd>
+<dt>include_header_row <span class="classifier-delimiter">:</span> <span class="classifier">boolean, default = True</span></dt>
+<dd><p class="first last">When true, a header row, prepended by &#8216;#&#8217;, is output to the top of each created file. All field names defined by header_var are reported in this line</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The field corresponding to the sequencey_key will always be removed from the header_var variable</p>
+</div>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.save_as_fastq">
+<tt class="descname">save_as_fastq</tt><big>(</big><em>prefix_file_path=None, file_ext='fastq', sequence_key='SEQUENCE', header_var=['SEQUENCE_HEADER'], keep_all_info=False, split_results_by=[], save_by_exp_name=False, save_by_filename=False, include_header_row=False, null_quality=40</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.save_as_fastq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.save_as_fastq" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Exports the results of a query to a FASTQ file
+Once this function is called, the query cursor will be exhausted.</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>prefix_file_path</strong> : string , default=None</p>
+<blockquote>
+<div><blockquote>
+<div><p>All exported files will start with this path. The prefix should also include parent folder paths (i.e scratch/query/myquery)
+If None, then function will default prefix as, &#8216;current folder/&#8217;+default_query_name</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>file_ext <span class="classifier-delimiter">:</span> <span class="classifier">string, default=&#8217;txt&#8217;</span></dt>
+<dd><p class="first last">Save files using this extension</p>
+</dd>
+<dt>sequence_key <span class="classifier-delimiter">:</span> <span class="classifier">string, default = &#8216;SEQUENCE&#8217;</span></dt>
+<dd><p class="first last">This field will be used as the sequence for a fasta file (i.e. &gt;header</p>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>sequence)</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>header_var <span class="classifier-delimiter">:</span> <span class="classifier">list of strings, default = [&#8216;SEQUENCE_HEADER&#8217;]</span></dt>
+<dd><p class="first last">These fields will be used to form the sequence header for a faster file. All fields in this list will be seperated by | (i.e. &gt;header field 1 | header field 2 | header field 3</p>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>sequence)</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>keep_all_info <span class="classifier-delimiter">:</span> <span class="classifier">boolean, default = False</span></dt>
+<dd><p class="first last">When True then all other fields not explicity defined in &#8216;header_var&#8217; will be exported in json format to the sequence header (i.e. &gt;header field 1 &lt;{field 2: value, field 3: value}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>sequence)</strong></p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>split_results_by <span class="classifier-delimiter">:</span> <span class="classifier">list of strings, default = []</span></dt>
+<dd><p class="first last">This variable defines how to seperate results into multiple files by specific field names. For example, if you wanted each file to only include sequences with
+a unique CDR3 AA sequence, you would set split_results_by = [&#8216;CDR3.AA&#8217;]. In this sitation, each new CDR3 instance would create a new file with the path: filepath+&#8217;.&#8217;+cdr3_name</p>
+</dd>
+<dt>save_by_filename <span class="classifier-delimiter">:</span> <span class="classifier">boolean, default = False</span></dt>
+<dd><p class="first last">When true, results are seperated into different files based on the original filename of the sequences uploaded to the database. For example, if R1/R2 files from MIseq were uploaded, this
+function will seperate sequences based on either R1/R2 file location.</p>
+</dd>
+<dt>save_by_exp_name <span class="classifier-delimiter">:</span> <span class="classifier">boolean, default = False</span></dt>
+<dd><p class="first last">When true, results are seperated into different files based on their respective experiment name</p>
+</dd>
+<dt>include_header_row <span class="classifier-delimiter">:</span> <span class="classifier">boolean, default = False</span></dt>
+<dd><p class="first last">When true, a header row, prepended by &#8216;#&#8217;, is output to the top of each created file. All field names defined by header_var are reported in this line</p>
+</dd>
+<dt>null_quality <span class="classifier-delimiter">:</span> <span class="classifier">char or integer, default = 40</span></dt>
+<dd><p class="first last">This is used for documents that do not have fields for the sequence quality score.
+For example if sequences from a FASTA file were inserted into the database, then they have no quality information. So when saving these sequences as a FASTQ file,
+we will use this null_quality value as the default value of quality for each base. i.e. when null_quality is 40, the quality information wil be &#8216;)&#8217; for each sequence. (<a class="reference external" href="mailto:'&#37;&#52;&#48;ACTGG">'<span>&#64;</span>ACTGG</a>&#8216; will be have quality &#8216;)))))&#8217;)</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The field corresponding to the sequencey_key and the &#8216;QUALITY_SCORE&#8217; field will always be removed from the header_var variable</p>
+</div>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.save_as_flatjson">
+<tt class="descname">save_as_flatjson</tt><big>(</big><em>prefix_file_path=None</em>, <em>file_ext='json'</em>, <em>convert_values_to_strings=False</em>, <em>split_results_by=[]</em>, <em>save_by_filename=False</em>, <em>save_by_exp_name=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.save_as_flatjson"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.save_as_flatjson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports the results of a query to a FLAT JSON document
+Once this function is called, the query cursor will be exhausted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>prefix_file_path</strong> : string , default=None</p>
+<blockquote>
+<div><p>All exported files will start with this path. The prefix should also include parent folder paths (i.e scratch/query/myquery)
+If None, then function will default prefix as, &#8216;current folder/&#8217;+default_query_name</p>
+</div></blockquote>
+<p><strong>file_ext</strong> : string, default=&#8217;txt&#8217;</p>
+<blockquote>
+<div><p>Save files using this extension</p>
+</div></blockquote>
+<p><strong>convert_values_to_strings</strong> : boolean, default=False</p>
+<blockquote>
+<div><p>When True, all values in from a document query will be converted to strings. For example fields contaning lists (i.e. VREGION.VGENES) will be come strings using &#8216;,&#8217;.join(list)
+When False, datatypes are maintained</p>
+</div></blockquote>
+<p><strong>split_results_by</strong> : list of strings, default = []</p>
+<blockquote>
+<div><p>This variable defines how to seperate results into multiple files by specific field names. For example, if you wanted each file to only include sequences with
+a unique CDR3 AA sequence, you would set split_results_by = [&#8216;CDR3.AA&#8217;]. In this sitation, each new CDR3 instance would create a new file with the path: filepath+&#8217;.&#8217;+cdr3_name</p>
+</div></blockquote>
+<p><strong>save_by_filename</strong> : boolean, default = False</p>
+<blockquote>
+<div><p>When true, results are seperated into different files based on the original filename of the sequences uploaded to the database. For example, if R1/R2 files from MIseq were uploaded, this
+function will seperate sequences based on either R1/R2 file location.</p>
+</div></blockquote>
+<p><strong>save_by_exp_name</strong> : boolean, default = False</p>
+<blockquote class="last">
+<div><p>When true, results are seperated into different files based on their respective experiment name</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.save_as_json">
+<tt class="descname">save_as_json</tt><big>(</big><em>prefix_file_path=None</em>, <em>file_ext='json'</em>, <em>split_results_by=[]</em>, <em>save_by_filename=False</em>, <em>save_by_exp_name=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.save_as_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.save_as_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports the results of a query as JSON. JSON dumps on all documents.
+Once this function is called, the query cursor will be exhausted.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Because dumps using json is faster than dumps using bson, all ObjectId values will be converted to a string</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>prefix_file_path</strong> : string , default=None</p>
+<blockquote>
+<div><p>All exported files will start with this path. The prefix should also include parent folder paths (i.e scratch/query/myquery)
+If None, then function will default prefix as, &#8216;current folder/&#8217;+default_query_name</p>
+</div></blockquote>
+<p><strong>file_ext</strong> : string, default=&#8217;txt&#8217;</p>
+<blockquote>
+<div><p>Save files using this extension</p>
+</div></blockquote>
+<p><strong>split_results_by</strong> : list of strings, default = []</p>
+<blockquote>
+<div><p>This variable defines how to seperate results into multiple files by specific field names. For example, if you wanted each file to only include sequences with
+a unique CDR3 AA sequence, you would set split_results_by = [&#8216;CDR3.AA&#8217;]. In this sitation, each new CDR3 instance would create a new file with the path: filepath+&#8217;.&#8217;+cdr3_name</p>
+</div></blockquote>
+<p><strong>save_by_filename</strong> : boolean, default = False</p>
+<blockquote>
+<div><p>When true, results are seperated into different files based on the original filename of the sequences uploaded to the database. For example, if R1/R2 files from MIseq were uploaded, this
+function will seperate sequences based on either R1/R2 file location.</p>
+</div></blockquote>
+<p><strong>save_by_exp_name</strong> : boolean, default = False</p>
+<blockquote class="last">
+<div><p>When true, results are seperated into different files based on their respective experiment name</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.save_as_tab">
+<tt class="descname">save_as_tab</tt><big>(</big><em>prefix_file_path=None</em>, <em>file_ext='txt'</em>, <em>header_var=[]</em>, <em>keep_all_info=False</em>, <em>split_results_by=[]</em>, <em>save_by_filename=False</em>, <em>save_by_exp_name=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.save_as_tab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.save_as_tab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports the results of a query to a TAB delimited file. Once this function is called, the query cursor will be exhausted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>prefix_file_path</strong> : string , default=None</p>
+<blockquote>
+<div><p>All exported files will start with this path. The prefix should also include parent folder paths (i.e scratch/query/myquery)
+If None, then function will default prefix as, &#8216;current folder/&#8217;+default_query_name</p>
+</div></blockquote>
+<p><strong>file_ext</strong> : string, default=&#8217;txt&#8217;</p>
+<blockquote>
+<div><p>Save files using this extension</p>
+</div></blockquote>
+<p><strong>header_var</strong> : list of strings, dict, or list of tuples default = []</p>
+<blockquote>
+<div><p>This variable allows user to manually define exactly how they want fields to appear in the delimited file.
+When format is a list of strings: Fields will appear in order based on the list of strings. i.e. [&#8216;SEQUENCE&#8217;,&#8217;SEQUENCE_HEADER&#8217;]
+When format is a dict: Fields will be renamed based on key value pairs where key is field name and value is new field name. i.e. {&#8216;SEQUENCE&#8217;:&#8217;raw read&#8217;,&#8217;SEQUENCE_HEADER&#8217;:&#8217;miseqread&#8217;}
+When format is a list of tuples: Fields will appear in order based on list, and also be renamed based on (fieldname, new field name). i.e. [(&#8216;SEQUENCE_HEADER&#8217;,&#8217;miseqread&#8217;),(&#8216;SEQUENCE&#8217;,&#8217;raw read&#8217;)]</p>
+</div></blockquote>
+<p><strong>keep_all_info</strong> : boolean, default = False</p>
+<blockquote>
+<div><p>This variable defines whether to report all results from a query/projection or only report those fields defined in the variable &#8216;header_var&#8217;.
+If False, then only those fields explicitly reported by &#8216;header_var&#8217; will appear in the file. If True, then all fields not included in &#8216;header_var&#8217; will
+appear afterwards in the order defined by &#8216;default_sorting_order&#8217;</p>
+</div></blockquote>
+<p><strong>split_results_by</strong> : list of strings, default = []</p>
+<blockquote>
+<div><p>This variable defines how to seperate results into multiple files by specific field names. For example, if you wanted each file to only include sequences with
+a unique CDR3 AA sequence, you would set split_results_by = [&#8216;CDR3.AA&#8217;]. In this sitation, each new CDR3 instance would create a new file with the path: filepath+&#8217;.&#8217;+cdr3_name</p>
+</div></blockquote>
+<p><strong>save_by_filename</strong> : boolean, default = False</p>
+<blockquote>
+<div><p>When true, results are seperated into different files based on the original filename of the sequences uploaded to the database. For example, if R1/R2 files from MIseq were uploaded, this
+function will seperate sequences based on either R1/R2 file location.</p>
+</div></blockquote>
+<p><strong>save_by_exp_name</strong> : boolean, default = False</p>
+<blockquote class="last">
+<div><p>When true, results are seperated into different files based on their respective experiment name</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.skip">
+<tt class="descname">skip</tt><big>(</big><em>num_skip</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.skip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.skip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Skips the first set of documents in a query</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>num_skip</strong> : integer</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="immunogrep_db_query_api.RunQuery.sort">
+<tt class="descname">sort</tt><big>(</big><em>sort_tuples</em><big>)</big><a class="reference internal" href="_modules/immunogrep_db_query_api.html#RunQuery.sort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_db_query_api.RunQuery.sort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sorts documents in a query by a set of tuples</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>sort_tuples</strong> : list of tuples</p>
+<blockquote>
+<div><p>A list of (key, direction) pairs specifying the sort order for this query.
+Direction is 1 for ascending or -1 for descending (or pymongo.ascending/descending)</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">self</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Antibody Database</a><ul>
+<li><a class="reference internal" href="#queries">Queries</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="VHVLPairing.html"
+                        title="previous chapter">VH-VL Pairing</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/ABDatabase.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="VHVLPairing.html" title="VH-VL Pairing"
+             >previous</a> |</li>
+        <li><a href="index.html">IGREP 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Costas.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

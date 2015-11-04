@@ -1546,7 +1546,7 @@ def WriteSummaryFile(annotated_file_paths,total_seqs,passed_filter,no_result,no_
 
 
 
-def RunPairing(annotated_file_paths,analysis_method,output_folder_path='',prefix_output_files='', annotated_file_formats=None,field_names=None,cluster_cutoff = [0.96,0.96,0],annotation_cluster_setting=None,use_low_memory = False,files_from_igrep_database=False,productivity_function=None):
+def RunPairing(annotated_file_paths,analysis_method,output_folder_path='',prefix_output_files='', annotated_file_formats=None,field_names=None,cluster_cutoff = [0.96,0.96,0],annotation_cluster_setting=None,use_low_memory = True,files_from_igrep_database=False,productivity_function=None):
 	"""
 		
 		Brief Description 

@@ -1,0 +1,547 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Useful Functions &mdash; IGREP 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="IGREP 1.0.0 documentation" href="index.html" />
+    <link rel="prev" title="Global Variables" href="Variables.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Variables.html" title="Global Variables"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">IGREP 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="useful-functions">
+<span id="functions"></span><h1>Useful Functions<a class="headerlink" href="#useful-functions" title="Permalink to this headline">¶</a></h1>
+<p>Here is a list of Functions used in Immunogrep.</p>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt><a class="reference internal" href="#insidefunc"><em>Functions</em></a></dt>
+<dd><ul class="first last simple">
+<li><a class="reference internal" href="#immunogrep_useful_functions.LoopStatus" title="immunogrep_useful_functions.LoopStatus"><tt class="xref py py-func docutils literal"><span class="pre">LoopStatus()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.LoopStatusGen" title="immunogrep_useful_functions.LoopStatusGen"><tt class="xref py py-func docutils literal"><span class="pre">LoopStatusGen()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.RemoveObjId" title="immunogrep_useful_functions.RemoveObjId"><tt class="xref py py-func docutils literal"><span class="pre">RemoveObjId()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.Reverse_Complement" title="immunogrep_useful_functions.Reverse_Complement"><tt class="xref py py-func docutils literal"><span class="pre">Reverse_Complement()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.Write_Single_Field" title="immunogrep_useful_functions.Write_Single_Field"><tt class="xref py py-func docutils literal"><span class="pre">Write_Single_Field()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.count_sorted_seqs" title="immunogrep_useful_functions.count_sorted_seqs"><tt class="xref py py-func docutils literal"><span class="pre">count_sorted_seqs()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.count_unique_values" title="immunogrep_useful_functions.count_unique_values"><tt class="xref py py-func docutils literal"><span class="pre">count_unique_values()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.divideEmptyAndNonEmptyVals" title="immunogrep_useful_functions.divideEmptyAndNonEmptyVals"><tt class="xref py py-func docutils literal"><span class="pre">divideEmptyAndNonEmptyVals()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.fieldsForAnnotatingAb" title="immunogrep_useful_functions.fieldsForAnnotatingAb"><tt class="xref py py-func docutils literal"><span class="pre">fieldsForAnnotatingAb()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.file_line_count" title="immunogrep_useful_functions.file_line_count"><tt class="xref py py-func docutils literal"><span class="pre">file_line_count()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.flatten_dictionary" title="immunogrep_useful_functions.flatten_dictionary"><tt class="xref py py-func docutils literal"><span class="pre">flatten_dictionary()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.get_stdout" title="immunogrep_useful_functions.get_stdout"><tt class="xref py py-func docutils literal"><span class="pre">get_stdout()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.merge_multiple_files" title="immunogrep_useful_functions.merge_multiple_files"><tt class="xref py py-func docutils literal"><span class="pre">merge_multiple_files()</span></tt></a></li>
+<li><tt class="xref py py-func docutils literal"><span class="pre">print_error()</span></tt></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.removeEmptyVals" title="immunogrep_useful_functions.removeEmptyVals"><tt class="xref py py-func docutils literal"><span class="pre">removeEmptyVals()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.removeFileExtension" title="immunogrep_useful_functions.removeFileExtension"><tt class="xref py py-func docutils literal"><span class="pre">removeFileExtension()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.removeNoneVals" title="immunogrep_useful_functions.removeNoneVals"><tt class="xref py py-func docutils literal"><span class="pre">removeNoneVals()</span></tt></a></li>
+<li><a class="reference internal" href="#immunogrep_useful_functions.split_files_by_seq" title="immunogrep_useful_functions.split_files_by_seq"><tt class="xref py py-func docutils literal"><span class="pre">split_files_by_seq()</span></tt></a></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="insidefunc">
+<span id="id1"></span><h2>Functions<a class="headerlink" href="#insidefunc" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-immunogrep_useful_functions"></span><dl class="class">
+<dt id="immunogrep_useful_functions.DotAccessible">
+<em class="property">class </em><tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">DotAccessible</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#DotAccessible"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.DotAccessible" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dictionary that allows dot notation for accessing nested subdictionaries. Code [inspired-by/copied-from]:
+<a class="reference external" href="http://www.velvetcache.org/2012/03/13/addressing-nested-dictionaries-in-python">http://www.velvetcache.org/2012/03/13/addressing-nested-dictionaries-in-python</a>
+<a class="reference external" href="http://stackoverflow.com/questions/3387691/python-how-to-perfectly-override-a-dict">http://stackoverflow.com/questions/3387691/python-how-to-perfectly-override-a-dict</a>
+<a class="reference external" href="http://docs.python.org/2/library/collections.html#collections-abstract-base-classes">http://docs.python.org/2/library/collections.html#collections-abstract-base-classes</a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">clear</span></tt>(()&nbsp;-&gt;&nbsp;None.&nbsp;&nbsp;Remove&nbsp;all&nbsp;items&nbsp;from&nbsp;D.)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">get</span></tt>((k[,d])&nbsp;-&gt;&nbsp;D[k]&nbsp;if&nbsp;k&nbsp;in&nbsp;D,&nbsp;...)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">items</span></tt>(()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D&#8217;s&nbsp;(key,&nbsp;value)&nbsp;pairs,&nbsp;...)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iteritems</span></tt>(()&nbsp;-&gt;&nbsp;an&nbsp;iterator&nbsp;over&nbsp;the&nbsp;(key,&nbsp;...)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">iterkeys</span></tt>(()&nbsp;-&gt;&nbsp;an&nbsp;iterator&nbsp;over&nbsp;the&nbsp;keys&nbsp;of&nbsp;D)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">itervalues</span></tt>(...)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">keys</span></tt>(()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D&#8217;s&nbsp;keys)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">pop</span></tt>((k[,d])&nbsp;-&gt;&nbsp;v,&nbsp;...)</td>
+<td>If key is not found, d is returned if given, otherwise KeyError is raised.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">popitem</span></tt>(()&nbsp;-&gt;&nbsp;(k,&nbsp;v),&nbsp;...)</td>
+<td>as a 2-tuple; but raise KeyError if D is empty.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">setdefault</span></tt>((k[,d])&nbsp;-&gt;&nbsp;D.get(k,d),&nbsp;...)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt>(([E,&nbsp;...)</td>
+<td>If E present and has a .keys() method, does:     for k in E: D[k] = E[k]</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">values</span></tt>(()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D&#8217;s&nbsp;values)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.LoopStatus">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">LoopStatus</tt><big>(</big><em>counter</em>, <em>totalSeq</em>, <em>perIndicate</em>, <em>startPer</em>, <em>div=''</em>, <em>addedInfo=None</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#LoopStatus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.LoopStatus" title="Permalink to this definition">¶</a></dt>
+<dd><p>counter of the current status of a process. (i.e. percent done)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.LoopStatusGen">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">LoopStatusGen</tt><big>(</big><em>totalSeq</em>, <em>perIndicate</em>, <em>addedInfo=None</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#LoopStatusGen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.LoopStatusGen" title="Permalink to this definition">¶</a></dt>
+<dd><p>counter of the current status of a process.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">this function uses generator instead</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#immunogrep_useful_functions.LoopStatus" title="immunogrep_useful_functions.LoopStatus"><tt class="xref py py-func docutils literal"><span class="pre">LoopStatus()</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.RemoveObjId">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">RemoveObjId</tt><big>(</big><em>document</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#RemoveObjId"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.RemoveObjId" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function will recursively search all the values of a document/dictionary. Any value in the dictionary whose type is equal to a MongoDB ObjectId will be converted to a string.</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Input</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>document</td>
+<td>A nested or flattened dictionary; or similarly a document returned by MongoDB</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.Reverse_Complement">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">Reverse_Complement</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#Reverse_Complement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.Reverse_Complement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in sequence x and returns its complement (?)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.Write_Single_Field">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">Write_Single_Field</tt><big>(</big><em>filename=None</em>, <em>outfile_location=None</em>, <em>field=None</em>, <em>count_field=None</em>, <em>file_format=None</em>, <em>contains_header=True</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#Write_Single_Field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.Write_Single_Field" title="Permalink to this definition">¶</a></dt>
+<dd><p>This will extract a specific field from a file and write it to the output file as a single column (without a header.)
+If <em>count_field</em> = None, then we assume there are no counts associated with the field of interest.
+If <em>count_field</em> =! None, then we assume that column refers to the number of counts a sequence has occurred</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.count_sorted_seqs">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">count_sorted_seqs</tt><big>(</big><em>input_file_name</em>, <em>output_file_name</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#count_sorted_seqs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.count_sorted_seqs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Counts the occurances of a sequence in a file. Takes a few assumptions into account.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Assumptions:</th><td class="field-body"><ul class="first last simple">
+<li>Sequences are sorted alphabetically</li>
+<li>tab delimited file</li>
+<li>column 1 = sequence of interest</li>
+<li>column 2 = counts for that sequence</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.count_unique_values">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">count_unique_values</tt><big>(</big><em>filelocation=None</em>, <em>output_filelocation=None</em>, <em>field=None</em>, <em>count_field=None</em>, <em>file_format=None</em>, <em>contains_header=True</em>, <em>delete_intermediate_file=True</em>, <em>mem_safe=False</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#count_unique_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.count_unique_values" title="Permalink to this definition">¶</a></dt>
+<dd><table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Input</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>filelocation</td>
+<td>location of file</td>
+</tr>
+<tr class="row-odd"><td>field</td>
+<td>name of the column/field in the file that you want to read</td>
+</tr>
+<tr class="row-even"><td>file_format</td>
+<td>JSON/TAB/CSV/etc.</td>
+</tr>
+<tr class="row-odd"><td>contains_header</td>
+<td>whether or not the file contains a header row</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.divideEmptyAndNonEmptyVals">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">divideEmptyAndNonEmptyVals</tt><big>(</big><em>myDict</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#divideEmptyAndNonEmptyVals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.divideEmptyAndNonEmptyVals" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a cleanup function that removes any unused fields.
+This will iterate the sequence document and remove any subdocuments or fields that have &#8220;None&#8221; values, empty strings or empty lists.
+Fields that are empty are returned as a second variable.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="28%" />
+<col width="72%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Input</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>myDict</td>
+<td>An already flattened dictionary</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This method assumes that the dictionary is in dot notation. i.e. not a nested dictionary</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.fieldsForAnnotatingAb">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">fieldsForAnnotatingAb</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#fieldsForAnnotatingAb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.fieldsForAnnotatingAb" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.file_line_count">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">file_line_count</tt><big>(</big><em>filepath</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#file_line_count"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.file_line_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a file path as input. Returns the number of lines in the file using wc -l</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If path is not found, raises an error</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.flatten_dictionary">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">flatten_dictionary</tt><big>(</big><em>d</em>, <em>val={}</em>, <em>p=''</em>, <em>start=True</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#flatten_dictionary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.flatten_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function recursively flattens dictionaries.
+All values in the dictionary that are found to be nested subdictionaries will be converted to keys containing &#8216;.&#8217;
+This is very useful for moving all keys in a dictionary to the top level rather than having to access each subkey</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="27%" />
+<col width="73%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Input</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>d</td>
+<td>A nested dictionary of key:values</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>See example below:</p>
+<div class="highlight-python"><div class="highlight"><pre>Imagine a dictionary is passed as such
+        d = {
+                &#39;a&#39;:{&#39;hello&#39;:5,
+                        &#39;world&#39;:10}
+                &#39;ok&#39;:10
+        }
+Running flatten_dictionary on this function will produce the following
+d = {
+        &#39;a.hello&#39;:5,
+        &#39;a.world&#39;:10,
+        &#39;ok&#39;:10,
+}
+So rather than accesssing d[&#39;a&#39;][&#39;hello&#39;], We access d[&#39;a.hello&#39;]
+</pre></div>
+</div>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">Please refer to the function,DotAccessible, to perform the opposite of this function: Convert a flattened dictionary into a nested dictionary</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.get_parent_dir">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">get_parent_dir</tt><big>(</big><em>path</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#get_parent_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.get_parent_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses os.path to return the parent directory of a file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.get_stdout">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">get_stdout</tt><big>(</big><em>bash_command</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#get_stdout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.get_stdout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Python wrapper for running python subprocess.call function
+Returns the output from command</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.merge_multiple_files">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">merge_multiple_files</tt><big>(</big><em>file_list</em>, <em>num_header_lines=1</em>, <em>outfile=None</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#merge_multiple_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.merge_multiple_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs an awk script for merging results from multiple files</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="9%" />
+<col width="91%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Input</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>file_list</td>
+<td>A list of strings corresponding to the path of all files to merge</td>
+</tr>
+<tr class="row-odd"><td>num_header_lines</td>
+<td>The number of lines (x) in each file that correspond to a header row. When, FNR!=NR the first x lines are ignored. In other words only the first x lines from the first file are copied to the new file.</td>
+</tr>
+<tr class="row-even"><td>outfile</td>
+<td>The location of the output file (optional). When empty it defaults to the first input file +&#8217;.merged&#8217;</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.print_error_string">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">print_error_string</tt><big>(</big><em>e=None</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#print_error_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.print_error_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints an error message if system/program fails.
+Uses traceback to report the last line and module where error occurred</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises code:</th><td class="field-body"><dl class="docutils">
+<dt>if not(e):</dt>
+<dd>e = &#8220;Exception error not passed&#8221;</dd>
+<dt>else:</dt>
+<dd>print there was an error: str(e)</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.removeEmptyVals">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">removeEmptyVals</tt><big>(</big><em>myDict</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#removeEmptyVals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.removeEmptyVals" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is a cleanup function to remove any unused fields
+this will iterate the sequence document/dictionary and remove any subdocuments or fields that have &#8220;None&#8221; or empty string or empty array/dict values</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="28%" />
+<col width="72%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Input</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>myDict</td>
+<td>A python dictionary of keys/values</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.removeFileExtension">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">removeFileExtension</tt><big>(</big><em>stringFileName</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#removeFileExtension"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.removeFileExtension" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes File Extension</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.removeNoneVals">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">removeNoneVals</tt><big>(</big><em>myDict</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#removeNoneVals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.removeNoneVals" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is a cleanup function to remove any unused fields
+this will iterate the sequence document/dictionary and remove any subdocuments or fields that have &#8220;None&#8221; only</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="31%" />
+<col width="69%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Input</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>myDict</td>
+<td>A python dictionary of keys/values</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="immunogrep_useful_functions.split_files_by_seq">
+<tt class="descclassname">immunogrep_useful_functions.</tt><tt class="descname">split_files_by_seq</tt><big>(</big><em>filepath</em>, <em>num_files_to_make</em>, <em>number_lines_per_seq</em>, <em>contains_header_row</em><big>)</big><a class="reference internal" href="_modules/immunogrep_useful_functions.html#split_files_by_seq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#immunogrep_useful_functions.split_files_by_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is used for splitting a single file into multiple little files. This will be useful for multithreading purposes.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">First make sure files do not start with any documentation fields</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>filepath</strong> : string</p>
+<blockquote>
+<div><p>Location of the input file</p>
+</div></blockquote>
+<p><strong>num_files_to_make</strong> : int</p>
+<blockquote>
+<div><p>Defines the number of smaller files you want to create</p>
+</div></blockquote>
+<p><strong>number_lines_per_seq</strong> : int</p>
+<blockquote>
+<div><p>Defines the number of lines that correspond to a single sequence
+i.e. fastq files = 4 &amp; fasta files = 2</p>
+</div></blockquote>
+<p><strong>contains_header_row</strong> : boolean</p>
+<blockquote>
+<div><p>Defines whether or not the input file contains a header row (i.e. CSV or TAB files)</p>
+</div></blockquote>
+<p><strong>.. important::</strong></p>
+<blockquote class="last">
+<div><p>We cannot just use the split command, instead we have to use awk command. This is because we need to copy header lines and IGREP documentation lines to each split file.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<p><a class="reference internal" href="#functions"><em>^To top</em></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Useful Functions</a><ul>
+<li><a class="reference internal" href="#contents">Contents</a></li>
+<li><a class="reference internal" href="#insidefunc">Functions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Variables.html"
+                        title="previous chapter">Global Variables</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/Functions.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Variables.html" title="Global Variables"
+             >previous</a> |</li>
+        <li><a href="index.html">IGREP 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Costas.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

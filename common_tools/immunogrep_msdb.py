@@ -28,7 +28,7 @@ from immunogrep_global_variables import descriptor_symbol as comment_line
 allowed_file_formats = ['TAB', 'CSV', 'JSON', 'IMGT']
 # Order in which fields should appear in the FASTA file. Any fields not defined here will appear afterwards as optional fields
 # important: the first element in default_order_of_fields will be treated as the 'sequence' in a FASTA file >header\nsequence!!!
-default_order_of_fields = ['ABSEQ.AA', 'RECOMBINATIONTYPE', 'DBIDENTIFIER', 'Clonotype', 'READS', 'TAG', 'VREGION.CDR1.AA', 'VREGION.CDR2.AA', 'CDR3.AA', 'VREGION.VGENES', 'JREGION.JGENES', 'ISOTYPE.GENES']
+default_order_of_fields = ['ABSEQ.AA', 'RECOMBINATIONTYPE', 'DBIDENTIFIER','READS', 'TAG', 'VREGION.CDR1.AA', 'VREGION.CDR2.AA', 'CDR3.AA', 'VREGION.VGENES', 'JREGION.JGENES', 'Clonotype']
 rename_must_be_present = {'CDR1': 'VREGION.CDR1.AA', 'CDR2': 'VREGION.CDR2.AA', 'CDR3': 'CDR3.AA'}
 # variable for determining whether the antibody is heavy or light chain
 chain_call = {
@@ -53,14 +53,10 @@ def default_field_names():
 	default_fields = {
 		'ABSEQ.AA': 'PREDICTED_AB_SEQ.AA',
 		'VREGION.CDR1.AA': 'VREGION.CDR1.AA',
-		'VREGION.CDR2.AA': 'VREGION.CDR2.AA',
+		'VREGION.CDR2.AA': 'VREGION.CDR2.AA',		
 		'CDR3.AA': 'CDR3.AA',
-		'VREGION.SHM.NTPER': 'VREGION.SHM.NT_PER',
-		'JREGION.SHM.NTPER': 'JREGION.SHM.NT_PER',
 		'VREGION.VGENES': 'VREGION.VGENES',
-		'JREGION.JGENES': 'JREGION.JGENES',
-		'RECOMBINATIONTYPE': 'RECOMBINATION_TYPE',
-		'ISOTYPE.GENES': 'ISOTYPE.GENE'
+		'JREGION.JGENES': 'JREGION.JGENES'
 	}
 	return default_fields
 
@@ -146,6 +142,11 @@ def pandas_read_chunks(input_file, filetype, fields, chunks=10000):
 			if not line.startswith(comment_line):
 				break
 			skip_lines += 1
+		tmp = readfile.immunogrepFile(each_file, 'TAB')
+		header_names_in_file = tmp.getDescription()
+		
+		field_names = [f for f in field_names if f in header_names_in_file]
+		tmp.IFclass.close()
 		reader = pd.read_table(each_file, sep=seps[guessed_type], chunksize=chunks, usecols=field_names, dtype=object, skip_blank_lines=True, skiprows=skip_lines)
 	else:
 		# We need to use our class for reading files
@@ -257,7 +258,7 @@ def generate_msdb_file(input_files, filetype=None, output_folder_path=None, dbid
 		if len(dataset_tags) != len(input_files):
 			raise Exception('If defining each dataset using tags, then you must define a tag for each provided input file')
 
-	remove_from_tags = ['\_', '\ ', '\:', '\|', '\,']
+	remove_from_tags = ['\_', '\ ', '\|', '\,']
 	for dn in range(len(dataset_tags)):
 		dataset_tags[dn] = re.sub(re.compile('|'.join(remove_from_tags)), '-', dataset_tags[dn])
 
@@ -318,7 +319,7 @@ def generate_msdb_file(input_files, filetype=None, output_folder_path=None, dbid
 	print('Parsing provided files and generating list of unique sequences')
 	[vdj_df, vj_df, stats] = parse_annotation_files(input_files, filetype, fields, must_be_present, dataset_tags, dbidentifier, use_vl_sequences)
 	if vdj_df is None:
-		print('Problem occurred: there is no VDJ/VH data, please double check input files are proper')
+		print('Problem occurred: there is no VDJ/VH data, please double check input files are proper; Also check the summary file')
 	else:
 		print('Clonotyping heavy chains')
 		clonotype_seqs(vdj_df, cluster_id, prefix + 'msDB.fasta', prefix + 'malGucken.txt', append=False)
@@ -330,7 +331,43 @@ def generate_msdb_file(input_files, filetype=None, output_folder_path=None, dbid
 	write_summary_file(input_files, prefix + 'parsed_summary.txt', stats)
 
 	# CONCATENATE DATABSE FILES
-	
+
+def ProcessGene(gene, noallele=True):
+	"""
+		Removes the allele calls from genes		
+		Assumption: 			
+			Multiple genes are seperated by ',' 			
+			Alleles are seperated by '*' 			
+			If a gene is seperated by multiple spaces, then the gene should be identified by a gene that contains either - or '*' 
+			For example: 
+				Imgt genes may be: 
+					Homo sapiens IGHV1-3*01
+					We only want to isolate the word IGHV1-3
+	"""	
+	if not gene:
+		return ''
+	# extract first genes in field 
+	top_gene = gene.split(',')[0]	
+	# split each gene by spaces. Go through each word
+	split_words  = top_gene.split(' ')	
+	if len(split_words)==1: #there is only one word 
+		g = split_words[0]#.split('*')[0]
+	else:
+		g = ''
+		for subv in split_words:
+			#if we find a word with gene characters in it, it must be our gene 
+			if '*' in subv or '-' in subv:						
+				#extract everything before '*'
+				g = subv
+				
+				break
+	if noallele:
+		top_gene = g.split('*')[0]
+	else:
+		top_gene = g
+	return top_gene
+		
+
 
 def clean(df):
 	'''
@@ -340,12 +377,13 @@ def clean(df):
 	df['ABSEQ.AA'] = df['ABSEQ.AA'].str.replace('_', '')
 	df['CDR3.AA'] = df['CDR3.AA'].str.replace('_', '')
 	# => choose first gene only
-	df['VREGION.VGENES'] = df['VREGION.VGENES'].map(lambda x: x.split(',')[0].split('*')[0])  # because germans dislike regular expressions
-	df['JREGION.JGENES'] = df['JREGION.JGENES'].map(lambda x: x.split(',')[0].split('*')[0])
+
+	df['VREGION.VGENES'] = df['VREGION.VGENES'].map(lambda x: ProcessGene(x) )  # x.split(',')[0].split('*')[0])  # because germans dislike regular expressions
+	df['JREGION.JGENES'] = df['JREGION.JGENES'].map(lambda x: ProcessGene(x, False) )  # x.split(',')[0].split('*')[0])
 	if 'ISOTYPE.GENES' in df.columns:
-		df['ISOTYPE.GENES'] = df['ISOTYPE.GENES'].map(lambda x: x.split(',')[0].split('*')[0])
+		df['ISOTYPE.GENES'] = df['ISOTYPE.GENES'].map(lambda x: ProcessGene(x) )  # x.split(',')[0].split('*')[0])
 	if 'DREGION.DGENES' in df.columns:
-		df['DREGION.DGENES'] = df['DREGION.DGENES'].map(lambda x: x.split(',')[0].split('*')[0])
+		df['DREGION.DGENES'] = df['DREGION.DGENES'].map(lambda x: ProcessGene(x) )  # x.split(',')[0].split('*')[0])
 	return df
 
 
@@ -362,15 +400,15 @@ def determine_recomb(row):
 		jgene = row['JREGION.JGENES']
 		if (vgene and not recomb_type) or (recomb_type != 'VDJ' and recomb_type != 'VJ'):
 			# We need to predict recobmination using vgene
-			if vgene[0][:3] in chain_call['VDJ']:
+			if vgene[:3] in chain_call['VDJ']:
 				recomb_type = 'VDJ'
-			elif vgene[0][:3] in chain_call['VJ']:
+			elif vgene[:3] in chain_call['VJ']:
 				recomb_type = 'VJ'
 		if (jgene and not recomb_type) or (recomb_type != 'VDJ' and recomb_type != 'VJ'):
 			# We need to predict recobmination using jgene
-			if jgene[0][:3] in chain_call['VDJ']:
+			if jgene[:3] in chain_call['VDJ']:
 				recomb_type = 'VDJ'
-			elif jgene[0][:3] in chain_call['VJ']:
+			elif jgene[:3] in chain_call['VJ']:
 				recomb_type = 'VJ'
 	return recomb_type
 
@@ -414,7 +452,7 @@ def filter_dataframe(df, filtered_events, must_be_present):
 		if cdr == 'CDR3.AA':
 			# we already did this filter above
 			continue
-		cdr_bool = cdr_bool & df[cdr] != ''
+		cdr_bool = (cdr_bool) & (df[cdr] != '')
 
 	# Remove rows that are missing required CDRs
 	df = df[cdr_bool]
@@ -533,6 +571,7 @@ def parse_annotation_files(input_files, filetype, fields, must_be_present, datas
 				continue
 			filtered_events['passed_filter'] += len(df)
 			r_counts = df['RECOMBINATIONTYPE'].value_counts()
+
 			if 'VDJ' in r_counts:
 				filtered_events['VDJ'] += r_counts['VDJ']
 			if 'VJ' in r_counts:
@@ -548,6 +587,8 @@ def parse_annotation_files(input_files, filetype, fields, must_be_present, datas
 			if (total_seqs) / 100000 > (total_seqs - chunks) / 100000:
 				print('Processed {0} sequences'.format(total_seqs))
 	print('Merging alldata')
+	if not df_list:
+		return [None, None, filtered_events]
 	df_alldata = merge_all_data(df_list).reset_index()
 	df_alldata['DBIDENTIFIER'] = dbidentifier
 	print('Sortingdata')
@@ -966,19 +1007,3 @@ def group_unique_seqs(filepath, seq_col, tag_col, read_col):
 """
 	
 
-mixcr_trans = {
-	'ABSEQ.AA': 'Full AA',
-	'VREGION.CDR1.AA': "AA. seq. CDR1",
-	'VREGION.CDR2.AA': "AA. seq. CDR2",
-	'CDR3.AA': "AA. seq. CDR3",
-	'VREGION.SHM.NTPER': "VGENE: Shm.per",
-	'JREGION.SHM.NTPER': "JGENE: Shm.per",
-	'VREGION.VGENES': "All V hits",
-	'JREGION.JGENES': "All J hits",
-	'RECOMBINATIONTYPE': 'Recombination Type',
-	'ISOTYPE.GENES': 'All C hits',
-}
-f1 = 'scratch/igrep/Exp_00038_igseq_analysis_2015-10-27_121445/DTRA_Polio_D3173_VAX1605_VHVL.mixcr.annotation'
-
-
-generate_msdb_file([f1, f1], 'TAB', dataset_tags=['A', 'B'], dbidentifier='MS', translate_fields=mixcr_trans, must_be_present=['CDR3'], use_vl_sequences=True, cluster_id=1)

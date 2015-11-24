@@ -1,3 +1,5 @@
+#REFER TO IMMUNOGREP_READFILE VERSION...15 
+
 #~~~~Updated on 6/16/2015 to support reading IMGT files (previous version is 213)~~~#
 
 #~~~~Updated on 5/6/2015 to allow for field names to be custom passed into initialization (previous version is 207)~~~#
@@ -9,7 +11,7 @@ import sys
 import os
 import json
 import re
-import subprocess
+
 try:
 	from Bio import SeqIO
 except:
@@ -18,9 +20,9 @@ except:
 from collections import defaultdict
 
 
-#import immunogrep_useful_functions as useful#import removeNoneVals
-#from immunogrep_useful_functions import fieldsForAnnotatingAb
-#from immunogrep_useful_functions import removeFileExtension
+#import immunogrep_useful_immunogrep_functions as useful#import removeNoneVals
+#from immunogrep_useful_immunogrep_functions import fieldsForAnnotatingAb
+#from immunogrep_useful_immunogrep_functions import removeFileExtension
 
 # +++++++++++++++++++++++++++++
 # +Importing Global variables +
@@ -38,8 +40,8 @@ from immunogrep_global_variables import listofextension
 
 from immunogrep_global_variables import imgt_files_info
 
-
-
+import copy 
+import traceback
 
 # +++++++++++++++++++
 # + File variable   +
@@ -136,28 +138,75 @@ imgt_db_translator = {
 	}
 }
 
-def convert_gglab_format(filepath, translator_tuple_list, filetype=None, output_file_name=None):
+def convert_gglab_format(filepath, translator_tuple_list, filetype=None, output_file_name=None, skip_lines=0):
+	'''
+		This will convert a file provided by a user into a standardized TAB format for our annotated files. 
+		The resulting TAB file field names should match the fields in the database.
+		A list of field names and their values that we use in the database can be found in immunogrep_database_schema module.
+		
+		Parameters
+		----------
+		filepath : string
+			path to the user's file
+		translation_tuple_list : list of tuples
+			Each element in the list represents the column number in the converted file. Each element should be a two-element tuple 
+			where element 0 represents the value the field name will be converted to and element 1 represents the name of the original field in the provided file
+		filetype : string, default None
+			File type of the input file (TAB, CSV, JSON, FASTQ, FASTA)
+		output_file_name : string, default None
+			Path of the output file/converted file. If None, then the filename will be equal to the filepath + '.converted.txt'
+		skip_lines : int, default 0
+			Number of lines to skip before reading input file
+			
+		Returns
+		-------
+		output_file_name
+		
+		Examples
+		--------
+		We have an input JSON file, fileA.json, with the following fields: CDR3, CDR1, CDR2, AASEQ. 
+		We want to convert this file into a TAB format using our standardized keys. We only want the output file to keep AASEQ and CDR3
+		The resulting converted file will be a TAB delimited file with the following header row 'AB_SEQ.AA' and 'CDR3'
+		>>> convert_gglab_format(fileA.json, [('AB_SEQ.AA', 'AASEQ'), ('CDR3.AA', 'CDR3')], 'JSON', output_file_name='converted.txt')
+		
+	'''
+	
 	translator = { val[0] : val[1] for val in translator_tuple_list}
 	fields = [ val[0] for val in translator_tuple_list ]
+	fields_from_file = [ val[1] for val in translator_tuple_list ] 
 	remove_from_aa = ['\_','\.']
 	if not output_file_name:
 		output_file_name = filepath+'.converted.txt'
-	
+
 	with open(output_file_name, 'w') as out:
 		out.write('\t'.join(fields) + '\n')
-		for lines in readfile.immunogrepFile(filepath, filetype).read():
-			lines = defaultdict(lines)
+		for lines in readfile.immunogrepFile(filepath, filetype, field_names=fields_from_file, skip_lines=skip_lines).read():
+			lines = defaultdict(str, lines)
 			if not lines:
-				continue				
-			lines[translator['PREDICTED_AB_SEQ.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['PREDICTED_AB_SEQ.AA']])
-			lines[translator['VREGION.CDR1.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.CDR1.AA']])
-			lines[translator['VREGION.CDR2.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.CDR2.AA']])
-			lines[translator['VREGION.FR1.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR1.AA']])
-			lines[translator['VREGION.FR2.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR2.AA']])
-			lines[translator['VREGION.FR3.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR3.AA']])
-			lines[translator['CDR3.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['CDR3.AA']])
-			lines[translator['VREGION.FR4.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR4.AA']])
-			out.write('\t'.join([str(lines[translator[x]]) for x in fields])
+				continue			
+			if 'PREDICTED_AB_SEQ.AA' in translator:	
+				lines[translator['AB_SEQ.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['AB_SEQ.AA']])
+			if 'VREGION.CDR1.AA' in translator:
+				lines[translator['VREGION.CDR1.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.CDR1.AA']])
+			if 'VREGION.CDR2.AA' in translator:
+				lines[translator['VREGION.CDR2.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.CDR2.AA']])
+			if 'VREGION.FR1.AA' in translator:
+				lines[translator['VREGION.FR1.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR1.AA']])
+			if 'VREGION.FR2.AA' in translator:
+				lines[translator['VREGION.FR2.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR2.AA']])
+			if 'VREGION.FR3.AA' in translator:
+				lines[translator['VREGION.FR3.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['VREGION.FR3.AA']])
+			if 'CDR3.AA' in translator:
+				lines[translator['CDR3.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['CDR3.AA']])
+			if 'JREGION.FR4.AA' in translator:
+				lines[translator['JREGION.FR4.AA']] = re.sub(re.compile('|'.join(remove_from_aa)), '', lines[translator['JREGION.FR4.AA']])
+			if 'VREGION.VGENES' in translator:
+				lines[translator['VREGION.VGENES']] = lines[translator['VREGION.VGENES']].replace(', or',',').replace(' or ',',').replace('(see comment)','')
+			if 'JREGION.JGENES' in translator:
+				lines[translator['JREGION.JGENES']] = lines[translator['JREGION.JGENES']].replace(', or',',').replace(' or ',',').replace('(see comment)','')
+			if 'DREGION.DGENES' in translator:
+				lines[translator['DREGION.DGENES']] = lines[translator['DREGION.DGENES']].replace(', or',',').replace(' or ',',').replace('(see comment)','')
+			out.write('\t'.join([str(lines[translator[x]]) for x in fields])+'\n')
 	return output_file_name
 
 
@@ -192,14 +241,14 @@ def GetAdditionalInfo(header_line):
 	return [header,additional_info]
 
 def find_imgt_file_type_index(filename,important_headers_only=True):
-		filename = os.path.basename(filename)
-		imgt_file_type = filename.strip().split('_')
-		imgt_file_type = '_'.join(imgt_file_type[0:2])	
-		imgt_file = [i+1 for i,a in enumerate(imgt_files_info) if a['Name']==imgt_file_type]
-		if len(imgt_file)>0:
-			return [imgt_file[0],imgt_files_info[imgt_file[0]-1]['Important_Headers']] if important_headers_only else [imgt_file[0],imgt_files_info[imgt_file[0]-1]['Headers']]
-		else:
-			return [None,None]
+	filename = os.path.basename(filename)
+	imgt_file_type = filename.strip().split('_')
+	imgt_file_type = '_'.join(imgt_file_type[0:2])		
+	imgt_file = [i + 1 for i, a in enumerate(imgt_files_info) if imgt_file_type.startswith(a['Name'])]
+	if len(imgt_file)>0:
+		return [imgt_file[0],imgt_files_info[imgt_file[0]-1]['Important_Headers']] if important_headers_only else [imgt_file[0],imgt_files_info[imgt_file[0]-1]['Headers']]
+	else:
+		return [None,None]
 	
 
 #WE ASSUME IMGT FILES ARE LABELED USING IMGT RULES:
@@ -207,8 +256,9 @@ def find_imgt_file_type_index(filename,important_headers_only=True):
 def GroupIMGTFiles(imgt_files):
 	#imgt_files = sorted([str(im_f) for im_f in imgt_files],key=str.lower)	
 	grouped_files = defaultdict(list)
-	for each_file in imgt_files:
+	for each_file in imgt_files:		
 		filenum=find_imgt_file_type_index(each_file)
+
 		if each_file.lower().endswith('.txt') and len(filenum)>0 and filenum[0]!=None:			
 			#take basename of file , split by '_'
 			split_file = os.path.basename(each_file).split('_')
@@ -269,8 +319,9 @@ def ReadIgBlastQueryBlock(f1,igblast_eof = False):
 class immunogrepFile():
 	#the following parameters are ONLY used for IMGT : important_headers_only =True,include_parameters_file=False,required_files=0
 	#the following parameters are ONLY used for DELIM files/TAB/CSV: delimiter=None, contains_header=True
-	def __init__(self,filelocation,filetype=None,decoratorinfo=None,delimiter=None,contains_header=True,mode='r',field_names=[],chunk_size=1,important_headers_only =True,include_parameters_file=False,required_files=0):
-		 
+	def __init__(self,filelocation,filetype=None,decoratorinfo=None,delimiter=None,contains_header=True,mode='r',field_names=[],chunk_size=1,important_headers_only =True,include_parameters_file=False,required_files=0,comment=None, skip_lines=0):
+		
+		field_names = copy.deepcopy(field_names)
 		self.filelocation=filelocation
 		self.decoratorinfo=decoratorinfo
 		self.delimiter=delimiter
@@ -278,6 +329,15 @@ class immunogrepFile():
 		self.mode=mode
 		self.field_names=field_names
 		self.chunk_size=chunk_size
+		self.comment=comment
+		self.skip_lines=skip_lines
+		self.descriptor_search = [descriptor_symbol]
+		if comment:
+			if isinstance(comment, list):
+				self.descriptor_search.extend(comment)
+			else:
+				self.descriptor_search.append(comment)				
+		self.descriptor_search = '|'.join(['^' + c for c in sorted(list(set(self.descriptor_search)), key=len, reverse=True)])
 		
 		if filetype:
 			if filetype.lower() in current_filetypes['FASTA']:
@@ -325,14 +385,14 @@ class immunogrepFile():
 			
 
 		if self.filetype:
-			self.filetypedict={'IMGT':immunogrepIMGT,'FASTA':immunogrepFASTA,'FASTQ':immunogrepFASTQ,'TAB':immunogrepDELIM,'CSV':immunogrepDELIM,'JSON':immunogrepJSON,'DELIM':immunogrepDELIM}						
-			
+			self.filetypedict={'IMGT': immunogrepIMGT,'FASTA': immunogrepFASTA,'FASTQ': immunogrepFASTQ,'TAB': immunogrepDELIM,'CSV': immunogrepDELIM,'JSON': immunogrepJSON,'DELIM': immunogrepDELIM}
 			if self.filetype == 'DELIM' or self.filetype=='CSV' or self.filetype=='TAB':
-				self.IFclass=self.filetypedict[self.filetype](filelocation=self.filelocation,filetype=self.filetype,decoratorinfo=self.decoratorinfo,delimiter=self.delimiter,contains_header=self.contains_header,mode=self.mode,field_names=self.field_names,chunk_size=self.chunk_size)			
+				self.IFclass=self.filetypedict[self.filetype](filelocation=self.filelocation,filetype=self.filetype,decoratorinfo=self.decoratorinfo,delimiter=self.delimiter,contains_header=self.contains_header,mode=self.mode,field_names=self.field_names,chunk_size=self.chunk_size, comment=comment, skip_lines=skip_lines)			
 			elif self.filetype=='IMGT':			
 				self.IFclass=immunogrepIMGT(imgtfiles=self.filelocation,field_names = field_names, chunk_size = chunk_size,important_headers_only=important_headers_only,include_parameters_file=include_parameters_file,required_files=required_files)
 			else:
-				self.IFclass=self.filetypedict[self.filetype](filelocation=self.filelocation,filetype=self.filetype,decoratorinfo=self.decoratorinfo,mode=self.mode,field_names=self.field_names,chunk_size=self.chunk_size)
+				self.IFclass=self.filetypedict[self.filetype](filelocation=self.filelocation,filetype=self.filetype,decoratorinfo=self.decoratorinfo,mode=self.mode,field_names=self.field_names,chunk_size=self.chunk_size,  comment=comment, skip_lines=skip_lines)						
+			self.decoratorinfo=self.IFclass.getDecoratorinfo()
 		else:			
 			self.IFclass=None			
 		
@@ -343,21 +403,14 @@ class immunogrepFile():
 		return self.filetype
 
 	def guessFiletype(self):
-		check = []
+		check = []		
 		fileformat=['FASTA','FASTQ','JSON','TAB','CSV']
-	
 		check.append(self.isFASTA())
-	
 		check.append(self.isFASTQ())
-	
 		check.append(self.isJSON())
-
 		check.append(self.isTAB())
-
 		check.append(self.isCSV())
-		
-		checkcnt=check.count(True)
-		
+		checkcnt=check.count(True)		
 		if check[2] == True:			
 			#if JSON is listed as true, then irespect to other checks and report as JSON 
 			self.filetype=fileformat[2]			
@@ -369,38 +422,44 @@ class immunogrepFile():
 				self.delimiter=","					
 		else:			
 			self.filetype=None
-		
 		return self.filetype
 
-	def getDecoratorinfo(self):
-		if self.isimmunogrepFile() and self.decoratorinfo==None:
+	def getDecoratorinfo(self):		
+		if self.isimmunogrepFile() and self.decoratorinfo is None:						
 			with open(self.filelocation,"r") as f:
-				line=f.readline()
-				if descriptor_symbol in line:
-					try:
-						self.decoratorinfo=json.loads(line[len(descriptor_symbol):].strip().replace("'",'"'))
-					except:
-						self.decoratorinfo={}
+				for _ in range(self.skip_lines):
+					f.readline()				
+				self.decoratorinfo = {}
+				while True:
+					line=f.readline().rstrip('\r\n')				
+					if re.match(self.descriptor_search, line):
+						substr = re.sub(self.descriptor_search, '', line)
+						try:						
+							self.decoratorinfo.update(json.loads(substr))
+						except:
+							pass
+					else:
+						break			
 			return self.decoratorinfo
-		else:
+		else:					
 			return self.decoratorinfo
 
 	def getDescription(self):
 		if self.IFclass:
-			if self.getDecoratorinfo()!=None:
-				if self.getDecoratorinfo()[description_var]:
-					d=self.getDecoratorinfo()[description_var]
+			if self.getDecoratorinfo() is not None:
+				if description_var in self.getDecoratorinfo() and self.getDecoratorinfo()[description_var]:
+					d = self.getDecoratorinfo()[description_var]
 				else:				
-					d=self.IFclass.Extract_Header() 		
+					d = self.IFclass.Extract_Header() 		
 			else:			
-				d=self.IFclass.Extract_Header()
+				d = self.IFclass.Extract_Header()
 			return d
 		else:		
 			return None
 		
 	def getTranslation(self):
-		if self.getDecoratorinfo()!=None:
-			if self.getDecoratorinfo()[translation_var]:
+		if self.getDecoratorinfo() is not None:
+			if translation_var in self.getDecoratorinfo() and self.getDecoratorinfo()[translation_var]:
 				t=self.getDecoratorinfo()[translation_var]
 			else:
 				t=None
@@ -416,75 +475,83 @@ class immunogrepFile():
 		self.filelocation=self.filelocation+'.'+IFExt
 		self.filetype='JSON'
 
-	def isimmunogrepFile(self):
+	def isimmunogrepFile(self):		
 		check=False
-		with open(self.filelocation,"r") as f:
-			line=f.readline().strip()
-			if descriptor_symbol in line:
-				try:
-					json.loads(line[len(descriptor_symbol):].replace("'",'"'))
-					check=True
-				except:
-					check=False
-			else:
-				check=False
-			line=f.readline().strip()
-			try:
-				json.loads(line.replace("'",'"'))
-				check=True
-			except:
-				check=False
-		return check and IFExt in self.filelocation
+		dec_data = ''
+		try:
+			with open(self.filelocation,"r") as f:
+				for _ in range(self.skip_lines):
+					f.readline()							
+				check = False
+				while True:
+					line=f.readline().rstrip('\r\n')
+					if re.match(self.descriptor_search, line):				
+						substr = re.sub(self.descriptor_search, '', line)									
+						try:
+							dec_data = json.loads(substr)
+							check=True												
+						except:
+							continue
+					else:										
+						break								
+			return check
+		except:
+			return False
 
 	def isFASTA(self):
 		check=False
+		
+		preview_lines = 100
+		temp_file = self.filelocation+'__temp__'						
 		try:
-			preview_lines = 100
-			temp_file = self.filelocation+'__temp__'
-			bash_command = 'head -{0} "{1}" > "{2}" '.format(preview_lines,self.filelocation,temp_file)
-			subprocess.call(bash_command,shell=True)
-			#os.system(bash_command)
-			with open(temp_file,"r") as f:			
-				line=f.readline()
-				
-				if line.startswith(descriptor_symbol):
-					line=f.readline()				
-				else:				
-					f.seek(0,0)			
-					
+			with open(temp_file, 'w') as out:
+				with open(self.filelocation) as f:
+					for _ in range(self.skip_lines):
+						f.readline()
+					l=0
+					while l<preview_lines:
+						line = f.readline()
+						if re.match(self.descriptor_search, line):
+							continue			
+						l+=1
+						out.write(line.rstrip('\r\n')+'\n')				
+			with open(temp_file,"r") as f:							
 				g=SeqIO.parse(f,"fasta")
-									
 				try:
 					g.next()
 					check=True
 				except:	
 					check=False
-			os.remove(temp_file)#os.system('rm "{0}"'.format(temp_file))
+			os.remove(temp_file)
 			return check
 		except:
 			return False
 		
+		
 	def isFASTQ(self):
-		check=False
+		check=False		
+		preview_lines = 100
+		temp_file = self.filelocation+'__temp__'		
 		try:
-			preview_lines = 100
-			temp_file = self.filelocation+'__temp__'
-			bash_command = 'head -{0} "{1}" > "{2}" '.format(preview_lines,self.filelocation,temp_file)
-			#os.system(bash_command)
-			subprocess.call(bash_command,shell=True)
-			with open(temp_file,"r") as f:
-				line=f.readline()
-				if line.startswith(descriptor_symbol):
-					line=f.readline()
-				else:
-					f.seek(0,0)
-				g=SeqIO.parse(f,"fastq")
+			with open(temp_file, 'w') as out:
+				with open(self.filelocation) as f:
+					for _ in range(self.skip_lines):
+						f.readline()
+					l=0
+					while l<preview_lines:
+						line = f.readline()
+						if re.match(self.descriptor_search, line):
+							continue						
+						l += 1
+						out.write(line.rstrip('\r\n') + '\n')				
+				
+			with open(temp_file,"r") as f:			
+				g=SeqIO.parse(f,"fastq")			
 				try:
 					g.next()
 					check=True
-				except:
+				except:	
 					check=False
-			#os.system('rm "{0}"'.format(temp_file))
 			os.remove(temp_file)
 			return check
 		except:
@@ -493,21 +560,22 @@ class immunogrepFile():
 	# Note: Must be a block delimited file format; jaggered delimited file format is considered invalid
 	def isDelim(self,delimiter):
 		check=False
-		chkcnt=[]
-		
+		chkcnt=[]		
+		l=0
 		try:
 			with open(self.filelocation,"r") as f:
-				line=f.readline().strip('\r\n')
-				if descriptor_symbol in line:
-					line=f.readline().strip('\r\n')
-				else:
-					f.seek(0,0)
-				for i in range(num_line_search):
-					if line=='':						
-						break									
+				for _ in range(self.skip_lines):
+					f.readline()									
+				while l<num_line_search:					
+					line=f.readline().rstrip('\r\n')
+					if re.match(self.descriptor_search, line):					
+						continue					
+					l+=1
+					if not line:						
+						continue					
 					chkcnt.append(line.count(delimiter))
-					line=f.readline().strip('\r\n')
-	
+					line=f.readline().rstrip('\r\n')
+						
 			unique_chckcnt = set(chkcnt)
 			if len(unique_chckcnt) == 1 and list(unique_chckcnt)[0]!=0:
 				check=True
@@ -527,18 +595,19 @@ class immunogrepFile():
 
 	def isJSON(self):
 		check=True
-		chkcnt=0
+		chkcnt=0		
+		l=0
 		try:
 			with open(self.filelocation,"r") as f:
-				line=f.readline().strip()
-				if descriptor_symbol in line:
-					line=f.readline().strip()
-				else:
-					f.seek(0,0)
-				for i in range(num_line_search):
-					line=f.readline().strip()
-					if line=='':
-						break
+				for _ in range(self.skip_lines):
+					f.readline()
+				while l<num_line_search:
+					line = f.readline().strip()				
+					if re.match(self.descriptor_search, line):					
+						continue
+					l+=1																		
+					if not line:
+						continue
 					try:
 						json.loads(line)
 					except:
@@ -546,7 +615,8 @@ class immunogrepFile():
 			return check
 		except:
 			return False
-
+	
+	"""
 	def convert2FASTA(self,headervar,sequencevar,keepinfo=False):
 		if self.filetype=='JSON':
 			with open(self.filelocation+'.fna',"w") as fout:
@@ -684,10 +754,21 @@ class immunogrepFile():
 							fout.write("%s\n"%label)
 		self.filelocation=self.filelocation+'.csv'
 		self.filetype='CSV'
+	"""
 
-	#generator constructor for simple file reading
-	#dummy_var=>I had to call immunogrepfile.read() in a function , but that function assumed there had to be a parameter passed into read function. So I set a dummy_var that never gets Used
+		
 	def read(self,dummy_var=None):
+		"""
+			Generator constructor for simple file reading
+			EXample:
+			>>>fileA = immunogrepFile(filepath)
+			>>>for line in fileA.read()
+			...	print line
+			
+			..important::dummy_var
+				This parameter should never be used or defined. It is simply a place-holder
+		"""
+		# dummy_var=>I had to call immunogrepfile.read() in a function , but that function assumed there had to be a parameter passed into read function. So I set a dummy_var that never gets Used
 		if self.IFclass == None:
 			return
 		while not(self.IFclass.eof):		
@@ -695,87 +776,107 @@ class immunogrepFile():
 			if line_data:
 				yield line_data
 
-	def __str__(self):
-		return "Please refer to http://bigg.icmb.utexas.edu:5000/immunogrepFile/ for Manual."
+		def __str__(self):
+			return "Please refer to http://bigg.icmb.utexas.edu:5000/immunogrepFile/ for Manual."
 
 
 class immunogrepFASTA():
-	def __init__(self,filelocation,filetype,decoratorinfo=FASTAdecoratorinfo,contains_header=False,mode='r',field_names=[],chunk_size=1):
+	def __init__(self,filelocation,filetype,decoratorinfo=FASTAdecoratorinfo,contains_header=False,mode='r',field_names=[],chunk_size=1, comment=None, skip_lines=0):
 		self.filelocation=filelocation
 		fasta_file_comment = "#" #standard comment for all fastafiles
 		self.filetype=filetype
 		self.field_names=field_names
 		self.chunk_size=chunk_size
 		self.contains_header = False
-		if decoratorinfo==None:
+		self.descriptor_search = [descriptor_symbol, fasta_file_comment]
+		if comment:
+			if isinstance(comment, list):
+				self.descriptor_search.extend(comment)
+			else:
+				self.descriptor_search.append(comment)		
+		self.descriptor_search = '|'.join(['^' + c for c in sorted(list(set(self.descriptor_search)), key=len, reverse=True)])
+		self.skip_lines=skip_lines
+		if decoratorinfo is None:
+			self.decoratorinfo={}
 			with open(self.filelocation,"r") as f:
-				tmpline=f.readline().strip()
-				if descriptor_symbol in tmpline:
-					try:
-						self.decoratorinfo=json.loads(tmpline[len(descriptor_symbol):].replace("'",'"'))
-					except:
-						self.decoratorinfo={}
-				else:
-					self.decoratorinfo=FASTAdecoratorinfo
+				for _ in range(skip_lines):
+					f.readline()
+				l=0				
+				while True:				
+					line=f.readline().strip()
+					if re.match(self.descriptor_search, line):
+						substr = re.sub(self.descriptor_search, '', line)
+						try:
+							self.decoratorinfo.update(json.loads(substr))
+						except:
+							continue
+					else:
+						break
+			if not self.decoratorinfo:
+				self.decoratorinfo=FASTAdecoratorinfo			
 		else:
 			self.decoratorinfo=decoratorinfo
+			
 		self.mode=mode
-		self.filehandle=open(self.filelocation,self.mode)
-		self.SeqIOfilehandle=SeqIO.parse(self.filehandle,'fasta')
-		#By-passing the decorator line if it exists
-		self.temphandle=open(self.filelocation,"r")
-		if descriptor_symbol in self.temphandle.readline():
-			self.SeqIOfilehandle=SeqIO.parse(self.temphandle,'fasta')
-		self.eof=False
 		
+		more_skips = 0		
+		#By-passing the decorator line if it exists (figure out how many lines need skipping)
+		with open(self.filelocation,self.mode) as temp:
+			for _ in range(skip_lines):
+				more_skips += 1
+				temp.readline()
+			while True:
+				line = temp.readline()
+				if re.match(self.descriptor_search, line):
+					more_skips += 1
+				else:
+					break		
+		self.filehandle = open(self.filelocation,self.mode)
+		for _ in range(more_skips):
+			self.filehandle.readline()
+		self.SeqIOfilehandle=SeqIO.parse(self.filehandle,'fasta')							
+		self.more_skips=more_skips
+		self.eof=False		
+		self.Extract_Header()
 	
 	def Extract_Header(self):
-		
+		if description_var in self.decoratorinfo:
+			return self.decoratorinfo[description_var]
+
 		linenum = 0
 		readunit=dict()
 		endchk=False
-		f = open(self.filelocation,'r')
-		
-		line = f.readline()		
-		if descriptor_symbol in line:
-			line = f.readline()
-			if self.contains_header:
-				line = f.readline()
-		
-		numSeq = 0
+		f = open(self.filelocation,'r')		
+		for _ in range(self.more_skips):
+			f.readline()
 		fields = []
-		totallines = 0
 		fail = False
-		try:
-			while line and numSeq<num_line_search and not(fail):
-				
-				line = line.strip()			
-				if len(line)>=1 and '>' in line[0]:					
-					[header,more_fields] = GetAdditionalInfo(line[1:])					
-					fields+=more_fields.keys()
+		numSeq = 0
+		totallines = 0
+		while numSeq < num_line_search:
+			line = f.readline()
+			if not line:
+				break
+			line = line.rstrip('\r\n')
+			if line.startswith('>'):
+				[header,more_fields] = GetAdditionalInfo(line[1:])					
+				fields += more_fields.keys()
+				numSeq += 1
+			totallines += 1
+			if totallines == num_line_search * 2 and numSeq == 0:
+				fail = True
+				break			
+		f.close()
 					
-					#if fasta_file_delimiter in line:
-					#	tmp=line.split(fasta_file_delimiter) #if extra info is included in the header, then it is passed using the the fasta_file_delimiter													
-					#	additional_info = json.loads(tmp[1])						
-					#	fields = fields+additional_info.keys()
-					numSeq+=1
-				line = f.readline()
-				totallines+=1
-				if totallines == num_line_search*2 and numSeq == 0:
-					fail = True				
-			f.close()
-		
-			#unique_fields = sorted(set(fields))
-			fields =['header','sequence','document_header']+sorted(set(fields))
-			fields = sorted(set(fields))
-		
-			if fail:
-				return None
-			else:				
-				return fields
-		except Exception as e:
-			print e
+		#unique_fields = sorted(set(fields))
+		fields =['header','sequence','document_header']+sorted(set(fields))
+		fields = sorted(set(fields))
+	
+		self.decoratorinfo.update({description_var: fields})
+		if fail:
 			return None
+		else:				
+			return fields		
 	
 	def convert2IF(self):
 		if self.filetype=='FASTA':
@@ -814,14 +915,12 @@ class immunogrepFASTA():
 
 
 	def read(self):
-		readunit=dict()
-		
+		readunit=dict()		
 		try:
 			line=self.SeqIOfilehandle.next()
 		except:
 			self.eof=True
-			readunit=None
-			
+			readunit=None			
 		if not self.eof:						
 			readunit['sequence'] = str(line.seq)
 			header_line = line.description
@@ -880,59 +979,65 @@ class immunogrepFASTA():
 
 class immunogrepFASTQ():
 	#working version 211...
-	def __init__(self,filelocation,filetype,decoratorinfo=FASTQdecoratorinfo,contains_header=False,mode='r',field_names=[],chunk_size=1):
+	def __init__(self,filelocation,filetype,decoratorinfo=FASTQdecoratorinfo,contains_header=False,mode='r',field_names=[],chunk_size=1, comment=None, skip_lines=0):
 		self.filelocation=filelocation
+		
 		self.filetype=filetype
 		self.field_names=field_names
 		self.chunk_size=chunk_size
 		self.contains_header = False
-		if decoratorinfo==None:
+		self.descriptor_search = [descriptor_symbol]
+		if comment:
+			if isinstance(comment, list):
+				self.descriptor_search.extend(comment)
+			else:
+				self.descriptor_search.append(comment)
+		self.descriptor_search = '|'.join(['^' + c for c in sorted(list(set(self.descriptor_search)), key=len, reverse=True)])
+		self.skip_lines = skip_lines
+		if decoratorinfo is None:			
+			self.decoratorinfo={}
 			with open(self.filelocation,"r") as f:
-				tmpline=f.readline().strip()
-				if descriptor_symbol in tmpline:
-					try:
-						self.decoratorinfo=json.loads(tmpline[len(descriptor_symbol):].replace("'",'"'))
-					except:
-						self.decoratorinfo={}
-				else:
-					self.decoratorinfo=FASTQdecoratorinfo
+				for _ in range(skip_lines):
+					f.readline()
+				l=0				
+				while True:									
+					line=f.readline().strip()
+					if re.match(self.descriptor_search, line):
+						substr = re.sub(self.descriptor_search, '', line)						
+						try:							
+							self.decoratorinfo.update(json.loads(substr))
+						except:
+							continue						
+					else:
+						break
+			if not self.decoratorinfo:
+				self.decoratorinfo=FASTQdecoratorinfo						
 		else:
-			self.decoratorinfo=decoratorinfo
+			self.decoratorinfo = decoratorinfo		
+		
 		self.mode=mode
-		self.filehandle=open(self.filelocation,self.mode)
-		#self.SeqIOfilehandle=SeqIO.parse(self.filehandle,'fastq')
-		#By-passing the decorator line if it exists
 		
-		self.temphandle=open(self.filelocation,"r")
-		skip_lines = 0
+		more_skips = 0		
+		#By-passing the decorator line if it exists (figure out how many lines need skipping)
+		with open(self.filelocation,self.mode) as temp:
+			for _ in range(skip_lines):
+				more_skips += 1
+				temp.readline()
+			while True:
+				line = temp.readline()
+				if re.match(self.descriptor_search, line):
+					more_skips += 1
+				else:
+					break		
+		self.filehandle = open(self.filelocation,self.mode)
+		for _ in range(more_skips):
+			self.filehandle.readline()
+		self.more_skips = more_skips
+		self.SeqIOfilehandle = self.filehandle  #SeqIO.parse(self.filehandle,'fastq')							
+		self.more_skips=more_skips
+		self.eof=False		
+		self.Extract_Header()
 		
-		while True:			
-			new_line = self.temphandle.readline().strip()
-			if not(new_line):
-				break
-			if new_line.startswith('@'):
-				break
-			else:
-				skip_lines+=1
-			if new_line.startswith(descriptor_symbol) or new_line.startswith('#'):
-				continue
-			else:
-				raise Exception('This FASTQ file, '+self.filelocation+', has unusual header lines: '+new_line)
-		
-		self.SeqIOfilehandle = open(self.filelocation,'r')
-		
-		for _ in range(skip_lines):
-			self.SeqIOfilehandle.readline()
-					
-		
-	#	if descriptor_symbol in self.temphandle.readline():
-#			#self.SeqIOfilehandle=SeqIO.parse(self.temphandle,'fastq')
-#			self.SeqIOfilehandle=open(self.filelocation,'r') #SeqIO.parse(self.filelocation,self.mode)
-#		else:
-#			#self.SeqIOfilehandle=SeqIO.parse(self.filehandle,'fastq')
-#			self.SeqIOfilehandle=open(self.filelocation,'r') #SeqIO.parse(self.filelocation,self.mode)
-		
-		self.eof=False
 
 	def convert2IF(self):
 		if self.filetype=='FASTQ':
@@ -964,106 +1069,91 @@ class immunogrepFASTQ():
 			self.filetype='JSON'
 	
 	def Extract_Header(self):
-		try:
-			linenum = 0
-			readunit=dict()
-			endchk=False
-			f = open(self.filelocation,'r')
-			
-			line = f.readline()		
-			if descriptor_symbol in line:
-				line = f.readline()
-				if self.contains_header:
-					line = f.readline()
-			
-			numSeq = 0
+		if description_var in self.decoratorinfo:
+			return self.decoratorinfo[description_var]
+		
+		try:			
 			fields = []
 			fail = False
-			totallines=0
-			while line and numSeq<num_line_search and not(fail):
-				line = line.strip()			
-				if '@' in line[0]:
-					[header,more_fields] = GetAdditionalInfo(line[1:])					
-					fields+=more_fields.keys()
-					#if fasta_file_delimiter in line:
-					#	tmp=line.split(fasta_file_delimiter) #if extra info is included in the header, then it is passed using the the fasta_file_delimiter													
-					#	additional_info = json.loads(tmp[1])						
-					#	fields = fields + additional_info.keys()
-					numSeq+=1
-				line = f.readline()
-				totallines+=1
-				if totallines == num_line_search*4 and numSeq == 0:
-					fail = True
-		
-			
-			f.close()
+			with open(self.filelocation, 'r') as f:
+				for _ in range(self.more_skips):
+					f.readline()
+				fq = SeqIO.parse(self.filehandle,'fastq')							
+				for l in range(num_line_search):
+					data = self.readfastqseq(f)
+					if data is None:
+						break					
+					[header,more_fields] = GetAdditionalInfo(data[0])					
+					fields+=more_fields.keys()						
+
+			f.close()					
 			#unique_fields = sorted(set(fields))
-			fields = sorted(set(['header','sequence','phred','document_header']+sorted(set(fields))))
-		
+			fields = sorted(set(['header','sequence','phred','document_header']+sorted(set(fields))))					
+			self.decoratorinfo.update({description_var: fields})						
 			if fail:
 				return None
 			else:
 				return fields
-		except:
+		except:			
 			return None		
-
-	def read(self):
-		readunit=dict()				
-				
-		try:
-			line1 = self.SeqIOfilehandle.readline().strip()
-		except:
-			self.eof=True
-			readunit=None
-		
+	
+	def readfastqseq(self, filehandle):
+		line1 = filehandle.readline()
 		if not line1:
-			self.eof=True
-			readunit = None
-		else:				
-			if line1[0] != '@':
-				raise Exception('This does not appear to be a FASTQ sequence as the sequence header does not start with "@": {0}'.format(line1))			
-			header = line1[1:]
-			seq=''
-			next_line = self.SeqIOfilehandle.readline().strip()
-			while next_line!='+':
-				seq+=next_line
-				next_line = self.SeqIOfilehandle.readline().strip()
-			len_seq = len(seq)
-			next_line = self.SeqIOfilehandle.readline().strip()
-			qual=next_line
-			qual_len = len(qual)			
-			while qual_len<len_seq:
-				qual+=self.SeqIOfilehandle.readline().strip()
-				qual_len = len(qual)
-			if qual_len!=len_seq:
-				raise Exception('The sequence length does not match the length of the quality score for the following sequence: {0}'.format(header))
-			#line = self.SeqIOfilehandle.next()
-		
+			return None
+		if line1[0] != '@':
+			raise Exception('This does not appear to be a FASTQ sequence as the sequence header does not start with "@": {0}'.format(line1))			
+		header = line1[1:]
+		seq=''
+		next_line = filehandle.readline().strip()
+		while next_line != '+':
+			seq += next_line
+			next_line = filehandle.readline().strip()
+		len_seq = len(seq)
+		next_line = filehandle.readline().strip()
+		qual=next_line
+		qual_len = len(qual)			
+		while qual_len<len_seq:
+			qual += filehandle.readline().strip()
+			qual_len = len(qual)
+		if qual_len!=len_seq:
+			raise Exception('The sequence length does not match the length of the quality score for the following sequence: {0}'.format(header))		
+		return [header, seq, qual]
+	
+	def read(self):
+		if self.eof:
+			return None
+		readunit=dict()				
 			
-		if not self.eof:						
-			readunit['sequence'] = seq # str(line.seq)
-			#qualnum=line.letter_annotations["phred_quality"]
-			#readunit['phred']=''
-			#for i in qualnum:
-			#	readunit['phred']=readunit['phred']+str(chr(i+33))
-			readunit['phred'] = qual
-			header_line = header #line.description
-			readunit['document_header'] = header_line
-			if fasta_file_delimiter in header_line:
-				tmp=header_line.split(fasta_file_delimiter) #if extra info is included in the header, then it is passed using the the fasta_file_delimiter
-				readunit['header']=tmp[0]									
-				additional_info = json.loads(tmp[1])						
+		fastqdata = self.readfastqseq(self.SeqIOfilehandle)
+		if fastqdata is None:
+			self.eof = True
+			return None
+					
+		header = fastqdata[0]
+		seq = fastqdata[1]
+		qual = fastqdata[2]
+							
+		readunit['sequence'] = seq # str(line.seq)		
+		readunit['phred'] = qual
+		header_line = header #line.description
+		readunit['document_header'] = header_line.rstrip('\r\n')
+		if fasta_file_delimiter in header_line:
+			tmp=header_line.split(fasta_file_delimiter) #if extra info is included in the header, then it is passed using the the fasta_file_delimiter
+			readunit['header']=tmp[0]									
+			additional_info = json.loads(tmp[1])						
+	
+			for keyval in additional_info:
+				if keyval == idIdentifier:
+					if type(additional_info[keyval]) is dict:							
+						readunit[idIdentifier] = additional_info[keyval]['$oid']
+					else:							
+						readunit[idIdentifier] = additional_info[keyval]								
+				else:						
+					readunit[keyval] = additional_info[keyval]
+		else:
+			readunit['header']=header_line
 		
-				for keyval in additional_info:
-					if keyval == idIdentifier:
-						if type(additional_info[keyval]) is dict:							
-							readunit[idIdentifier] = additional_info[keyval]['$oid']
-						else:							
-							readunit[idIdentifier] = additional_info[keyval]								
-					else:						
-						readunit[keyval] = additional_info[keyval]
-			else:
-		 		readunit['header']=header_line
 		return readunit
 
 	def create(self):
@@ -1081,10 +1171,10 @@ class immunogrepFASTQ():
 		self.SeqIOfilehandle.close()
 		self.temphandle.close()
 
-	def getDecoratorinfo(self):
+	def getDecoratorinfo(self):		
 		return self.decoratorinfo
 
-	def getDescription(self):
+	def getDescription(self):		
 		return self.decoratorinfo[description_var]
 
 	def getFilelocation(self):
@@ -1101,67 +1191,81 @@ class immunogrepFASTQ():
 		return t
 
 class immunogrepDELIM():
-	def __init__(self,filelocation,filetype,decoratorinfo,delimiter,contains_header=True,mode='r',field_names=[],chunk_size=1):
+	def __init__(self,filelocation,filetype,decoratorinfo,delimiter,contains_header=True,mode='r',field_names=[],chunk_size=1, comment=None, skip_lines=0):
+		self.mode = mode
 		self.filelocation=filelocation
 		self.filetype=filetype
 		self.delimiter=delimiter
-		self.contains_header=contains_header
-		descriptorPresent = False
+		self.contains_header=contains_header		
 		self.field_names=field_names
 		self.chunk_size=chunk_size		
-		if decoratorinfo==None:
+		self.descriptor_search = [descriptor_symbol]
+		if comment:
+			if isinstance(comment, list):
+				self.descriptor_search.extend(comment)
+			else:
+				self.descriptor_search.append(comment)
+		self.descriptor_search = '|'.join(['^' + c for c in sorted(list(set(self.descriptor_search)), key=len, reverse=True)])
+		self.skip_lines=skip_lines
+				
+		if decoratorinfo is None:
+			self.decoratorinfo={}
 			with open(self.filelocation,"r") as f:
-				tmpline=f.readline().strip('\r\n')				
-				if descriptor_symbol in tmpline:
-					descriptorPresent = True
-					try:
-						self.decoratorinfo=json.loads(tmpline[len(descriptor_symbol):].replace("'",'"'))
-					except:
-						self.decoratorinfo = {}
-				else:
-					self.decoratorinfo={}			
-		else:
-			with open(self.filelocation,"r") as f:
-				tmpline=f.readline().strip('\r\n')				
-				if descriptor_symbol in tmpline:
-					descriptorPresent = True				
+				for _ in range(skip_lines):
+					f.readline()
+				while True:
+					tmpline=f.readline().strip('\r\n')
+					if re.match(self.descriptor_search, tmpline):													
+						substr = re.sub(self.descriptor_search, '', tmpline)
+						try:
+							self.decoratorinfo.update(json.loads(substr))
+						except:
+							self.decoratorinfo = {}
+					else:
+						break					
+		else:						
 			self.decoratorinfo=decoratorinfo
-					
-		if contains_header:
-			self.header_skipped = False
-			with open(self.filelocation,"r") as f:
-				line=f.readline().strip('\r\n')
-				if descriptor_symbol in line:
-					line=f.readline().strip('\r\n')
-				tmp=line.split(self.delimiter)
+				
+		
+		self.filehandle=open(self.filelocation,self.mode)
+		for _ in range(skip_lines):
+			self.filehandle.readline()
+		
+		while True:			
+			tmpline = self.filehandle.readline()
+			if re.match(self.descriptor_search, tmpline):				
+				skip_lines += 1
+				continue			
+			tmp=tmpline.split(self.delimiter)
+			self.maxfields = len(tmp)
+			if contains_header:
+				# Get field names from the header row					
 				self.decoratorinfo[description_var] = [f for f in tmp]#filed names detected in file 
-				self.header_names_map={f:col for col,f in enumerate(tmp) if f}#dictionary mapping header name to column number
-				self.maxfields = len(tmp)					
-		else:
-			self.header_skipped = True
-			self.maxfields=0
-			with open(self.filelocation,'r') as f:
-				for line in range(num_line_search):					
-					line = f.readline().strip('\r\n')
-					if descriptor_symbol in line:
-						continue
+				self.header_names_map={f:col for col,f in enumerate(tmp) if f}#dictionary mapping header name to column number						
+				skip_lines += 1
+			else:
+				for _ in range(num_line_search):					
+					# Try and guess the number of columns probably in file...
+					newline = f.readline().strip('\r\n')					
 					tmp=line.split(delimiter)
 					if len(tmp)>self.maxfields:
-						self.maxfields=len(tmp)
-			descriptor = ['Column '+str(i+1) for i in range(self.maxfields)]#field names detected in file 
-			self.header_names_map = {'Column '+str(i+1):i for i in range(self.maxfields)}#dictionary mapping header name to column number
-			self.decoratorinfo[description_var]=descriptor		
-
-		self.mode=mode
-		self.filehandle=open(self.filelocation,self.mode)
+						self.maxfields=len(tmp)					
+				# Default field names as Column + Number					
+				descriptor = ['Column '+str(i+1) for i in range(self.maxfields)]#field names detected in file 
+				self.header_names_map = {'Column '+str(i+1):i for i in range(self.maxfields)}#dictionary mapping header name to column number
+				self.decoratorinfo[description_var]=descriptor												
+			break
 		
 		#if field names were provided, then filter the dictionary header map by field names
 		if self.field_names:
 			self.header_names_map = {f:v for f,v in self.header_names_map.iteritems() if f in self.field_names}
-		
-		if descriptorPresent:
-			self.filehandle.readline()
-		self.eof=False
+				
+		# Open the file, and skip any lines that are not part of the file/are comment lines
+		self.mode=mode
+		self.filehandle = open(self.filelocation, self.mode)
+		for _ in range(skip_lines):
+			self.filehandle.readline()		
+		self.eof=False				
 
 	def Extract_Header(self):		
 		return self.decoratorinfo[description_var]
@@ -1191,22 +1295,15 @@ class immunogrepDELIM():
 			self.filelocation=self.filelocation+'.'+IFExt
 			self.filetype='JSON'
 
-	def read(self):
-	
-		if not(self.header_skipped):
-			self.filehandle.readline()
-			self.header_skipped = True
-							
-		line=self.filehandle.readline().strip('\r\n')
-		
+	def read(self):			
+		line = self.filehandle.readline()
 		if not line:
-			self.eof=True
+			self.eof = True
 			return None
-				
+		line=line.strip('\r\n')				
 		tmp=line.split(self.delimiter)
 		max_len = len(tmp)
-		readunit = {field:tmp[col_num] if col_num < max_len else '' for field,col_num in self.header_names_map.iteritems() }								
-		
+		readunit = {field:tmp[col_num] if col_num < max_len else '' for field,col_num in self.header_names_map.iteritems() }										
 		return readunit
 
 	def create(self):
@@ -1250,7 +1347,7 @@ class immunogrepDELIM():
 		return t
 
 class immunogrepJSON():
-	def __init__(self,filelocation,filetype,decoratorinfo,contains_header=False,mode='r',field_names=[],chunk_size=1):
+	def __init__(self,filelocation,filetype,decoratorinfo,contains_header=False,mode='r',field_names=[],chunk_size=1, comment=None, skip_lines=0):
 		self.filelocation=filelocation
 		self.filetype=filetype
 		descriptorPresent = False
@@ -1435,7 +1532,7 @@ class immunogrepIMGT():
 					if data_to_read[each_required_file-1]=={}:
 						raise Exception('IMGT File {0} from {1} is required'.format(str(each_required_file),each_group))				
 				
-		
+		self.data_to_read = []
 		#ITS IMGT so we already know what to expect 
 		self.decoratorinfo = {
 			description_var:sorted(list(set(all_field_names))),
@@ -1480,20 +1577,20 @@ class immunogrepIMGT():
 		return self.decoratorinfo[description_var]	
 		
 	def read(self):
-				
-		try:
-			readunit = self.my_gen.next()
-		except Exception as e:
+		try:			
+			readunit = self.my_gen.next()			
+		except Exception as e:			
 			if str(e).strip():				
+				exc_type, exc_obj, exc_tb = sys.exc_info()
+				tb_error = traceback.format_exc()
+				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+				print "\nLine Number: {0} , type: {1} , fname: {2}".format(str(exc_tb.tb_lineno),str(exc_type),str(fname))
+				print tb_error
 				raise Exception('Unexpected error reading imgt file: '+str(e).strip())
 			readunit = None
 			self.eof=True
-		return readunit
-			
+		return readunit			
 		
-	#def close(self):		
-	#	self.filehandle.close()
-
 	def getDecoratorinfo(self):
 		return self.decoratorinfo
 
@@ -1519,13 +1616,20 @@ class immunogrepIMGT():
 		#first seperate the provided IMGT files by their file name. 
 		#group all files from the same original filename together 
 		grouped_imgt_files = GroupIMGTFiles(self.filelocation)
-		
+
 		#next make sure all the required fieldnames are present 
 		add_fields = []
 		if 'PREDICTED_AB_SEQ.NT' in include_fields:
-			add_fields.extend(['V-D-J-REGION_3','V-J-REGION_3']) #these fields from IGMT files will be required to make PREDICTED_AB_SEQ.NT
+			add_fields.extend(['V-D-J-REGION_3','V-J-REGION_3'])  #these fields from IGMT files will be required to make PREDICTED_AB_SEQ.NT
 		if 'PREDICTED_AB_SEQ.AA' in include_fields:
 			add_fields.extend(['V-D-J-REGION_5','V-J-REGION_5'])
+		if 'GAPPED.PREDICTED_AB_SEQ.NT' in include_fields:
+			add_fields.extend(['V-D-J-REGION_2','V-J-REGION_2'])  #these fields from IGMT files will be required to make PREDICTED_AB_SEQ.NT
+		if 'GAPPED.PREDICTED_AB_SEQ.AA' in include_fields:
+			add_fields.extend(['V-D-J-REGION_4','V-J-REGION_4'])  #these fields from IGMT files will be required to make PREDICTED_AB_SEQ.N
+		
+		if 'R_TYPE' in include_fields:
+			add_fields.extend(['V-D-J-REGION_5','V-J-REGION_5','V-D-J-REGION_3','V-J-REGION_3'])
 		
 		if 'VREGION.SHM.NT_PER' in include_fields:
 			add_fields.extend(['V-REGION identity %_1'])
@@ -1546,19 +1650,16 @@ class immunogrepIMGT():
 				include_fields.append(new_fields)
 		
 		#read results from each IMGT 'group'
-		for each_group,found_files in grouped_imgt_files.iteritems():			
-		
-			data_to_read = [{}]*11				
-			
-			for file in found_files:# imgtfiles:
-			
+		for each_group,found_files in grouped_imgt_files.iteritems():					
+			self.data_to_read = [{}]*11							
+			for file in found_files:# imgtfiles:				
 				#go through each of the found files in that group 
 				#determine each files  file number 
 				#also make sure to only read in fields requested by user 
 				[filenumber,fields] = find_imgt_file_type_index(file,self.important_headers_only)				
 				if not filenumber:				
 					continue
-				if filenumber==11:				
+				if filenumber==11:							
 					if self.include_parameters_file == False:
 						read_fields = []
 					else:
@@ -1578,19 +1679,19 @@ class immunogrepIMGT():
 				#pprint(read_fields)
 				#if we are reading fields from this file, then add to the list of files to read 
 				if read_fields:
-					data_to_read[filenumber-1] = {
+					self.data_to_read[filenumber-1] = {
 						'filenum': filenumber,
 						'fields':read_fields,
 						'filepath':file,				
 						'file_reader':immunogrepFile(filelocation = file,filetype='TAB',field_names=read_fields)				
-					}		
+					}							
 						
-					
+			
 			#ENSURE THAT THE REQUIRED IMGT FILES ARE PRESENT			
 			for each_required_file in self.required_files:
 				if each_required_file>0 and each_required_file<=11:
 					#user requested that specific IMGT file is required for reading 
-					if data_to_read[each_required_file-1]=={}:
+					if self.data_to_read[each_required_file-1]=={}:
 						raise Exception('IMGT File {0} from {1} is required'.format(str(each_required_file),each_group))
 			
 			command_settings_keys = {
@@ -1607,8 +1708,8 @@ class immunogrepIMGT():
 			#check if file 11 exists
 			command=''
 			#print command_settings_keys
-			if data_to_read[10]:
-				with open(data_to_read[10]['filepath'],'r') as e:
+			if self.data_to_read[10]:				
+				with open(self.data_to_read[10]['filepath'],'r') as e:
 					command_lines = e.readlines()
 				for each_command in command_lines:
 					settings = each_command.split('\t')
@@ -1617,15 +1718,15 @@ class immunogrepIMGT():
 					if settings[0].strip(' \r\t\n:').upper() in command_settings_keys and settings[1].strip():				
 						#if we find the command we we want to store in the file and the second column is not empty, then add to command string 
 						command+=command_settings_keys[settings[0].strip(' \r\t\n:').upper()]+':'+settings[1].strip().upper()+';'
-														
+
 			command = command.strip(';')
 			
 			at_least_one_file_open = True
 			while at_least_one_file_open:
 				row_data = defaultdict(str,{})
-				
+								
 				at_least_one_file_open = False#if all files are eof, then thsi will be false at t thend of loop
-				for files_dict in data_to_read[0:10]:		
+				for files_dict in self.data_to_read[0:10]:		
 					
 					if not files_dict:				
 						continue
@@ -1643,7 +1744,7 @@ class immunogrepIMGT():
 									else:								
 										#row_data['{0}_{1}'.format(each_field,str(filenumber))] = each_value#treat_these_fields_specially(each_field,each_value)							
 										row_data['{0}_{1}'.format(each_field,str(filenumber))] = self.treat_these_fields_specially(each_field+'_'+str(filenumber),each_value)							
-				
+
 				if at_least_one_file_open==False:					
 					continue
 				
@@ -1651,11 +1752,13 @@ class immunogrepIMGT():
 					row_data['PREDICTED_AB_SEQ.NT'] = row_data['V-D-J-REGION_3'] if row_data['V-D-J-REGION_3'] else row_data['V-J-REGION_3']			
 				if 'V-D-J-REGION_5' in row_data:
 					row_data['PREDICTED_AB_SEQ.AA'] = row_data['V-D-J-REGION_5'] if row_data['V-D-J-REGION_5'] else row_data['V-J-REGION_5']		
+				if 'V-D-J-REGION_4' in row_data:
+					row_data['GAPPED.PREDICTED_AB_SEQ.AA'] = row_data['V-D-J-REGION_4'] if row_data['V-D-J-REGION_4'] else row_data['V-J-REGION_4']		
+				if 'V-D-J-REGION_2' in row_data:
+					row_data['GAPPED.PREDICTED_AB_SEQ.NT'] = row_data['V-D-J-REGION_2'] if row_data['V-D-J-REGION_2'] else row_data['V-J-REGION_2']		
 				if 'Sequence ID' in row_data: #extract any other information included in sequence header including database key information
 					more_fields = self.CheckForDBID(row_data['Sequence ID'])
-					row_data = dict(row_data.items()+more_fields.items())
-				
-												
+					row_data = dict(row_data.items()+more_fields.items())															
 				
 				row_data['VREGION.SHM.NT_PER'] = ''
 				if 'V-REGION identity %_1' in row_data and row_data['V-REGION identity %_1']:												
@@ -1691,9 +1794,7 @@ class immunogrepIMGT():
 					try:
 						row_data['JREGION.SHM.NT_PER']=100-float(row_data['J-REGION identity %_1'])
 					except:
-						row_data['JREGION.SHM.NT_PER']=''					
-				
-							
+						row_data['JREGION.SHM.NT_PER']=''																
 				try:
 					
 					if row_data['CDR3-IMGT Nb of AA_9'].strip() == '-':					
@@ -1709,13 +1810,23 @@ class immunogrepIMGT():
 					row_data['VREGION.SHM.AA_PER']=''
 					row_data['VREGION.SHM.AA']=''
 				
+				if row_data['J-REGION end_3']!='':
+					row_data['Ab end'] = row_data['J-REGION end_3']
+				elif row_data['V-REGION end_3']!='':
+					row_data['Ab end'] = row_data['V-REGION end_3']
+				else:
+					row_data['Ab end'] = ''
 				
 				#add recombination_type to fields 
 				row_data['R_TYPE']  = 'VDJ' if row_data['V-D-J-REGION_3'] else ('VJ' if row_data['V-J-REGION_3'] else ('' if not(row_data['V-GENE and allele_1']) else ('VDJ' if ('IGHV' in row_data['V-GENE and allele_1'] or 'TRBV' in row_data['V-GENE and allele_1']) else 'VJ')))
 				
+				row_data['FULL_LENGTH'] = ''
+				if 'CDR-IMGT lengths_1' in row_data and 'FR-IMGT lengths_1' in row_data:
+					row_data['FULL_LENGTH'] = False if 'X' in row_data['FR-IMGT lengths_1'] or 'X' in row_data['CDR-IMGT lengths_1'] else True
 				
 				if command:
 					row_data['COMMAND'] = command
+				
 				#if 'Sequence ID_3' in row_data:
 				#	more_fields = CheckForDBID(row_data['Sequence ID_3'])
 				#	row_data = dict(row_data.items()+more_fields.items())
@@ -1725,5 +1836,8 @@ class immunogrepIMGT():
 				if row_data:
 					yield row_data
 	
-		
+	def close(self):
+		for f in self.data_to_read:
+			if 'file_reader' in f:
+				f['file_reader'].IFclass.close()
 		

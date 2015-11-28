@@ -6,6 +6,8 @@
 #this is sample output from the igblast program using the settings defined above
 ##############################################################################################
 
+# VERSION 25 HAD BEFORE JONATHAN CDR3 UPDATE# 
+
 from Bio import SeqIO
 from Bio.Seq import Seq
 import sys
@@ -33,7 +35,8 @@ from datetime import datetime
 from collections import defaultdict
 from collections import OrderedDict
 import collections
-import immunogrep_appsoma_cdr3tools as CDR3tools
+#import immunogrep_appsoma_cdr3tools as CDR3tools
+import cchrysostomou_cdr3toolsv2 as CDR3tools
 from immunogrep_global_variables import descriptor_symbol #this is the symbol we will use to designate 'comment' lines in the file 
 from immunogrep_global_variables import translation_var #this key will signify the translation/translator key 
 from immunogrep_global_variables import filetype_var
@@ -231,11 +234,9 @@ def download_germlines_from_db(query_settings):
 	germlines = {}	
 	for subtype in ['V','D','J']:
 		if subtype in selected_genes:					
-			filepath = output_directory+file_prefix+'_'+subtype+'.txt'#the function QueryGenesById will create germline database files with these filesnames				
-			print filepath
+			filepath = output_directory+file_prefix+'_'+subtype+'.txt'#the function QueryGenesById will create germline database files with these filesnames							
 			germlines[subtype] = filepath if os.path.isfile(filepath) else None #make sure the file downloaded correctly							
-	
-	print germlines
+		
 	
 	return [germlines,unique_settings]
 	
@@ -257,7 +258,7 @@ def download_germlines_from_db(query_settings):
 		#first element => string defining method for describing where germline came from: default, custom, db
 			#default => use default files currently in folder 
 			#custom => provide custom text files 
-			#db => download germlines from database 
+			#db => download germlines from database (only works if user has a local mongodb setup)
 		#second element => defines the parameters for the germline file locations
 			#if element 1 => default:
 				#provide a two element tuple defining the species and the molecular componenet
@@ -578,17 +579,16 @@ def Find_CDR3_Motif(motif,j_gene_algn_info,cdr3_fr4_subseq,cdr3start):
 		
 				
 	return [fr4start,result_notes]
-					
+			      
 
-def IdentifyCDR3UsingGGJunctionalMotif(algn_seq,cdr3start,end_of_ab,cdr3_index,fr3present,jpresent,cdr3_search_parameters=None,locus=None,var_type=None,Jgermline_alignments=None,max_lmotif_len=0,max_rmotif_len=0):
-			
-	Motif=cdr3_search_parameters
+def IdentifyCDR3UsingGGJunctionalMotif(algn_seq,cdr3start,end_of_ab,cdr3_index,fr3present,jpresent,cdr3_search_class=None,locus=None,var_type=None,Jgermline_alignments=None,max_lmotif_len=0,max_rmotif_len=0):
+	
 	guess_starting =max(0,cdr3start-max_lmotif_len)
 	guess_ending = min(end_of_ab+21,len(algn_seq))
 	algn_seq=algn_seq[:guess_ending]
 	
 	 
-	[bestmotifset,MaxP,cdr3start,cdr3end,cdr3_nt,cdr3_aa,bestchain,bestscoreset,allscores] = CDR3tools.FindCDR3(algn_seq,Motif,suggest_chain=locus,start_pos=guess_starting,strand='+',motif_type='AA')
+	[bestmotifset,MaxP,cdr3start,cdr3end,cdr3_nt,cdr3_aa,bestchain,bestscoreset,allscores] = cdr3_search_class.FindCDR3(algn_seq,suggest_chain=locus,start_pos=guess_starting,strand='+')
 	if cdr3_nt:		
 		fr4start = cdr3end+1
 		cdr3Frame = cdr3start%3+1
@@ -706,11 +706,13 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 			annotation_settings['cdr3_search']['param'] = cdr3_motif_class.GetMotifForProgram(query=germline_query)
 												
 			CDR3_SEARCH_FUNCTION = IdentifyCDR3UsingGGJunctionalMotif	 #point the fucntion cdr3_seearch_function to the method defined for motifs
-			cdr3_search_parameters = annotation_settings['cdr3_search']['param']
-			unique_locus_sets = set([a[0].upper() for a in cdr3_search_parameters])
-			max_l_motif_len = 4*max(sorted([int(k) for a in cdr3_search_parameters for k in a[1]])) #find the maximum length of the poossible motifs
-			max_r_motif_len = 4*max(sorted([int(k) for a in cdr3_search_parameters for k in a[2]])) #find the maximum lenght of the possible right motifs
+			
+			
+			unique_locus_sets = set([a[0].upper() for a in annotation_settings['cdr3_search']['param']])
+			max_l_motif_len = 4*max(sorted([int(k) for a in annotation_settings['cdr3_search']['param'] for k in a[1]])) #find the maximum length of the poossible motifs
+			max_r_motif_len = 4*max(sorted([int(k) for a in annotation_settings['cdr3_search']['param'] for k in a[2]])) #find the maximum lenght of the possible right motifs
 			cdr3_search_name = list(unique_locus_sets)
+			cdr3_search_parameters = CDR3tools.findCDR3(annotation_settings['cdr3_search']['param'])
 		elif annotation_settings['cdr3_search']['method'] == 'regexp':
 			max_l_motif_len = None
 			max_r_motif_len = None			
@@ -1419,7 +1421,7 @@ def TABFileHeader():
 				'FR2_Sequence.AA.Gapped',
 				'CDR2_Sequence.AA.Gapped',
 				'FR3_Sequence.AA.Gapped',
-				'VRegion..NT',
+				'VRegion.SHM.NT',
 				'VRegion.SHM.Per_nt',
 				"Reading_Frames: FR1,CDR1,FR2,CDR2,FR3,CDR3,FR4",
 				"VGENE: Total_Matches", 
@@ -1522,7 +1524,7 @@ def DatabaseTranslator(input_dictionary = {}):
 				"CDR3.NT":"CDR3_Sequence.NT",
 				"CDR3.AA":"CDR3_Sequence.AA",
 				"DREGION.DGENES":"Top_D-Gene_Hits",
-				"DREGION.DGENE_SCORE":"D-Gene_Alignment_Scores",
+				"DREGION.DGENE_SCORES":"D-Gene_Alignment_Scores",
 				"JREGION.FR4.NT":"FR4_Sequence.NT",		
 				"JREGION.FR4.AA":"FR4_Sequence.AA",
 				"JREGION.JGENES":"Top_J-Gene_Hits",

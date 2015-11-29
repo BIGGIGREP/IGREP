@@ -355,7 +355,9 @@ class findCDR3():
 				l = l.lower().replace(' ', '')
 				motif_path = os.path.join(cdr3MotifFolder, s, '_'.join([s, l, 'cdr3motif.txt']))
 				if not os.path.isfile(motif_path):
-					raise Exception('CDR3 motif file does not exist: ' + motif_path)
+					print('Warning: The provided CDR3 motif file does not exist and will not be included in analysis: ' + motif_path)
+					continue
+					# raise Exception('CDR3 motif file does not exist: ' + motif_path)
 				loaded_motifs.append(json.loads(open(motif_path).read().strip()))
 		return loaded_motifs
 

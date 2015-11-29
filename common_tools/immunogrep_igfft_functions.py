@@ -94,7 +94,7 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 		igfft_settings : dict
 			Additional alignment settings used for running igfft. See run_igfft function below. 
 		parsing_settings : dict
-			Additional alignment settings used for parsing igfft. I.e. settings for isotyping, idnentifying CDR3, handling insertions. See Parse_Alignment_File function below.
+			Additional alignment settings used for parsing igfft. I.e. settings for isotyping, idnentifying CDR3, handling insertions. See parse_alignment_file function below.
 		custom_germline_file_loc : dict, default {}
 			Only used when germline_source is "custom"
 			Allowed keys in the dict are "v", "d", and "j"
@@ -110,6 +110,19 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 		List of two strings:
 			Element 1: location of the final parsed file containing genes, fr, cdr, cdr3, and isotype
 			Element 2: location of the file created by igfft containing genes, fr, cdr
+
+		Examples
+		--------
+		1) Standard usage: only define the  input file, species, and locus (will run as a single process, and will guess the input file type)
+		>>> igfft_multiprocess(file.fastq, species="Homo sapiens", locus="IGH")
+		2) Define file type, define multiple loci, run as 6 parallel processes
+		>>> igfft_multiprocess(file.fasta, species="Homo sapiens", locus=["IGH","IGK","IGL"], num_processes=6, file_type="FASTA")
+		3) Define multiple loci, run as 6 parallel processes, change a parameter in parsing settings (always remove insertins from alignment)
+		>>> igfft_multiprocess(file.fasta, species="Homo sapiens", locus=["IGH","IGK","IGL"], num_processes=6, parsing_settings={'remove_insertions': 1})
+		4) Define multiple loci, run as 6 parallel processes, change a paramter in annotation settings (when annotating only return first top hit), change a parameter in parsing settings (always remove insertins from alignment)
+		>>> igfft_multiprocess(file.fasta, species="Homo sapiens", locus=["IGH","IGK","IGL"], num_processes=6, igfft_settings={'num_hits': 1}, parsing_settings={'remove_insertions': 1})
+		5) Annotate V germlines of a FASTQ file using a custom v germline set
+		>>> igfft_multiprocess(file.fastq, germline_source="custom", custom_germline_file_loc={'v': '~/common_tools/igfft_germline_files/homosapiens/v/homosapiens_igh_v.txt'})	
 	"""
 	if not file_type:
 		# Attempt to guess filetype
@@ -165,7 +178,7 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 		# Step 1: Run the igfft program and return the settings used for the program (command_val)
 		command_val = run_igfft(f1, outfile=outfile_igfft, germline_source=germline_source, germlines=germline_location_settings, input_filetype=file_type.upper(), variable_parameters=fxn_params)		
 		# Step 2: Run the parsing function which should also perform cdr3 analysis and isotype analysis		
-		Parse_Alignment_File(outfile_igfft, outfile_annotation, fxn_parse, command_val=command_val, return_igrep_doc_line=return_igrep_doc_line)
+		parse_alignment_file(outfile_igfft, outfile_annotation, fxn_parse, command_val=command_val, return_igrep_doc_line=return_igrep_doc_line)
 		# add outputfiles to queue
 		outfile_queue.put([outfile_annotation, outfile_igfft, index])		
 		
@@ -207,8 +220,7 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 		print('files merged.')
 		# Delete all of the split files 		
 		# delete split files and delete any files created from split files
-		purge(split_files)
-		# subprocess.call("rm {0}".format(' '.join([f.replace(' ', '\ ') + ".*" for f in split_files]) + ' ' + ' '.join([f.replace(' ', '\ ') for f in split_files])), shell=True)
+		purge(split_files)		
 		final_files = [of1_prefix + '.igfft.annotation', of1_prefix + '.igfft.alignment']
 
 	return final_files
@@ -234,7 +246,7 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 			If germline_source = default:
 				germlines = {'SPECIES': list of species, 'LOCUS': list of loci}
 			If germline_source = custom: 
-				germlines = {'v': list of paths to vgermline files, 'd': list of paths to d germline files, 'j': list of path to j germline files}
+				germlines = {'v': path to vgermline set, 'd': path to d germline set, 'j': path to j germline set}
 			If germline_source = db:
 				dict for querying database for germlines:				
 				i.e. {_id: [list of germline ids]}
@@ -273,7 +285,7 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 		Annotate a FASTQ file, containing heavy and light chain sequences from humans, using the database
 		>>>run_igfft("folder/filetest.fastq", germline_settings="db", germlines={'SPECIES': 'Homo sapiens', 'LOCUS':['IGH', 'IGK', 'IGL']})
 		Annotate a FASTQ file but change the number of germlines to report. In this case, return the top two germlines.
-		>>>run_igfft("folder/filetest.fastq", germlines={'SPECIES': 'Homo sapiens', 'LOCUS':['IGH', 'IGK', 'IGL']}, variable_parameters={"num_hits": 2})
+		>>>run_igfft("folder/filetest.fastq", germlines={'SPECIES': 'Homo sapiens', 'LOCUS':['IGH', 'IGK', 'IGL']}, variable_parameters={"num_hits": 2})		
 	"""
 	
 	# first go through the variable germlines to figure out the germline files to use 
@@ -304,14 +316,16 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 
 	# IGNORE d FOR NOW  (igfft requires lowercalse subtypes)
 	subtypes = ['v', 'j']
-
-	if germline_source == 'custom':
-		germline_settings = {'GERMLINE-SOURCE': 'CUSTOM-FILE', 'PARAMS': {}}							
+	germline_files = {}
+	if germline_source == 'custom':		
+		germline_settings = {'GERMLINE-SOURCE': 'CUSTOM-FILES', 'PARAMS': {}}							
 		# the user is providing proper germline files for each 
-		for keys, paths in germlines[1].iteritems():
-			keys = keys.lower()
+		for key_subtypes, paths in germlines.iteritems():
+			keys = key_subtypes.lower()
 			if keys in subtypes and os.path.isfile(paths):				
-				variable_parameters[keys.lower()] = paths								
+				germline_files[keys] = paths
+			if not os.path.isfile(paths):
+				print("Warning: the provided germline path does not exist and will not be included in germlines: " + paths)							
 	elif germline_source == 'default':
 		germline_filepath_dict = {}
 		germline_files = {}
@@ -327,9 +341,11 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 					l = l.replace(' ', '').lower()
 					germline_file = os.path.join(default_germline_folder, s, st, '_'.join([s, l, st]) + '.txt')				
 					if not os.path.isfile(germline_file):
-						raise Exception("The provided germline path does not exist: " + germline_file)
+						print("Warning: the provided germline path does not exist and will not be included in germlines: " + germline_file)
+						continue
+						# raise Exception()
 					germline_filepath_dict[st].append(germline_file)
-			germline_files[st] = ('DefaultGermlines' + '_'.join(species) + '_'.join(locus)).replace(' ', '') + '_' + st + '.txt'
+			germline_files[st] = ('default_germline_set' + '_'.join(species) + '_'.join(locus)).replace(' ', '') + '_' + st + '.txt'
 			with open(germline_files[st], 'w') as g_write:
 				# Write all germlines to a single file
 				for fc, gf in enumerate(germline_filepath_dict[st]):
@@ -340,16 +356,15 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 							igf.readline()
 						for all_gs in igf.read():
 							g_write.write(all_gs)
-			# Store location of file path for each subtype (V, D, J)
-		variable_parameters.update(germline_files)
+			# Store location of file path for each subtype (V, D, J)		
 	elif germline_source == 'db':
 		# the user wants to download germlines from database		
 		germline_settings = {'GERMLINE-SOURCE': 'DATABASE-DOWNLOAD'}		
-		[germline_files, germline_settings['PARAMS']] = download_germlines_from_db(germlines)
-		variable_parameters.update(germline_files)			
+		[germline_files, germline_settings['PARAMS']] = download_germlines_from_db(germlines)		
 	else:		
 		raise Exception('Germline source is only allowed to be equal to the following strings: custom, default, db')			
-	
+	variable_parameters.update(germline_files)			
+
 	# make sure igfft parameters are good in variable_parameters dictionary  
 	default_parameters = GetDefaultParameters()
 
@@ -439,7 +454,7 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 	return command
 
 
-def Parse_Alignment_File(annotatedFile, outfile=None, annotation_settings={}, command_val={}, return_results_dict=False, return_igrep_doc_line=False):
+def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, command_val={}, return_results_dict=False, return_igrep_doc_line=False):
 	"""
 		Function  for parsing the results of the IGFFT annotation file. 
 		It will go through the results and ensure results were found, identify CDR3 if requested, remove insertions if requested, and identify isotype sequences if requested
@@ -767,7 +782,7 @@ def Parse_Alignment_File(annotatedFile, outfile=None, annotation_settings={}, co
 			query_results['Locus'] = ','.join(locus_list)
 			
 			if  var_type == 'UNK':			
-				print('This chain type was not recognized in the parsing script. Analysis information for this sequence will be placed in the file "{0}". Consider updating the variable chainTypes in the funcion "Parse_Alignment_File"'.format(outfile_unknown_rec))
+				print('This chain type was not recognized in the parsing script. Analysis information for this sequence will be placed in the file "{0}". Consider updating the variable chainTypes in the funcion "parse_alignment_file"'.format(outfile_unknown_rec))
 				error_dic = query_results
 				error_dic['Notes'] = "Chain type not recognized"
 				error_dic['Errors'] = "Chain type not recognized. analysis info placed in the file '{0}'".format(outfile_unknown_rec)				
@@ -1157,7 +1172,7 @@ def download_germlines_from_db(query_settings):
 		for l in unique_settings['LOCUS']:
 			name_data[s].append(l)	
 	# should create a file name of datbasedownload_species_all loci_speices_all loci.txt
-	file_prefix = 'DatabaseDownload_' + '_'.join({s + '_'.join(v) for s, v in name_data.iteritems()})
+	file_prefix = '_'.join({s + '_' + '_'.join(v) for s, v in name_data.iteritems()})
 	file_prefix = file_prefix.replace(' ', '')			
 		
 	# actually run the query and download germlines as a TAB file for igfft format 

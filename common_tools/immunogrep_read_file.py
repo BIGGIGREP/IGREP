@@ -955,7 +955,7 @@ class immunogrepFASTA():
 	def close(self):
 		self.filehandle.close()
 		self.SeqIOfilehandle.close()
-		self.temphandle.close()
+		# self.temphandle.close()
 
 	def getDecoratorinfo(self):
 		return self.decoratorinfo
@@ -1169,7 +1169,7 @@ class immunogrepFASTQ():
 	def close(self):
 		self.filehandle.close()
 		self.SeqIOfilehandle.close()
-		self.temphandle.close()
+		# self.temphandle.close()
 
 	def getDecoratorinfo(self):		
 		return self.decoratorinfo

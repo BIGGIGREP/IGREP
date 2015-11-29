@@ -1,0 +1,708 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"minim",
+				"minimum_length_cutoff"
+			],
+			[
+				"conver",
+				"convert_tab"
+			],
+			[
+				"dat",
+				"dataparameters	statement"
+			],
+			[
+				"igfft",
+				"igfft_location	statement"
+			],
+			[
+				"remove",
+				"removeFileExtension"
+			],
+			[
+				"imm",
+				"immunogrep_useful_functions"
+			],
+			[
+				"igfft_",
+				"igfft_germline_files"
+			],
+			[
+				"barcodesplit",
+				"barcode_split_bash_program	statement"
+			],
+			[
+				"datas",
+				"dataset_tags	param"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "immunogrep_singlechain_cdr3_cluster.py",
+			"settings":
+			{
+				"buffer_size": 73054,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "immunogrep_igfft_functions.py",
+			"settings":
+			{
+				"buffer_size": 60540,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Write_Seq_TAB(error_dic, tab_header_var, output_files['annotated'])",
+			"settings":
+			{
+				"buffer_size": 67,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/costas/Documents/get_cdr3_motifs.py",
+			"settings":
+			{
+				"buffer_size": 471,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "import sys\nimport os\nfrom datetime import datetime\nfrom immunogrep_global_variables import listofextension\nfrom immunogrep_global_variables import descriptor_symbol\nimport immunogrep_read_file as readwrite\nimport traceback\nimport subprocess\nfrom collections import MutableMapping\n\ndna_codes = {\n	'A': 'T',\n	'C': 'G',\n	'G': 'C',\n	'T': 'A',\n	'N': 'N',\n	'X': 'X',\n	'-': '-',\n	'U': 'A',\n	'W': 'W',\n	'M': 'K',\n	'K': 'M',\n	'S': 'S',\n	'R': 'Y',\n	'Y': 'R',\n	'a': 't',\n	'c': 'g',\n	'g': 'c',\n	't': 'a',\n	'u': 'a',\n	'w': 'w',\n	'n': 'n',\n	'm': 'k',\n	'k': 'm',\n	's': 's',\n	'r': 'y',\n	'x': 'x',\n	'y': 'r'\n}\n\n\ndef get_stdout(bash_command):\n	\"\"\"\n		Python wrapper for running python subprocess.call function\n		Returns the output from command\n	\"\"\"\n	output = subprocess.check_output(bash_command, shell=True)\n	return output\n\n\ndef file_line_count(filepath):\n	\"\"\"\n		Takes a file path as input. Returns the number of lines in the file using wc -l\n\n		.. warning::\n			If path is not found, raises an error\n	\"\"\"\n	if os.path.isfile(filepath):\n		filepath = os.path.abspath(filepath)\n		value = get_stdout(\"wc -l '{0}'\".format(filepath)).split()[0]\n		if value:\n			return int(value)\n		else:\n			return 0\n	else:\n		raise Exception('File does not exist: ' + filepath)\n\n\ndef Reverse_Complement(x):\n	\"\"\"\n		Takes in sequence x and returns its complement (?)\n	\"\"\"\n	rc_list = [dna_codes[c] if c in dna_codes else 'N' if ord(c) < 91 else 'n' for c in reversed(x)]\n	return ''.join(rc_list)\n\n\ndef get_parent_dir(path):\n	\"\"\"\n		Uses os.path to return the parent directory of a file\n	\"\"\"\n	return os.path.dirname(os.path.abspath(path))\n\n\ndef split_files_by_seq(filepath, num_files_to_make, number_lines_per_seq, contains_header_row):\n	\"\"\"\n		This function is used for splitting a single file into multiple little files. This will be useful for multithreading purposes.\n\n		.. note:: First make sure files do not start with any documentation fields\n\n		Parameters\n		----------\n		filepath : string\n			Location of the input file\n		num_files_to_make : int\n			Defines the number of smaller files you want to create\n		number_lines_per_seq : int\n			Defines the number of lines that correspond to a single sequence\n			i.e. fastq files = 4 & fasta files = 2\n		contains_header_row : boolean\n			Defines whether or not the input file contains a header row (i.e. CSV or TAB files)\n\n		.. important::\n			We cannot just use the split command, instead we have to use awk command. This is because we need to copy header lines and IGREP documentation lines to each split file.\n	\"\"\"\n	num_doc_fields = 0\n	header_lines = ''\n\n	with open(filepath, 'r') as i:\n		while True:\n			line = i.readline()\n			if line.startswith(descriptor_symbol):\n				num_doc_fields += 1\n				header_lines += line\n			else:\n				if contains_header_row:\n					num_doc_fields += 1\n					# NOW read the top header line\n					header_lines += line\n				break\n\n	parent_path = get_parent_dir(filepath)\n	if num_doc_fields > 0:\n		my_temp_file = os.path.join(parent_path, 'header_rows_' + str(datetime.now()).replace(' ', ''))\n		with open(my_temp_file, 'w') as e:\n			e.write(header_lines)\n\n	# First get the number of lines in the file\n	num_lines = file_line_count(filepath)\n	# Make sure the number of lines per seq matches what would be expected from num_lines\n	if(num_lines % number_lines_per_seq != 0):\n		raise Exception('Number of lines in file is not divisible by the number of lines for each sequence: {0}/{1}!=0'.format(str(num_lines), str(number_lines_per_seq)))\n\n	num_seqs = num_lines / number_lines_per_seq\n	# Determine how many lines to split the file by\n	# Round down, division THEN add 1\n	# We add a 1 to ensure that the num_files_to_make is the max number of files made\n	num_lines_in_split_files = (int(num_seqs / num_files_to_make) + 1) * number_lines_per_seq\n\n	# Make a temp folder\n	subfolder = os.path.join(parent_path, str(datetime.today()).replace(' ', '_').replace(':', '').replace('.', ''))\n	os.makedirs(subfolder)\n\n	# Ok THERE are header lines at the top fo the file that we dont watn to split so we need to ignore these lines\n	if num_doc_fields > 0:\n		# The final '-' is IMPORTANT when combining with tail\n		system_command = \"tail -n +{5} '{1}'| split -l {0} -a {4} - '{2}/{3}'\".format(str(num_lines_in_split_files),filepath,subfolder,os.path.basename(filepath+'.'),num_files_to_make/10+1,num_doc_fields+1)\n	else:\n		system_command = \"split -l {0} -a {4} '{1}' '{2}/{3}'\".format(str(num_lines_in_split_files),filepath,subfolder,os.path.basename(filepath+'.'),num_files_to_make/10+1)\n\n\n	#run the bash split command , split files by lines defined above, generate suffixes whose length is equal to the number of files ot make, output results to temp subfolder, prefix files with inputfile+'.'\n	#os.system(system_command)\n	subprocess.call(system_command,shell=True)\n\n	#return the contents of files made\n	files_created = os.listdir(subfolder)\n\n\n\n	if num_doc_fields>0:\n		#move files back up one folder, but while moving files also concatenate teh header file\n		hack_bash_command = '''\n			for file in \"{0}/\"*\n			do\n				s=$(basename \"$file\")\n				cat \"{1}\" \"$file\" > \"{2}/$s\"\n			done\n			rm \"{1}\"\n			rm -r \"{0}\"\n		'''.format(subfolder,my_temp_file,parent_path)\n		#os.system(hack_bash_command)\n		subprocess.call(hack_bash_command,shell=True)\n	else:\n		#move files back to starting folder , delete temp folder\n		#os.system(\"mv {0}/*.* {1}/.;rm -r {0}\".format(subfolder.replace(' ','\\ '),parent_path.replace(' ','\\ ')))\n		subprocess.call(\"mv {0}/*.* {1}/.;rm -r {0}\".format(subfolder.replace(' ','\\ '),parent_path.replace(' ','\\ ')),shell=True)\n\n	return sorted([parent_path+'/'+f for f in files_created])\n\n\n\n#runs an awk script for merging results from multiple files\ndef merge_multiple_files(file_list, num_header_lines=1,outfile=None):\n	\"\"\"\n        Runs an awk script for merging results from multiple files\n\n        	=====================   =====================\n	        **Input**               **Description**\n	        ---------------------   ---------------------\n	        file_list               A list of strings corresponding to the path of all files to merge\n	        num_header_lines	    The number of lines (x) in each file that correspond to a header row. When, FNR!=NR the first x lines are ignored. In other words only the first x lines from the first file are copied to the new file.\n	        outfile			        The location of the output file (optional). When empty it defaults to the first input file +'.merged'\n	        =====================   =====================\n    \"\"\"\n	if not outfile: #no outfile, then make default path\n		outfile = file_list[0]+'.merged'\n\n	file_list = [f.replace(' ','\\ ') for f in file_list]\n	file_list_strings = ' '.join(file_list)#[\"'\"+f+\"'\" for f in file_list])\n\n	awk ='''\n		awk 'FNR!=NR&&FNR<={0}{{next}};\n		{{print $0> \"{1}\" }}' {2}'''.format(str(num_header_lines),outfile,file_list_strings)\n\n	#os.system(awk)\n	output = subprocess.check_output(awk,shell=True)# call(awk)\n	return outfile\n\ntry:\n	from bson.objectid import ObjectId\n	oid_type = type(ObjectId())\nexcept:\n	print('Cannot convert objectid to str. install pymongo')\n	oid_type = str\n\ndef flatten_dictionary(d,val={},p='',start=True):\n	\"\"\"\n		This function recursively flattens dictionaries.\n		All values in the dictionary that are found to be nested subdictionaries will be converted to keys containing '.'\n		This is very useful for moving all keys in a dictionary to the top level rather than having to access each subkey\n\n			=====================   =====================\n			**Input**				**Description**\n			---------------------	---------------------\n			d						A nested dictionary of key:values\n			=====================   =====================\n\n		See example below::\n\n			Imagine a dictionary is passed as such\n				d = {\n					'a':{'hello':5,\n						'world':10}\n					'ok':10\n				}\n			Running flatten_dictionary on this function will produce the following\n			d = {\n				'a.hello':5,\n				'a.world':10,\n				'ok':10,\n			}\n			So rather than accesssing d['a']['hello'], We access d['a.hello']\n\n		.. important:: Please refer to the function,DotAccessible, to perform the opposite of this function: Convert a flattened dictionary into a nested dictionary\n\n    \"\"\"\n	if start:\n		val = {}\n	for k,v in d.iteritems():\n		if isinstance(v, dict):\n			flatten_dictionary(v,val,p + k + '.', False)\n		elif isinstance(v,oid_type):\n			val[p+k]=str(v)\n		else:\n			val[p+k] = v\n	return val\n\n\n\nclass DotAccessible(MutableMapping):\n	\"\"\"\n		A dictionary that allows dot notation for accessing nested subdictionaries. Code [inspired-by/copied-from]:\n		http://www.velvetcache.org/2012/03/13/addressing-nested-dictionaries-in-python\n		http://stackoverflow.com/questions/3387691/python-how-to-perfectly-override-a-dict\n		http://docs.python.org/2/library/collections.html#collections-abstract-base-classes\n\n	\"\"\"\n\n	def __init__(self, *args, **kwargs):\n		self.store = dict()\n		self.update(dict(*args, **kwargs))  # use the free update to set keys\n\n	def __getitem__(self, dotkey):\n		value = self.store\n		for key in dotkey.split('.'):\n			value = value[key]\n		return value\n\n	def __setitem__(self, dotkey, value):\n		nested_node = self.store\n		for key in dotkey.split('.')[:-1]:\n			if key not in nested_node:\n				nested_node[key] = dict()\n			nested_node = nested_node[key]\n		nested_node[dotkey.split('.')[-1]] = value\n\n	def __delitem__(self, dotkey):\n		nested_node = self.store\n		for key in dotkey.split('.')[:-1]:\n			nested_node = nested_node[key]\n		del nested_node[dotkey.split('.')[-1]]\n\n	def __iter__(self):\n		return iter(self.store)\n\n	def __len__(self):\n		return len(self.store)\n\n	def __str__(self):\n		return str(dict(self))\n\n\ndef RemoveObjId(document):\n	\"\"\"\n        This function will recursively search all the values of a document/dictionary. Any value in the dictionary whose type is equal to a MongoDB ObjectId will be converted to a string.\n\n    		=====================   =====================\n	        **Input**               **Description**\n	        ---------------------   ---------------------\n	        document		A nested or flattened dictionary; or similarly a document returned by MongoDB\n	        =====================   =====================\n    \"\"\"\n	from bson.objectid import ObjectId\n	oid_type=type(ObjectId())\n	def remove_oid(document):\n		for f,v in document.iteritems():\n			if isinstance(v,dict):\n				remove_oid(v)\n			#its an object id\n			elif isinstance(v,oid_type):\n				document[f]=str(v)\n			elif isinstance(v,list) and isinstance(v[0],dict):\n				for sub_vals in v:\n					if isinstance(sub_vals,dict):\n						remove_oid(sub_vals)\n	remove_oid(document)\n\n#function description - this will extract a specific field from a file and write it to the output file as a  single column (without a header)\n#if count_field = None, then we assume there are no counts associated with the field of interest.  if count_field =is not None then we assume that column refers to the number of counts a sequence has occurred\ndef Write_Single_Field(filename=None,outfile_location=None,field=None,count_field = None, file_format=None,contains_header=True):\n	\"\"\"\n			This will extract a specific field from a file and write it to the output file as a single column (without a header.)\n			If *count_field* = None, then we assume there are no counts associated with the field of interest.\n			If *count_field* =! None, then we assume that column refers to the number of counts a sequence has occurred\n	\"\"\"\n\n	total_data = 0\n	total_field = 0\n\n	if outfile_location == None:\n		outfile_location = filename+'_singlefield.txt'\n\n	if (filename):\n		isfile = os.path.isfile(filename)\n	if (filename==None) or (isfile==False):\n		raise Exception(\"The pathname of the file is invalid\")\n	if (field==None):\n		IF_file = readwrite.immunogrepFile(filelocation=filename,filetype='TAB',contains_header=False,mode='r')\n		print(\"Warning no field name was provided.  This file will be treated as a tab file and the first column will be selected\")\n		field = 'Column 1'\n	else:\n		IF_file = readwrite.immunogrepFile(filelocation=filename,filetype=file_format,contains_header=contains_header,mode='r')\n\n		if (file_format==None):\n			guessedFiletype = IF_file.getFiletype()\n			print(\"Warning, no file type for this file was provided.  The file was predicted to be a \"+guessedFiletype+\" file.\")\n	try:\n		outfile = open(outfile_location,'w')\n		while not(IF_file.IFclass.eof):\n			data = IF_file.IFclass.read() #read in each line as a dictionary\n			if data:\n				total_data+=1\n				if field in data and data[field]:\n					value = data[field]\n					if count_field!=None and count_field in data and data[count_field]:\n						count = data[count_field] #this defines the number of times we will write it to a file\n					else:\n						count = '1'\n					outfile.write(value+'\\t'+count+'\\n')#write sequence to new file\n					total_field+=1\n	except Exception as e:\n		os.remove(outfile_location)#(\"rm '{0}'\".format(outfile_location))\n		print_error(e)\n\n	return [total_data,total_field]\n\n\n#Simple python command for counting the occurrences of a sequence ina file.\n#assumption 1: sequences are sorted alphabetically\n#assumption 2: tab delimited file\n#assumption 3: column 1 = sequence of interest, column 2 = counts for that sequence\ndef count_sorted_seqs(input_file_name, output_file_name):\n	\"\"\"\n		Counts the occurances of a sequence in a file. Takes a few assumptions into account.\n\n		:Assumptions:\n			* Sequences are sorted alphabetically\n			* tab delimited file\n			* column 1 = sequence of interest\n			* column 2 = counts for that sequence\n	\"\"\"\n	f_in = open(input_file_name,'r')\n	f_out = open(output_file_name,'w')\n\n	line_one = f_in.readline().strip()\n	line_one = line_one.split('\\t')\n	current_seq = line_one[0]\n	if len(line_one)>1:\n		current_count = int(line_one[1])\n	else:\n		current_count = 1\n\n	for line in f_in:\n		data = line.strip()\n		data = data.split('\\t')\n		temp_seq = data[0]\n		if len(data)>1:\n			temp_count = int(data[1])\n		else:\n			temp_count = 1\n\n		if (temp_seq == current_seq): #same sequence as before, so keep adding to teh counts\n			current_count+=temp_count\n		else:\n			f_out.write(current_seq+'\\t'+str(current_count)+'\\n') # new sequence encountered so output results for old sequence and replace new sequence\n			current_seq = data[0]\n			current_count = temp_count\n	f_out.write(current_seq+'\\t'+str(current_count)+'\\n')\n	f_in.close()\n	f_out.close()\n\n\n#filelocation-> location of file\n#field -> name of the column/field in the file that you want to read\n#file_format -> JSON/TAB/CSV/ETC...\n#contains_header -> whether or not the file contains a header row\ndef count_unique_values(filelocation=None,output_filelocation=None,field=None,count_field=None,file_format=None,contains_header=True,delete_intermediate_file=True,mem_safe = False):\n	\"\"\"\n	        ===============   ================\n	        **Input**         **Description**\n	        ---------------   ----------------\n	        filelocation      location of file\n	        field             name of the column/field in the file that you want to read\n	        file_format       JSON/TAB/CSV/etc.\n	        contains_header   whether or not the file contains a header row\n	        ===============   ================\n	\"\"\"\n	if output_filelocation == None:\n		output_filename = removeFileExtension(filelocation)\n		output_filename = output_filename+'.unique_vals.txt'\n		unique_counts = output_filename+'.counts'\n	else:\n		output_filename = output_filelocation+'.single_field_list'\n		output_filename2 = output_filelocation+'_temp2'\n		unique_counts = output_filelocation\n\n	[total_found,total_field] = Write_Single_Field(filelocation,output_filename,field,count_field, file_format,contains_header) #take the field we are interested in and just write it to a temp file\n\n	if mem_safe:\n		#bash_command = '''sort '{0}' | uniq -c | awk 'BEGIN{{OFS=\"\\t\"}}{{ print $2,$1,$1 }}' > '{1}' '''.format(output_filename,unique_counts)	 --> oldest method, no longer used\n\n		#USE THESE LINES IF WE FIND THAT THERE ARE MEMORY LIMITATIONS/ERRORS WITH THE FUNCTION##\n		#print datetime.now()\n		bash_command = '''sort '{0}' > '{1}' '''.format(output_filename,output_filename2)\n		#os.system(bash_command)\n		subprocess.call(bash_command,shell=True)\n		count_sorted_seqs(output_filename2,unique_counts)\n		os.remove(output_filename2)\n		#os.system(\"rm '{0}'\".format(output_filename2))\n		#print datetime.now()\n		###END OF MEMORY SMART BUT SLOER FUNCTION ################\n	else:\n		#FAST method, but could have memory limitations for extremely large files)\n		bash_command = '''awk '{{OFS = \"\\t\"}} {{arr[$1]+=$2}} END {{for (i in arr) {{print i,arr[i]}}}}' '{0}' > '{1}' '''.format(output_filename,unique_counts)\n		#os.system(bash_command)\n		subprocess.call(bash_command,shell=True)\n\n	if delete_intermediate_file:\n		os.remove(output_filename)\n		#os.system(\"rm '{0}'\".format(output_filename))\n\n	#print datetime.now()\n\n	return [total_found,total_field]\n\n\n\n#print an error message if system/program fails\ndef print_error_string(e=None):\n	\"\"\"\n		Prints an error message if system/program fails.\n		Uses traceback to report the last line and module where error occurred\n\n		:exception code:\n\n			if not(e):\n				e = \"Exception error not passed\"\n			else:\n				print there was an error: str(e)\n    \"\"\"\n	exc_type, exc_obj, exc_tb = sys.exc_info()\n	fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]\n\n	if not(e):\n		error = \"Exception error not passed\\n\"\n	else:\n		error = \"There was an error: \\n\"+str(e)\n\n	error+=	\"\\nLine Number: {0} , type: {1} , fname: {2}\".format(str(exc_tb.tb_lineno),str(exc_type),str(fname))\n\n	tb_error = traceback.format_exc()\n	error+=\"Traceback Error:\\n\"+str(tb_error)\n	return error\n\n\n\n\n\n\n\n# this is a cleanup function to remove any unused fields\n# this will iterate the sequence document and remove any subdocuments or fields that have \"None\" values\ndef removeEmptyVals(myDict):\n	\"\"\"\n		this is a cleanup function to remove any unused fields\n		this will iterate the sequence document/dictionary and remove any subdocuments or fields that have \"None\" or empty string or empty array/dict values\n\n			================	================\n			**Input**			**Description**\n			----------------	----------------\n			myDict				A python dictionary of keys/values\n			================	================\n\n	\"\"\"\n	if myDict:\n		copyDict = myDict.copy();\n\n		for myKeys in myDict:\n			if type(myDict[myKeys]) is dict:\n				#if it has a subdocument then recursively remove any None elements in subdocument\n				subDict = removeEmptyVals(myDict[myKeys])\n				if subDict == {}:\n					copyDict.pop(myKeys,None)\n				else:\n					copyDict[myKeys] = subDict;\n			else:\n				if myDict[myKeys]!=0 and myDict[myKeys]!=False and not myDict[myKeys]:\n					copyDict.pop(myKeys,None)\n	else:\n		copyDict = myDict\n\n	return copyDict\n\n#ASSUMES THAT THE DICTIONARY IS ONLY IN DOT NOTATION!!! I.E. NOT A NESTED DICTIONARY\n# this is a cleanup function to remove any unused fields\n# this will iterate the sequence document and remove any subdocuments or fields that have \"None\" values or empty strings or empty lists\n#any fields that are 'empty' are retuend as a second variable\ndef divideEmptyAndNonEmptyVals(myDict):\n	\"\"\"\n		This is a cleanup function that removes any unused fields.\n		This will iterate the sequence document and remove any subdocuments or fields that have \"None\" values, empty strings or empty lists.\n		Fields that are empty are returned as a second variable.\n\n	        ===============   ================\n	        **Input**         **Description**\n	        ---------------   ----------------\n	        myDict			  An already flattened dictionary\n	        ===============   ================\n\n	        .. note::\n			This method assumes that the dictionary is in dot notation. i.e. not a nested dictionary\n	\"\"\"\n	empty_fields={}\n	non_empty = {}\n	for field,value in myDict.iteritems():\n		if value!=False and not(value):\n			empty_fields[field]= \"\"\n		else:\n			non_empty[field] = value\n\n	return [non_empty,empty_fields]\n\n# this is a cleanup function to remove any unused fields\n# this will iterate the sequence document and remove any subdocuments or fields that have \"None\" values\ndef removeNoneVals(myDict):\n	\"\"\"\n		this is a cleanup function to remove any unused fields\n		this will iterate the sequence document/dictionary and remove any subdocuments or fields that have \"None\" only\n\n			===============   ================\n			**Input**         **Description**\n			---------------   ----------------\n			myDict            A python dictionary of keys/values\n			===============   ================\n\n	\"\"\"\n	if myDict:\n		copyDict = myDict.copy();\n\n		for myKeys in myDict:\n			if type(myDict[myKeys]) is dict:\n				#if it has a subdocument then recursively remove any None elements in subdocument\n				subDict = removeNoneVals(myDict[myKeys])\n				if subDict == {}:\n					copyDict.pop(myKeys,None)\n				else:\n					copyDict[myKeys] = subDict;\n			else:\n				if myDict[myKeys]==None:\n					copyDict.pop(myKeys,None)\n	else:\n		copyDict = myDict\n\n	return copyDict\n\n\n\n#spint out a counter of the current status of a process (i.e. percent done)\ndef LoopStatus(counter,totalSeq,perIndicate,startPer,div='',addedInfo=None):\n	\"\"\"\n        	counter of the current status of a process. (i.e. percent done)\n    \"\"\"\n	percentDone = int(counter/float(totalSeq)*100)\n	if percentDone%perIndicate==0 and percentDone>startPer:\n		stringvar ='{0}% percent done. Time: {1}'.format(str(percentDone),str(datetime.now()))\n		if addedInfo:\n			stringvar+='\\n{0}\\n\\n'.format(addedInfo)\n		print(stringvar)\n		startPer = percentDone\n	return startPer\n\n#spint out a counter of the current status of a process (i.e. percent done)\n#THIS FUNCTION USES GENERATOR INSTEAD\ndef LoopStatusGen(totalSeq,perIndicate,addedInfo=None):\n	\"\"\"\n		counter of the current status of a process.\n\n		.. note::\n			this function uses generator instead\n\n		.. seealso::\n			:py:func:`.LoopStatus`\n	\"\"\"\n	counter=0\n	startPer = 0\n	while True:\n		percentDone = int(counter/float(totalSeq)*100)\n		if percentDone%perIndicate==0 and percentDone>startPer:\n			stringvar ='{0}% percent done. Time: {1}'.format(str(percentDone),str(datetime.now()))\n			if addedInfo:\n				stringvar+='\\n{0}\\n\\n'.format(addedInfo)\n\n			print(stringvar) #print out the current perecent\n			startPer = percentDone\n		yield startPer #use a generator to pause\n		counter+=1\n\ndef removeFileExtension(stringFileName):\n	\"\"\"\n		Removes File Extension\n    \"\"\"\n	filename = stringFileName.split('.')\n	lastExtension = filename[-1]\n\n	foundExtension = False\n\n	for i in listofextension:\n		if i == lastExtension:\n			foundExtension = True\n\n	if foundExtension:\n		editedFileName = filename[0]\n		for i in range(1,len(filename)-1):\n			editedFileName+=\".\"+filename[i]\n	else:\n		editedFileName = stringFileName\n\n	return editedFileName\n\n\ndef fieldsForAnnotatingAb():\n\n	abFields = {\n		\"FULL_SEQ\":None, #dna sequence\n		\"SEQ_HEADER\":None, #header for dna sequence\n		\"STRAND_DIR\":None, #after the alignment is the v/d/j gene aligned to the fwd or reverse complement?\n		\"VGENE_START\":None,\n		\"JGENE_START\":None,\n		\"FR1_START_NT\":None, #nucleotide position along sequence where FR1 starts\n		\"FR1_END_NT\":None,\n		\"CDR1_START_NT\":None,\n		\"CDR1_END_NT\":None,\n		\"FR2_START_NT\":None,\n		\"FR2_END_NT\":None,\n		\"CDR2_START_NT\":None,\n		\"CDR2_END_NT\":None,\n		\"CDR3_START_NT\":None,\n		\"CDR3_END_NT\":None,\n		\"FR4_START_NT\":None,\n		\"FR4_END_NT\":None,\n		\"SEQ_ALGN\":None, #the actual sequence that is aligned to the germline (includes gap characters (-)), to be used for later scripts\n		\"GERMLINE_ALGN\":None, #the actual germline sequence that best aligns to sequence (includes gap characters (-)), to be used for later scripts\n		\"START_FEATURE\":None #what region does the antibody start/along alignment\n	};\n	return abFields\n\n",
+			"file": "immunogrep_useful_functions.py",
+			"file_size": 23542,
+			"file_write_time": 130931970806089744,
+			"settings":
+			{
+				"buffer_size": 23544,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "immunogrep_germline_db_query_class.py",
+			"settings":
+			{
+				"buffer_size": 1748,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/costas/70.115.155.148",
+			"settings":
+			{
+				"buffer_size": 22,
+				"line_ending": "Unix",
+				"name": "70.115.155.148"
+			}
+		},
+		{
+			"file": "/home/costas/multhitheredigfft.py",
+			"settings":
+			{
+				"buffer_size": 6596,
+				"line_ending": "Unix",
+				"name": "#this wrapper will 1)run igfft, then 2) run the ig"
+			}
+		},
+		{
+			"file": "immunogrep_isotype_fft.py",
+			"settings":
+			{
+				"buffer_size": 14515,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/costas/Documents/testcommon.py",
+			"settings":
+			{
+				"buffer_size": 852,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "errors:\nfile 50\n",
+			"settings":
+			{
+				"buffer_size": 16,
+				"line_ending": "Unix",
+				"name": "errors:"
+			}
+		},
+		{
+			"file": "immunogrep_global_variables.py",
+			"settings":
+			{
+				"buffer_size": 20987,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 159.0,
+		"last_filter": "install",
+		"selected_items":
+		[
+			[
+				"install",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 467.0
+	},
+	"console":
+	{
+		"height": 139.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = '2915d1851351e5ee549c20394736b442' + '8bc59f460fa1548d1514676163dafc88'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by) "
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/costas/Documents/github/IGREP/common_tools"
+	],
+	"file_history":
+	[
+		"/home/costas/Documents/github/IGREP/common_tools/immunogrep_cdr3_tools.py",
+		"/home/costas/Documents/github/IGREP/common_tools/immunogrep_query_germline_functions.py",
+		"/home/costas/Documents/github/IGREP/common_tools/immunogrep_fft_align_tools.py",
+		"/home/costas/Documents/github/IGREP/common_tools/immunogrep_barcode_exactsplitter.py",
+		"/home/costas/Documents/github/IGREP/common_tools/immunogrep_germline_db_query_class.py",
+		"/home/costas/Desktop/make_msdb_v2.py",
+		"/home/costas/Desktop/Changes to code:",
+		"/home/costas/.config/sublime-text-3/Packages/User/SublimeLinter.sublime-settings",
+		"/home/costas/Desktop/GeoTrust_Global_CA.cer",
+		"/home/costas/.config/sublime-text-3/Packages/Anaconda/Anaconda.sublime-settings",
+		"/home/costas/.config/sublime-text-3/Packages/User/Anaconda.sublime-settings",
+		"/home/costas/.config/sublime-text-3/Packages/User/Preferences.sublime-settings",
+		"/home/costas/Documents/IGREP/common_tools/immunogrep_db_query_api.py",
+		"/home/costas/.config/sublime-text-3/Packages/User/Package Control.sublime-settings",
+		"/home/costas/Documents/github/airflow/airflow/www/app.py",
+		"/home/costas/Documents/GiuliaEnzymeAnalysis/align_seqs.bash",
+		"/home/costas/Documents/GiuliaEnzymeAnalysis/0 => SUBMIT THE SMALL FASTQ FILE TO IMGT AND LOOK",
+		"/home/costas/Documents/GiuliaEnzymeAnalysis/WTREF"
+	],
+	"find":
+	{
+		"height": 44.0
+	},
+	"find_in_files":
+	{
+		"height": 120.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"cdr3_search_name",
+			"stats.",
+			"def remo",
+			"IDENTIFYCD",
+			"CDR3_IN",
+			"IdentifyC",
+			"fr3pre",
+			"Find_cd",
+			"def i",
+			"def Identify",
+			"class ",
+			"print('aaa",
+			"download_germlines_from_db",
+			"def data",
+			"def databas",
+			"print ",
+			"igfft_germline_",
+			"testset",
+			"stats",
+			"appsoma_ap",
+			"import appsoma_api",
+			"fftaligner",
+			"os.sy",
+			"subproce",
+			"header =",
+			"pandas_re",
+			"def pandas_re",
+			"linting",
+			"HEAD",
+			"head"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"dataset_path"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "immunogrep_singlechain_cdr3_cluster.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 73054,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "immunogrep_igfft_functions.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 60540,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2260,
+								2260
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1008.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 67,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								67,
+								67
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/home/costas/Documents/get_cdr3_motifs.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 471,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								471,
+								471
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "immunogrep_useful_functions.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 23544,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								97,
+								97
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "immunogrep_germline_db_query_class.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1748,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1304,
+								1304
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "/home/costas/70.115.155.148",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 22,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								22,
+								22
+							]
+						],
+						"settings":
+						{
+							"auto_name": "70.115.155.148",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "/home/costas/multhitheredigfft.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6596,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"auto_name": "#this wrapper will 1)run igfft, then 2) run the ig",
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "immunogrep_isotype_fft.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 14515,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								478,
+								478
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "/home/costas/Documents/testcommon.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 852,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								787,
+								787
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 168.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 16,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								16,
+								16
+							]
+						],
+						"settings":
+						{
+							"auto_name": "errors:",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "immunogrep_global_variables.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 20987,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1374,
+								1374
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 36.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "igrep.sublime-project",
+	"replace":
+	{
+		"height": 82.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 338.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

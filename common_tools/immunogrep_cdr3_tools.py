@@ -1,13 +1,14 @@
 import math
 import numpy as np
 import scipy
-from scipy import stats
+from scipy.stats import entropy
 import re
 import json
 from pprint import pprint
 import timeit
 import copy
 
+import os
 import json
 from collections import defaultdict
 # from immunogrep_taxonomy_tools import convert2TaxID
@@ -19,6 +20,21 @@ from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 from numpy import prod
 import timeit
+
+global cdr3MotifFolder
+cdr3MotifFolder = os.path.join(os.path.dirname(os.path.relpath(__file__)), "cdr3_junction_motifs")
+
+
+def ModifyMotifPath(newpath):
+	"""
+		If the default database folder does not exist (subfolder within the module script location) then
+		this function will change the default path for finding cdr3_junction_motifs
+	"""
+	if not os.path.isdir(newpath):
+		raise Exception("The provided db path does not exist! " + newpath)
+	global cdr3MotifFolder
+	cdr3MotifFolder = newpath
+
 
 class RegularExpression():
 	'''
@@ -304,18 +320,46 @@ class RegularExpression():
 		return regnt
 
 
-
 class findCDR3():
-	def __init__(self, Motif, motif_type='AA', frame=[0, 1, 2, 3, 4, 5]):
+	def __init__(self, Motif, motif_method="default", motif_type='AA', frame=[0, 1, 2, 3, 4, 5]):
 		self.Motif = Motif
-		self.MotifList = [RegularExpression(data=motif) for motif in self.Motif]
-		# for m in self.MotifList:
-		#	  print(m.RegEx)
+		if motif_method == "list":
+			self.MotifList = [RegularExpression(data=motif) for motif in self.Motif]
+		elif motif_method == "default":
+			self.Motif = self.load_motifs(self.Motif)
+			self.MotifList = [RegularExpression(data=motif) for motif in self.Motif]		
 		self.motif_type = motif_type
 		self.frame = frame
 
-	def FindCDR3(self, seq, suggest_chain=None,
-				 start_pos=0, end_pos = None, strand=None,):
+	def get_motifs(self):
+		return self.Motif
+
+	def load_motifs(self, Motif):
+		'''
+			Loads CDR3 motifs from predefined file
+
+			Parameters
+			----------
+			Motif : dict
+			keys = 'SPECIES', 'LOCUS'
+		'''
+		if not isinstance(Motif['SPECIES'], list):
+			Motif['SPECIES'] = [Motif['SPECIES']]
+		if not isinstance(Motif['LOCUS'], list):
+			Motif['LOCUS'] = [Motif['LOCUS']]
+
+		loaded_motifs = []
+		for s in Motif['SPECIES']:
+			s = s.lower().replace(' ', '')
+			for l in Motif['LOCUS']:
+				l = l.lower().replace(' ', '')
+				motif_path = os.path.join(cdr3MotifFolder, s, '_'.join([s, l, 'cdr3motif.txt']))
+				if not os.path.isfile(motif_path):
+					raise Exception('CDR3 motif file does not exist: ' + motif_path)
+				loaded_motifs.append(json.loads(open(motif_path).read().strip()))
+		return loaded_motifs
+
+	def FindCDR3(self, seq, suggest_chain=None, start_pos=0, end_pos=None, strand=None,):
 		'''
 		look for regex
 		for each frame,

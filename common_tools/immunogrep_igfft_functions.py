@@ -1,449 +1,433 @@
-#VERSION 360-370 SOMEWHERE IN THIS VERSION WE CHANGED HOW RECOMBINATION IS DISPLAYED 
 
-##################################### PARSE IGFFT RESULT FILE ####################################################################################
-#THIS SCRIPT WILL PARSE THE ALIGNMENT FILE CREATED BY RUNNING IGFFT VERSION 0.6 and above
-#The code is hardcoded and assumes that the output of the file is identical to the following template:
-#this is sample output from the igblast program using the settings defined above
-##############################################################################################
+"""
+	Set of functions for running igfft, parsing results, CDR3 calls, and ISOTYPE calls
+"""
 
-# VERSION 25 HAD BEFORE JONATHAN CDR3 UPDATE# 
-
-from Bio import SeqIO
 from Bio.Seq import Seq
 import sys
-import commands
 import re
 
 from Bio.Alphabet import generic_dna
-from Bio.Seq import Seq
 import time
 from time import gmtime, strftime
-
-import immunogrep_useful_immunogrep_functions as useful
-
 import json
 import os
+import glob
+import subprocess
 import traceback
 from pprint import pprint
-
-#import immunogrep_run_igblast_command as run_igblast
-import immunogrep_immunogrepfile as readwrite
-
-from immunogrep_global_variables import idIdentifier
-from immunogrep_global_variables import fasta_file_delimiter
 from datetime import datetime
 from collections import defaultdict
 from collections import OrderedDict
 import collections
-#import immunogrep_appsoma_cdr3tools as CDR3tools
-import cchrysostomou_cdr3toolsv2 as CDR3tools
-from immunogrep_global_variables import descriptor_symbol #this is the symbol we will use to designate 'comment' lines in the file 
-from immunogrep_global_variables import translation_var #this key will signify the translation/translator key 
-from immunogrep_global_variables import filetype_var
-import immunogrep_query_germline_functions as query_germlines #use this for querying germlines 
-import cchrysostomou_nt_fft_align_tools as fftaligner
-from cchrysostomou_isotype_fft import defaultBarcodes
 import copy
-#from cchrysostomou_readwritefiles import *
+from multiprocessing import Process
+from multiprocessing import Queue
+
+# Useful functions
+import immunogrep_useful_functions as useful
+# For global variables
+from immunogrep_global_variables import idIdentifier
+from immunogrep_global_variables import fasta_file_delimiter
+from immunogrep_global_variables import descriptor_symbol  # this is the symbol we will use to designate 'comment' lines in the file 
+from immunogrep_global_variables import translation_var  # this key will signify the translation/translator key 
+from immunogrep_global_variables import filetype_var
+from immunogrep_global_variables import program_folder
+# For reading files
+import immunogrep_read_file as readwrite
+# use this for querying germlines sequences
+import immunogrep_query_germline_functions as query_germlines
+# For CDR3
+import immunogrep_cdr3_tools as CDR3tools
+# For isotyping
+import immunogrep_fft_align_tools as fftaligner
+from immunogrep_isotype_fft import defaultBarcodes
+
+# Keep an interal folder of database files. Within this folder are subfolders by species and loci.
+# A text file for each locus set is stored as a tab delimited file
+# If this folder is not present, then a user MUST provide the location of their own files OR change the location of the database folder
+global databaseFolder
+databaseFolder = os.path.join(os.path.dirname(os.path.relpath(__file__)), "igfft_germline_files")
+
+# Keep the location of the binary as a string
+igfft_location = os.path.join(program_folder, 'igfft')
 
 
-
-#This function will be used to print to screen the error file generated when parsing program
-def PrintErrorsToScreen(filename):	
-	eof = False
-	line_string = ""
-	with open(filename) as f1:
-		while not(eof):
-			line = f1.readline()
-			if line == "":
-				eof=True
-			else:
-				#line=line.strip('\r\n')
-				line_string+=line
-				if line.strip()=="**End of Error message**":
-					yield line_string
-					line_string = ""	
-	yield line_string
-
-databaseFolder = "scratch/fftannotation_db_files/"
+def modify_germline_DB_path(newpath):
+	"""
+		If the default database folder does not exist (subfolder within the module script location) then
+		this function will change the default path for finding germline sequences defined by the databaseFolder
+	"""
+	if not os.path.isdir(newpath):
+		raise Exception("The provided db path does not exist! " + newpath)
+	global databaseFolder
+	databaseFolder = newpath
 
 
+def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=None, germline_source="default", num_processes=1, igfft_settings={}, parsing_settings={}, custom_germline_file_loc={}, germline_db_query={}, return_igrep_doc_line=False):
+	"""
+		Wrapper function for running igfft on multiple processes. This will take input file, split into multiple files, and then run 
+		igfft and igfft parsing function on each file. igfft parsing function will always check for CDR3 and Isotyping using default settings.
 
-def EnsureDatabaseDirectoryExists():
-	if not os.path.isdir(databaseFolder):
-		os.makedirs(databaseFolder)
-		os.makedirs(databaseFolder+'/database')
-		
-	for subtype in ['V','D','J']:
-		folder = databaseFolder+subtype
-		if not os.path.isdir(folder):		
-			os.makedirs(folder)			
+		input_file can only be a FASTA or FASTQ file
 
-def GetDefaultParameters():
+		Parameters
+		---------
+		input_file : string, 
+			Filepath of the FASTQ/FASTA dataset		
+		species : list of strings
+			Species databases used to run igfft and identify CDR3
+		locus : list of strings
+			Loci databases used to run igfft and identify CDR3
+		file_type: string, default=None
+			Allowed file types are "FASTQ" or "FASTA"
+			If None, then program will attempt to guess filetype
+		output_dir : string, default None
+			Directory of the desired output file. If None, then output_dir will be equal to the directory of the input_file
+		germline_source : string ("default", "db", or "custom")
+			Settings for where we should look for germline files.
+			..important::
+			If germline_source is "custom" then the user must have defined the location of the v, d, and j files in the parameter custom_germline_file_loc
+			For "default" and "db" we will use the species list and locus list parameters to extract germlines.
+		num_processes : int, default 1
+			Number of files to create and run in parallel
+		igfft_settings : dict
+			Additional alignment settings used for running igfft. See run_igfft function below. 
+		parsing_settings : dict
+			Additional alignment settings used for parsing igfft. I.e. settings for isotyping, idnentifying CDR3, handling insertions. See Parse_Alignment_File function below.
+		custom_germline_file_loc : dict, default {}
+			Only used when germline_source is "custom"
+			Allowed keys in the dict are "v", "d", and "j"
+			Values are list of file paths for all germlines to use as "v" set, "j" set and "d" set
+		germline_db_query : dict, default {}
+			Only used when germline_source is "db"
+			Dict defines fields you want to use in a query that are in addition to the "SPECIES" and "LOCUS" settings
+		return_igrep_doc_line : boolean, default False
+			When True, then a comment line is added to the top of the annotated file after parsing. This line defines how to add select fields from the file into the database.
 	
-	try:
-		os.system('igfft --defaults')
-		filename_created = 'defaultsettings_fftprogram.txt'
-		with open(filename_created) as f:
-			dataparameters = f.readlines()
-		os.system('''rm '{0}' '''.format(filename_created))
-		default_settings = {}
-		
-		for p in dataparameters:
-			p = p.strip().split('\t')
-			default_settings[p[0][1:]] = {}
-			
-			if p[1]!="none":
-				v = p[1].split('.')
-				v[0] = v[0].lstrip('0')
-				if len(v)>1:
-					v[-1] =v[-1].rstrip('0')
-				v = '.'.join(v)
-				v = v[:-1] if v[-1] == '.' else v
-				default_settings[p[0][1:]]['default'] = v
-			else:
-				default_settings[p[0][1:]]['default'] = None
-			
-			default_settings[p[0][1:]]['description'] = p[2] if len(p) > 2 else ''
-	except:		
-		default_settings = {
-			'num_hits':None,
-			'gap_open_fft':None,
-			'gap_extend_fft':None,
-			'pep_len':None,
-			'gap_extend_sw':None,
-			'gap_open_sw':None,
-			's_pep':None,
-			'cluster_per_id':None,
-			'group_clusters':None,
-			'gap':None,
-			'similar_clusters':None,
-			'match_sw':None,
-			'mismatch_sw':None,
-			'min_per_id':None,
-			'ratio_cutoff':None,
-			'times_above_ratio':None,
-			's_fft':None						
-		}
-		
-	return default_settings
+		Returns
+		-------
+		List of two strings:
+			Element 1: location of the final parsed file containing genes, fr, cdr, cdr3, and isotype
+			Element 2: location of the file created by igfft containing genes, fr, cdr
+	"""
+	if not file_type:
+		# Attempt to guess filetype
+		tempfile = readwrite.immunogrepFile(input_file)
+		file_type = tempfile.getFiletype()
+		if file_type is None:
+			raise Exception("Could not predict the filetype for this file. Please manually define the file_type using file_type parameter in function")
+	
+	if file_type not in ['FASTQ', 'FASTA']:
+		raise Exception("The provided file, {0}, does not appear to be a FASTQ or FASTA file. Predicted type: {1}. Please manually define if the file is a FASTQ or FASTA using the file_type file_type parameter".format(input_file, file_type))
 
-#just simply convert lists in query to mongodb format 
-def MakeQueryList(query,fields_list):
-	mongo_query = {}
-	for field in fields_list:
-		if field in query:
-			if isinstance(query[field],list):
-				mongo_query[field] = {'$in':query[field]}				
-			elif isinstance(query[field],basestring):
-				mongo_query[field] = query[field]
-			else:
-				raise Exception('Improper format for {0} query. We only allow a list of strings or a single string. Fields provided by user: {1}'.format(field,json.dumps(query)))
-	return mongo_query	
-	
-#function for downloading germline files from our database 
-#the structure of query_settings is as follows: 
-#allowable keys: 
-			#_id: LIST OF IDS REFERRING TO SPECIFIC GERMLINE SETS YOU WANT TO DOWNLOAD (if this is passed in all other fields are ignored)
-			#IF _id is not provided , then SPECIES IS REQUIRED 									
-			#SPECIES: LIST OF SPEICES OR SINGLE STRING 
-			
-			#the following are optional, if not provided, then SOURCE IS ASSUMED TO BE IMGT AND VERSION IS THE LATEST VERSION 
-			#PRODUCTIVITY: STRINGS DEFINING PRODUCTIVITY OF GERMLINES TO QUERY 
-			#LOCUS: LIST OF LOCUS OR SINGLE STRING 										
-			#MOLECULAR_COMPONENT: LIST OR SINGLE STRING 
-			#SOURCE: STRING DEFINING SOURCE 
-			#VERSION: STRING DEFINING THE VERSION 
-def download_germlines_from_db(query_settings):
-	query = {}
-	
-	output_directory = databaseFolder+'databasedownloads/'
-	
-	if not os.path.isdir(output_directory):
-		os.makedirs(output_directory)
-		
-	#capitalize everything 
-	ids = query_settings.pop('_id',None)
-	query_settings = {k.upper():v for k,v in query_settings.iteritems()}
-	if ids:
-		query_settings['_id'] = ids
-	
-	
-	if '_id' in query_settings and query_settings['_id']:		
-		#query['_id'] = {'$in':query_settings['_id']}
-		id_list = query_settings['_id']		
-		query_settings.pop('_id')
-		
-	elif 'SPECIES' in query_settings:
-		query_settings.pop('_id',None)
-		id_list = []
-		#we will always choose the following database source and person as default if not defined
-		source ='IMGT'
-		uploadedby='immunogrep'
-				
-		query = MakeQueryList(query_settings,['SPECIES','LOCUS','MOLECULAR_COMPONENT','SOURCE','VERSION','UPLOADED-BY','GENETYPE'])
-		if 'SOURCE' not in query:
-			query['SOURCE'] = source
-		if 'UPLOADED-BY' not in query:
-			query['UPLOADED-BY'] = uploadedby								
-		
+	if not output_dir:
+		output_dir = os.path.dirname(input_file)
 	else:
-		raise Exception('Either a list of germline ids or a SPECIES must be provided as query input. Fields provided by user: {0}'.format(json.dumps(query_settings)))
+		if not os.path.isdir(output_dir):
+			os.path.makedirs(output_dir)
+	basename_file = useful.removeFileExtension(os.path.basename(input_file))
 	
-	#add extra filters/functionality for query only genes within a germline set with provided productivity 
-		#i.e. add filter to the query if one was specifieid ('F','[F]','ORF')
-	if 'PRODUCTIVITY' in query_settings:
-		if not isinstance(query_settings['PRODUCTIVITY'],list):
-			query_settings['PRODUCTIVITY'] = [query_settings['PRODUCTIVITY']]
-		if query_settings['PRODUCTIVITY']:
-			productive_gene_filters = {'$in':query_settings['PRODUCTIVITY']}
+	# Files created by program will be placed here
+	outfile_queue = Queue()
+	# this should be the final name provided to the alignment file 	
+	of1_prefix = os.path.join(output_dir, basename_file)
+
+	if 'isotype' not in parsing_settings:
+		# Always run isotyping
+		parsing_settings['isotype'] = {}
+	if 'cdr3_search' not in parsing_settings:
+		# Always run CDR3 search
+		parsing_settings['cdr3_search'] = {'SPECIES': species, 'LOCUS': locus}
+	if germline_source == "default":
+		germline_location_settings = {'SPECIES': species, 'LOCUS': locus}
+	elif germline_source == "db":
+		germline_location_settings = {'SPECIES': species, 'LOCUS': locus}
+		germline_location_settings.update(germline_db_query)
+	elif germline_source == "custom":
+		germline_location_settings = custom_germline_file_loc
+		
+	def calligfft(f1, output_file_prefix, index=0):
+		"""
+			This inside function actually runs the programs
+			index => current file being analyzed/called by the function
+			output_file_prefix => this defines how the result files wil be named WITH OUT EXTENSION (we always add the .alignment and .annoation)
+			queue => this uses multithreading queues to keep track of what files were genreated in each process/thread
+			index => this the number of the thread/process being run (makes it easy for sorting the results so that they mach the order they were input)
+		"""
+		# Filename created by igfft program	
+		outfile_igfft = output_file_prefix + '.igfft.alignment'
+		# Filename created by parsing program
+		outfile_annotation = output_file_prefix + '.igfft.annotation'		
+		# use deepcopy so we cant screw with original settings		
+		fxn_params = copy.deepcopy(igfft_settings)
+		fxn_parse = copy.deepcopy(parsing_settings)
+		# Step 1: Run the igfft program and return the settings used for the program (command_val)
+		command_val = run_igfft(f1, outfile=outfile_igfft, germline_source=germline_source, germlines=germline_location_settings, input_filetype=file_type.upper(), variable_parameters=fxn_params)		
+		# Step 2: Run the parsing function which should also perform cdr3 analysis and isotype analysis		
+		Parse_Alignment_File(outfile_igfft, outfile_annotation, fxn_parse, command_val=command_val, return_igrep_doc_line=return_igrep_doc_line)
+		# add outputfiles to queue
+		outfile_queue.put([outfile_annotation, outfile_igfft, index])		
+		
+	if num_processes == 1:
+		# No need to muliprocess,so just run function 
+		calligfft(input_file, of1_prefix)				
+		final_files = outfile_queue.get()[0:2]
+	else:			
+		# First split files into mulitple small files 
+		if file_type.upper() == 'FASTQ':
+			split_files = useful.split_files_by_seq(input_file, num_processes, number_lines_per_seq=4, contains_header_row=False)
 		else:
-			productive_gene_filters={'$nin':[]}
-	else:
-		productive_gene_filters = {'$nin':[]}
-					
-	
-	#create a query for getting germlines from database 
-	db_class_var = query_germlines.GermlineDB()						
-	
-	#this is just for documenting purproses/keeping track of what teh query request was. storing settings of query basically 
-	unique_settings = db_class_var.QueryDistinctValsByID(id_list,extra_filters=copy.deepcopy(query),distinct_fields=['SPECIES','GENETYPE','MOLECULAR_COMPONENT','SOURCE','VERSION','LOCUS'])					
-	
-	unique_settings['DB-FILE-SOURCE'] = unique_settings.pop('SOURCE')
-	
-	selected_genes = unique_settings['GENETYPE']	
-	
-	if 'PRODUCTIVITY' in query_settings:
-		unique_settings['PRODUCTIVITY'] = query_settings['PRODUCTIVITY']	
-	
-	
-	
-	#figure out a name for the database file that makes it easy to recognize when referred to later on 
-	name_data = defaultdict(list)
-	for s in unique_settings['SPECIES']:
-		for l in unique_settings['LOCUS']:
-			name_data[s].append(l)	
-	file_prefix = 'DatabaseDownload_'+'_'.join({s+'_'.join(v) for s,v in name_data.iteritems()}) #should create a file name of datbasedownload_species_all loci_speices_all loci.txt
-	file_prefix=file_prefix.replace(' ','')			
-		
-	#actually run the query and download germlines as a TAB file for igfft format 
-	db_class_var.QueryGenesByID(id_list,extra_filters=copy.deepcopy(query),gene_functionality_filter = productive_gene_filters).PrintFFTDBFormat(parent_folder=output_directory,filename=file_prefix) 
-		
-	#ensure sequences downloaded correctly 	
-	selected_genes = unique_settings['GENETYPE']	
-	germlines = {}	
-	for subtype in ['V','D','J']:
-		if subtype in selected_genes:					
-			filepath = output_directory+file_prefix+'_'+subtype+'.txt'#the function QueryGenesById will create germline database files with these filesnames							
-			germlines[subtype] = filepath if os.path.isfile(filepath) else None #make sure the file downloaded correctly							
-		
-	
-	return [germlines,unique_settings]
-	
+			split_files = useful.split_files_by_seq(input_file, num_processes, number_lines_per_seq=2, contains_header_row=False)
+		proc = []
+		for n, small_file in enumerate(split_files):
+			# Annotate split files in parallel
+			p = Process(target=calligfft, args=(small_file, small_file, n)) 	
+			p.start()
+			# Add a small delay between files 
+			time.sleep(2)
+			proc.append(p)
+		for p in proc:
+			p.join()
 
-		
-		
+		# return all files generated by queue , they may be out of order depending upon upon when analysis completes; sort files so that they appear int he order they were submitted to run 
+		results = sorted([outfile_queue.get() for i in range(len(split_files))], key=lambda x: x[2])	
+		generated_annotated_files = [f[0] for f in results] 
+		generated_alignment_files = [f[1] for f in results]
+
+		# Merge the files back into a single file 
+		print('annotation complete, merging files...')
+		if return_igrep_doc_line:
+			# This file has 2 header lines => database translator, and fields
+			useful.merge_multiple_files(generated_annotated_files, 2, of1_prefix + '.igfft.annotation')
+		else:
+			# this file has 1 header lines => Fields
+			useful.merge_multiple_files(generated_annotated_files, 1, of1_prefix + '.igfft.annotation') 
+		useful.merge_multiple_files(generated_alignment_files, 1, of1_prefix + '.igfft.alignment')
+		print('files merged.')
+		# Delete all of the split files 		
+		# delete split files and delete any files created from split files
+		purge(split_files)
+		# subprocess.call("rm {0}".format(' '.join([f.replace(' ', '\ ') + ".*" for f in split_files]) + ' ' + ' '.join([f.replace(' ', '\ ') for f in split_files])), shell=True)
+		final_files = [of1_prefix + '.igfft.annotation', of1_prefix + '.igfft.alignment']
+
+	return final_files
+
+
+def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=None, variable_parameters={}, input_filetype='FASTQ', header_field='header', sequence_field='sequence', quality_field='phred'):
+	"""
+		Python wrapper for running igfft binary from terminal
+
+		Parameters
+		----------
+		dataset_path : string,
+			Filepath of sequences to be annotated
+		germline_source : string, default="default"
+			Defines where the program will search for germlines
+			If default: search for germlines in the default folder defined by igfft_germline_files
+			If custom: the location of germline files will be explicity defined
+			If db: Germlines will be downloaded from the IGREP database
+		germlines : dict, default = None
+			Defines settings for identifying germlines. Settings depends on the germline_source defined above
+			..important::germlines=None
+				if this field is not defined by the user, then we assume that the path is defined for v and j germlines in the dict variable_parameters
+			If germline_source = default:
+				germlines = {'SPECIES': list of species, 'LOCUS': list of loci}
+			If germline_source = custom: 
+				germlines = {'v': list of paths to vgermline files, 'd': list of paths to d germline files, 'j': list of path to j germline files}
+			If germline_source = db:
+				dict for querying database for germlines:				
+				i.e. {_id: [list of germline ids]}
+				i.e. {'SPECIES': 'Homo sapiens', 'LOCUS': 'IGH', 'PRODUCTIVITY': 'P'}
+				..note::Allowed keys in query:
+					The following keys are allowed in the query: ['_id', 'SPECIES', 'PRODUCTIVITY', 'LOCUS', 'MOLECULAR_COMPONENT', 'SOURCE', 'VERSION']
+		outfile : string, default=None
+			If defined, it will be the source of the output file
+		variable_parameters : dict, default = {}
+			Set of key, values for defining settings when running igfft. Keys for settings can be found by running ./igfft --defaults
+		input_filetype : string, default="FASTQ"
+			Format of the input file (dataset_path)
+			Allowed values are None, FASTA, FASTQ, TAB, JSON
+		header_field : string, default="header"
+			If the format is not FASTQ/FASTA, we need to know what field in the file corresponds to the sequence header.
+			This string defines the field name in the file that represents the DNA sequence header 
+		sequence_field : string, default="sequence"
+			If the format is not FASTQ/FASTA, we need to know what field in the file corresponds to the sequence.
+			This string defines the field name in the file that represents the DNA sequence 
+		phred_field : string, default="phred"
+			If the format is not FASTQ, we need to know what field in the file corresponds to the sequence quality score.
+			If there is no quality field, enter None
+
+		Returns
+		-------
+		Settings used for annotating dataset
+
+		Examples
+		-------
+		Annotate a FASTQ file, containing heavy and light chain sequences from humans, using the default germline database
+		>>>run_igfft("folder/filetest.fastq", germlines={'SPECIES': 'Homo sapiens', 'LOCUS':['IGH', 'IGK', 'IGL']})
+		Annotate a FASTA file, containing heavy and light chain sequences from humans, using the default germline database
+		>>>run_igfft("folder/filetest.fasta", germlines={'SPECIES': 'Homo sapiens', 'LOCUS':['IGH', 'IGK', 'IGL']}, input_filetype='FASTA')
+		Annotate a TAB file, containing heavy and light chain sequences from humans, using the default germline database. The DNA sequence is found under the column name 'dnaseq'.
+		>>>run_igfft("folder/filetest.fasta", germlines={'SPECIES': 'Homo sapiens', 'LOCUS':['IGH', 'IGK', 'IGL']}, input_filetype=None (or 'TAB'), header_field='header', sequence_field='dnaseq')
+		Annotate a FASTQ file, containing heavy and light chain sequences from humans, using the database
+		>>>run_igfft("folder/filetest.fastq", germline_settings="db", germlines={'SPECIES': 'Homo sapiens', 'LOCUS':['IGH', 'IGK', 'IGL']})
+		Annotate a FASTQ file but change the number of germlines to report. In this case, return the top two germlines.
+		>>>run_igfft("folder/filetest.fastq", germlines={'SPECIES': 'Homo sapiens', 'LOCUS':['IGH', 'IGK', 'IGL']}, variable_parameters={"num_hits": 2})
+	"""
 	
-
-#testSet -> location ofthe input file
-#outfile -> desired location and name of the output file
-#variable_parameters -> optional parameters for running igblast
-#skipRunning -> dont run igblast, just generate a string command
-#input_Filetype -> the file type of the input file (FASTA, TAB, CSV, ETC)
-#header_field -> the field in the file that corresponds to the sequence header
-#sequence_field -> the field in the file that corresponds to the seqeuence 
-
-#germline parameter is as follows:
-	#a two index tuple 
-		#first element => string defining method for describing where germline came from: default, custom, db
-			#default => use default files currently in folder 
-			#custom => provide custom text files 
-			#db => download germlines from database (only works if user has a local mongodb setup)
-		#second element => defines the parameters for the germline file locations
-			#if element 1 => default:
-				#provide a two element tuple defining the species and the molecular componenet
-					#allowed species: Mus musuculus, homo sapiens 
-					#allowed molecular components: IG, TR 
-			#if element 2=> provide a dictionary whose keys are {V,D, AND/OR J} and the values are the filepath for each germline file 
-		#third element => download fields from database 
-			#return a dictionary for querying database: 
-				#allowable keys: 
-					#_id: LIST OF IDS REFERRING TO SPECIFIC GERMLINE SETS YOU WANT TO DOWNLOAD (if this is passed in all other fields are ignored)
-					#IF _id is not provided , then SPECIES IS REQUIRED 									
-					#SPECIES: LIST OF SPEICES OR SINGLE STRING 
-					
-					#the following are optional, if not provided, then SOURCE IS ASSUMED TO BE IMGT AND VERSION IS THE LATEST VERSION 
-					#PRODUCTIVITY: STRINGS DEFINING PRODUCTIVITY OF GERMLINES TO QUERY 
-					#LOCUS: LIST OF LOCUS OR SINGLE STRING 										
-					#MOLECULAR_COMPONENT: LIST OR SINGLE STRING 
-					#SOURCE: STRING DEFINING SOURCE 
-					#VERSION: STRING DEFINING THE VERSION 
-def RunIgFFT(testSet, germlines=None,outfile=None, variable_parameters={}, input_filetype='FASTA',header_field='header',sequence_field='sequence',quality_field='phred'):	
-	#first go through the variable germlines to figure out the germline files to use 
-	default_germline_folder = 'scratch/fftannotation_db_files'
+	# first go through the variable germlines to figure out the germline files to use 
+	global databaseFolder
+	default_germline_folder = databaseFolder
 	
 	if not germlines:
-		#we assume that the user manually provided v and j parameters to variable parameters. therefore, this is a CUSTOM source 
-		
+		# we assume that the user manually provided v and j parameters to variable parameters. therefore, this is a CUSTOM source 		
 		custom_details = {}
-		v = variable_parameters.pop('v',None)
-		j = variable_parameters.pop('j',None)
+		v = variable_parameters.pop('v', None)
+		j = variable_parameters.pop('j', None)
 		if v:			
-			custom_details['v']=v
+			custom_details['v'] = v
 		if j:			
-			custom_details['j']=j
+			custom_details['j'] = j
 		if custom_details == {}:
-			#ther user has not provided any information at all regarding a germline 
+			# the user has not provided any information at all regarding a germline 
 			raise Exception("You must provide at least one germline database. If you do not have a germline database then define the variable germlines to use default germline database in program or download germline from GG lab database. See documentation in function")
 		else:
-			germlines = ('custom',custom_details)
-			
-	
-	#the possible ways of getting germlien files is from 'default' (use default files in folder) , 'custom' (provide your own files), or 'db' (database)
-	if not isinstance(germlines,tuple):
-		raise Exception('Germline definition must be a tuple of two elements. Element one is a string of either "custom","db", or "default". Element two defines details concerning the specific germlines desired')
-	
-	subtypes = ['v','j'] #IGNORE d FOR NOW  (igfft requires lowercalse subtypes)
-	
-	if germlines[0]=='custom':
-		germline_settings = {'GERMLINE-SOURCE':'CUSTOM-FILE',
-							 'PARAMS':{}
-							 }							
-		#the user is providing proper germline files for each 
-		for keys,paths in germlines[1].iteritems():
-			keys = keys.lower()
-			if keys in subtypes and os.path.isfile(paths):				
-				variable_parameters[keys.lower()] = paths				
-				#germline_settings['PARAMS'][keys.lower()] = paths 
-	elif germlines[0] == 'default':
-		germline_settings = {'GERMLINE-SOURCE':'DEFAULT',
-							 'PARAMS':{}
-						 }	
-		#the user wants to use the default germlines from the program 
-		species = germlines[1][0].lower().replace(' ','')
-		molcular_component = germlines[1][1].upper().replace(' ','')[:2]				
-		if os.path.isdir(default_germline_folder+'/'+species+'/'+molcular_component):
-			for s in subtypes:
-				#annoying, but igfft requires lowercalse subtypes, but folder names are uppercased...
-				s = s.upper()
-				if os.path.isdir(default_germline_folder+'/'+species+'/'+molcular_component+'/'+s.upper()):
-					#get teh file listed inside 										
-					variable_parameters[s.lower()] =default_germline_folder+'/'+species+'/'+molcular_component+'/'+s.upper()+'/'+os.listdir(default_germline_folder+'/'+species+'/'+molcular_component+'/'+s.upper())[0]  #there shoudl only be one file 										
-					#germline_settings['PARAMS'][s.lower()] = variable_parameters[s.lower()]
-	elif germlines[0] == 'db':
-		#the user wants to download germlines from database		
-		germline_settings = {'GERMLINE-SOURCE':'DATABASE-DOWNLOAD'}		
-		[germline_files, germline_settings['PARAMS']] = download_germlines_from_db(germlines[1])
-		for s in subtypes:
-			s = s.upper()
-			if s in germline_files:
-				#get teh file listed inside 				
-				#annoying, but igfft requires lowercalse subtypes
-				variable_parameters[s.lower()] = germline_files[s]	 										
-	else:		
-		raise Exception('Germline definition must be a tuple of two elements. Element one is a string of either "custom","db", or "default". Element two defines details concerning the specific germlines desired')						
+			germline_source = "custom"
+			germlines = custom_details
 		
+	if not isinstance(germlines, dict):
+		raise Exception('Germline definition must be a dict')
+	
 	if type(variable_parameters) is not dict:
 		raise Exception('Incorrect format of variable_parameters. The correct format of the function variable_parameters is a dictionary. keys correspond to the parameters used in the program and values correspond to the settings for that parameter')
-		
+
+	# IGNORE d FOR NOW  (igfft requires lowercalse subtypes)
+	subtypes = ['v', 'j']
+
+	if germline_source == 'custom':
+		germline_settings = {'GERMLINE-SOURCE': 'CUSTOM-FILE', 'PARAMS': {}}							
+		# the user is providing proper germline files for each 
+		for keys, paths in germlines[1].iteritems():
+			keys = keys.lower()
+			if keys in subtypes and os.path.isfile(paths):				
+				variable_parameters[keys.lower()] = paths								
+	elif germline_source == 'default':
+		germline_filepath_dict = {}
+		germline_files = {}
+		germline_settings = {'GERMLINE-SOURCE': 'DEFAULT FOLDER', 'PARAMS': germlines}	
+		# the user wants to use the default germlines from the program 		
+		species = [germlines['SPECIES']] if not isinstance(germlines['SPECIES'], list) else germlines['SPECIES']
+		locus = [germlines['LOCUS']] if not isinstance(germlines['LOCUS'], list) else germlines['LOCUS']
+		for st in subtypes:
+			germline_filepath_dict[st] = []
+			for s in species:
+				s = s.replace(' ', '').lower()
+				for l in locus:				
+					l = l.replace(' ', '').lower()
+					germline_file = os.path.join(default_germline_folder, s, st, '_'.join([s, l, st]) + '.txt')				
+					if not os.path.isfile(germline_file):
+						raise Exception("The provided germline path does not exist: " + germline_file)
+					germline_filepath_dict[st].append(germline_file)
+			germline_files[st] = ('DefaultGermlines' + '_'.join(species) + '_'.join(locus)).replace(' ', '') + '_' + st + '.txt'
+			with open(germline_files[st], 'w') as g_write:
+				# Write all germlines to a single file
+				for fc, gf in enumerate(germline_filepath_dict[st]):
+					with open(gf) as igf:
+						if fc == 0:
+							g_write.write(igf.readline())
+						else:
+							igf.readline()
+						for all_gs in igf.read():
+							g_write.write(all_gs)
+			# Store location of file path for each subtype (V, D, J)
+		variable_parameters.update(germline_files)
+	elif germline_source == 'db':
+		# the user wants to download germlines from database		
+		germline_settings = {'GERMLINE-SOURCE': 'DATABASE-DOWNLOAD'}		
+		[germline_files, germline_settings['PARAMS']] = download_germlines_from_db(germlines)
+		variable_parameters.update(germline_files)			
+	else:		
+		raise Exception('Germline source is only allowed to be equal to the following strings: custom, default, db')			
 	
-	#make sure igfft parameters are good in variable_parameters dictionary  
+	# make sure igfft parameters are good in variable_parameters dictionary  
 	default_parameters = GetDefaultParameters()
-	
-	default_parameters = {v:default_parameters[v]['default'] for v in default_parameters}
-	
-	
-	EnsureDatabaseDirectoryExists()		
-	
-	num_found = 0
-	remove_germline = []
-	for subset in ['v','d','j']: 
-		#remove any germlines whose path are not defined or are incorrect
-		if subset in variable_parameters:
-			if not(variable_parameters[subset]) or not(os.path.isfile(variable_parameters[subset])):
-				variable_parameters.pop(subset)
-		else:
-			num_found+=1
-				
-	if num_found == 0:
-		raise Exception('Could not find any of the germline files passed in the parameters. Program terminating.')	
-		
-			
+
+	default_parameters = {v: default_parameters[v] for v in default_parameters}
 	if not outfile:
-		outfile = testSet+'.igfft.alignment'
+		# User did not define path, so define it manuall
+		outfile = useful.removeFileExtension(dataset_path) + '.igfft.alignment'
 			
 	variable_parameters['o'] = outfile
-	ignore_seq_prefix = {var:var[1:] if var[0] in ['v','d','j'] and len(var)>1 else var for var in variable_parameters } #this will remove subtype preffix for parameters (for example, if parameter is num_gaps, but we are only modifying vgene, then parameter will be vnum_gaps. this will remove the v part of the string)	
-	
-	remove_vals_set_as_default = [var for var in variable_parameters  if ignore_seq_prefix[var] in default_parameters and default_parameters[ignore_seq_prefix[var]] and variable_parameters[var]==default_parameters[ignore_seq_prefix[var]] ] #remove any paramters that are already set as default in the program
+	# this will remove subtype preffix for parameters (for example, if parameter is num_gaps, but we are only modifying vgene, then parameter will be vnum_gaps. this will remove the v part of the string)	
+	ignore_seq_prefix = {var: var[1:] if var[0] in ['v', 'd', 'j'] and len(var) > 1 else var for var in variable_parameters}
+	# remove any paramters that are already set as default in the program
+	remove_vals_set_as_default = [var for var in variable_parameters if ignore_seq_prefix[var] in default_parameters and default_parameters[ignore_seq_prefix[var]] and variable_parameters[var] == default_parameters[ignore_seq_prefix[var]]] 
 	
 	for var in remove_vals_set_as_default:
 		variable_parameters.pop(var)
-			
-	
+				
 	deletetemp = False
-	#FASTA/FASTQ FILE FORMAT IS ALREADY SUPPORTED BY IGFFT
-	if input_filetype=='FASTA':
-		tempFile = testSet
-		filetype='FASTA'
-	elif input_filetype=='FASTQ':
-		tempFile = testSet
-		filetype='FASTQ'
-	else:	
+	# FASTA/FASTQ FILE FORMAT IS ALREADY SUPPORTED BY IGFFT
+	if input_filetype is 'FASTA':
+		tempFile = dataset_path
+		filetype = 'FASTA'
+	elif input_filetype is'FASTQ':
+		tempFile = dataset_path
+		filetype = 'FASTQ'
+	else:
+		# Read in the input file and convert it to a TAB file so that that can be read by igfft	
 		deletetemp = True
-		#read in the input file and convert it to a TAB file so that that can be read by igfft
-		inputIFFile = readwrite.immunogrepFile(filelocation=testSet,filetype=input_filetype)
+		inputIFFile = readwrite.immunogrepFile(filelocation=dataset_path, filetype=input_filetype)
 		date = str(datetime.now())
-		remove_chars = [':','-',' ','.']
+		remove_chars = [':', '-', ' ', '.']
 		for char in remove_chars:
-			date = date.replace(char,'')		
-		tempFile=testSet+'_{0}'.format(date)#temporary TAB file we will make for running program 
-		output_temp_file = open(tempFile,'w')
-		
+			date = date.replace(char, '')		
+		# Temporary TAB file we will make for running program 
+		tempFile = dataset_path + '_{0}'.format(date)
+		output_temp_file = open(tempFile, 'w')		
 		output_temp_file.write('HEADER\tSEQUENCE\tSEQUENCE_QUALITY\n')
 		for line in inputIFFile.read():		
 			if line:			
-				db_info = '{0}{1}'.format(fasta_file_delimiter,json.dumps({idIdentifier:line[idIdentifier]})) if idIdentifier in line else ''
-				quality=line[quality_field] if quality_field in line else ''
-					
+				db_info = '{0}{1}'.format(fasta_file_delimiter, json.dumps({idIdentifier: line[idIdentifier]})) if idIdentifier in line else ''
+				quality = line[quality_field] if quality_field in line else ''
 				if sequence_field in line:													
-					output_temp_file.write('{0}{2}\t{1}\t{3}\n'.format(line[header_field].strip(),line[sequence_field].strip(),db_info,quality))
-				
+					output_temp_file.write('{0}{2}\t{1}\t{3}\n'.format(line[header_field].strip(), line[sequence_field].strip(), db_info, quality))
 		output_temp_file.close()
 		inputIFFile.IFclass.close()
-		filetype='TAB'
+		filetype = 'TAB'
 	
 	variable_parameters['i'] = filetype
-	
 	
 	print('\n\nRunning IgFFT using the following settings:\n')
 	pprint(variable_parameters)		
 	running_program_text = "Input file location: {0}\n".format(tempFile)
 	running_program_text += "Output file will be saved as: {0}\n".format(outfile)
 	running_program_text += "IgFFT Run has started at {0}\n".format(strftime("%a, %d %b %Y %X +0000", gmtime()))			
-	
-	#NOW RUN THE BINARY 
+	# NOW RUN THE BINARY 
 	print(running_program_text)
-	command_string = '''igfft "{0}" '''.format(tempFile) #important! use " " to accoutn for spaces in filename!. 
-	print command_string
+	command_string = '''"{1}" "{0}" '''.format(tempFile, igfft_location)	
 	for var in variable_parameters:
-		if var in ['o','v','d','j']:
-			#OUTPUT FILE ADD DOUBLE QUOTES
+		if var in ['o', 'v', 'd', 'j']:
+			# OUTPUT FILE ADD DOUBLE QUOTES
 			command_string += '-{0} "{1}" '.format(var, variable_parameters[var])			
 		else:
 			command_string += '-{0} {1} '.format(var, variable_parameters[var])				
-	os.system(command_string)	
-	
-	#progrrm complete 
-	print("Analysis Completed at {0}\nAnalysis saved to: {1}\n\n\n".format(strftime("%a, %d %b %Y %X +0000", gmtime()),outfile))
-		
+	subprocess.call(command_string, shell=True)		
+	# program complete 
+	print("Analysis Completed at {0}\nAnalysis saved to: {1}\n\n\n".format(strftime("%a, %d %b %Y %X +0000", gmtime()), outfile))	
+	if os.path.isfile(tempFile + '.convert_tab.txt'):
+		# c++ program produces this, just delete it
+		os.remove(tempFile + '.convert_tab.txt')
 	if deletetemp:
-		#dleete any temp files that were made 
-		os.system("rm '{0}'".format(tempFile))
-				
+		# delete any temp files that were made 
+		os.remove(tempFile)
+
 	command = variable_parameters
-	command.pop('o',None) #dont store output path 
-	command.pop('i',None) #dont store input path 
+	# Dont store output path 
+	command.pop('o', None) 
+	# Dont store input path 
+	command.pop('i', None)
 	if 'v' in command:
 		command['v'] = os.path.basename(command['v'])
 	if 'j' in command:
@@ -451,380 +435,166 @@ def RunIgFFT(testSet, germlines=None,outfile=None, variable_parameters={}, input
 	if 'd' in command:
 		command['d'] = os.path.basename(command['d'])
 	command['germline-details'] = germline_settings	
-	command['annotation']='IGFFT'
+	command['annotation'] = 'IGFFT'
 	return command
 
 
-def IdentifyCDR3UsingRegExp(algn_seq,cdr3start,end_of_ab,j_start,fr3present,jpresent,cdr3_search_parameters,locus,var_type,Jgermline_alignments,maxleftmotif=None,maxrightmotif=None):
-	result_notes = ''
-	fr4start = 0
-	if fr3present:
-		if jpresent:
-			cdr3_fr4_seq = algn_seq[cdr3start:end_of_ab+1]				
-			#Determine whether we are searching for a motif or not
-			motif = cdr3_search_parameters[var_type] if cdr3_search_parameters and var_type in cdr3_search_parameters and cdr3_search_parameters[var_type] else None								
-			if motif:						
-				[fr4start,result_notes] = Find_CDR3_Motif(motif,Jgermline_alignments,cdr3_fr4_seq,cdr3start)			
-			else:					
-				fr4start = cdr3start + 3 * int((j_start - cdr3start + 1) / 3)					
-			
-			if fr4start != -1 and fr4start > cdr3start:
-				cdr3_nt = algn_seq[cdr3start:fr4start - 1]		
-				cdr3_aa = TranslateSeq(cdr3_nt,0)# Seq(cdr3_nt,generic_dna).translate().tostring()
-				
-				fr4_nt = algn_seq[fr4start:end_of_ab+1]
-				fr4_aa = TranslateSeq(fr4_nt,0)#Seq(fr4_nt,generic_dna).translate().tostring()
-						
-				fr4Frame = (fr4start) % 3 + 1		
-			else:
-				if j_start > cdr3start:
-					cdr3_nt = algn_seq[cdr3start:j_start] 
-					cdr3_aa = TranslateSeq(cdr3_nt,0)#Seq(cdr3_nt,generic_dna).translate().tostring()				
-				else:
-					cdr3_nt = ""
-					cdr3_aa = ""								
-				fr4start = -1
-				fr4_nt = ""
-				fr4_aa = ""
-				fr4Frame = 0
-		else:
-			result_notes='No JGene alignment was identified to find CDR3'
-			fr4Frame = 0			
-			cdr3_nt=''
-			fr4_nt=''
-			cdr3_aa=''
-			fr4_aa=''
-			fr4start = -1
-		cdr3Frame = cdr3start%3+1		
-	else:
-		cdr3_nt = ''
-		cdr3_aa = ''		
-		fr4_nt = ''
-		fr4_aa = ''
-		fr4Frame = 0
-		cdr3Frame = 0
-		cdr3start = -1
-		fr4start = -1
-		result_notes = 'No FR3 was identified to find CDR3'
-	   
-	return [cdr3_nt,cdr3_aa,fr4_nt,fr4_aa,cdr3Frame,fr4Frame,cdr3start,fr4start,result_notes]
+def Parse_Alignment_File(annotatedFile, outfile=None, annotation_settings={}, command_val={}, return_results_dict=False, return_igrep_doc_line=False):
+	"""
+		Function  for parsing the results of the IGFFT annotation file. 
+		It will go through the results and ensure results were found, identify CDR3 if requested, remove insertions if requested, and identify isotype sequences if requested
 
+		Parameters
+		----------
+		annotatedFile : string
+		Filepath of the annotated file output from igfft program
+		outfile : string, default None
+		Filepath of the file after being parsed. If path is none, then output file will be = annotatedFile+'.annotation'
+		annotation_settings : dict, default {}
+		These keys will define how the user wants to parse the annotation results. If empty, then default settings will be used.
+		The user can modify the following fields 'min_cutoff'=min percent id to germline, 'min_len_cutoff'=min alignment length to germline, 'remove_insertions': 0 => never, 2=> only when stop codon, 1=> always
+		'isotype'={'barcode-list':[], 'penalize_truncations':, 'maxmismatch':, 'min-len':, 'iso_search_direction' } => use isotpying if 'isotype' is a key
+		'cdr3_search'={'SPECIES':[], 'LOCUS':[]}
+		command_val : dict, default {}
+		Dict defining the command used in the igfft program. This is just an optional way to keep track of annotation settings.		
+		return_igrep_doc_line : boolean, default False
+		If True, will return a comment line above TAB file defining how to insert results into the database
+	"""
 
-#this is the function for finding the CDR3 using a motif.  There are two
-#options for finding the motif.
-#a) search through all of the possible J-GERMLINE hits for the motif of
-#interest.  If we find any of the j-germline-gene alignments, then we will map
-#the position back to the proper position in the sequence
-#b) search the CDR3-FR4 subsequence (antibody after the FR3 more or less) for
-#the motif
-def Find_CDR3_Motif(motif,j_gene_algn_info,cdr3_fr4_subseq,cdr3start):
-			
-	result_notes = ''
-	
-	motif_found = False
-
-	#first we loop through all possible j-germline alignments.  in each germline
-	#alignment, we search for the motif int he germline
-	for j_algn in j_gene_algn_info:
-		j_gene_query = j_algn['query_seq'] #query alignment
-		j_gene_germline = j_algn['germline_seq'] #germline alignemnt
-		j_gene_start = j_algn['start']
-		
-		j_search = j_gene_query.replace('-','')
-		j_search_germ = j_gene_germline.replace('-','')
-			
-		mtch = re.finditer(motif,j_search_germ,re.IGNORECASE) #first search germline for motif
-		regcount = 0
-		for loopreg in mtch:																							
-			m = loopreg #store teh last occurrence of the motif
-			regcount+=1
-			
-		if regcount > 0:
-			motif_found = True
-			
-			germ_fr4start = m.start()
-			fr4start = j_gene_start - 1
-			
-			i = 0
-			counter_char = 0
-			
-			#The motif was found.  Now we want to map the motif found in the germline to
-			#the proper position in the sequence
-			while i != germ_fr4start:					
-				if j_gene_query[counter_char] != '-':
-					fr4start+=1	
-				if j_gene_germline[counter_char] != '-':
-					i+=1						
-				counter_char+=1			
-			fr4start+=1
-			break #exit_loop
-			
-	if not(motif_found): #we couldnt find the motif in the germline, so we need to search the cdr3-fr4
-					  #sequence
-		mtch = re.finditer(motif,cdr3_fr4_subseq,re.IGNORECASE) #search for all instances of motif in the query sequence j-region
-	
-		regcount = 0		
-		for loopreg in mtch:																							
-			m = loopreg #store the last occurrence of the motif
-			regcount+=1
-		
-		if regcount > 0: 
-			motif_found = True
-			fr4start = m.start() + cdr3start
-			
-			
-	if not(motif_found):					
-		fr4start = -1
-		result_notes = 'RegExp not found;'
-		
-				
-	return [fr4start,result_notes]
-			      
-
-def IdentifyCDR3UsingGGJunctionalMotif(algn_seq,cdr3start,end_of_ab,cdr3_index,fr3present,jpresent,cdr3_search_class=None,locus=None,var_type=None,Jgermline_alignments=None,max_lmotif_len=0,max_rmotif_len=0):
-	
-	guess_starting =max(0,cdr3start-max_lmotif_len)
-	guess_ending = min(end_of_ab+21,len(algn_seq))
-	algn_seq=algn_seq[:guess_ending]
-	
-	 
-	[bestmotifset,MaxP,cdr3start,cdr3end,cdr3_nt,cdr3_aa,bestchain,bestscoreset,allscores] = cdr3_search_class.FindCDR3(algn_seq,suggest_chain=locus,start_pos=guess_starting,strand='+')
-	if cdr3_nt:		
-		fr4start = cdr3end+1
-		cdr3Frame = cdr3start%3+1
-		fr4Frame = fr4start%3+1
-		result_notes = ''
-		fr4_nt = algn_seq[fr4start:end_of_ab+1]
-		fr4_aa = TranslateSeq(fr4_nt,0)
-	else:		
-		result_notes = 'CDR3 not found because motif probability score was below threshold'
-		cdr3start = -1
-		fr4start = -1
-		cdr3Frame = 0
-		fr4Frame = 0
-		fr4_nt = ''
-		fr4_aa = ''
-	
-	return [cdr3_nt,cdr3_aa,fr4_nt,fr4_aa,cdr3Frame,fr4Frame,cdr3start,fr4start,result_notes]
-	
-#input_format = list of parametesr for the input file.  first value = filetype,
-#second value = field name for header sequence, third value = field name for
-#the sequence
-def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,input_format=['FASTA','header','sequence',''],write_format='TAB',return_results_dict=False, annotation_settings={}):
-		
-	###JUST SETTING UP SETTINGS AND PARAMETERS####
+	# ##JUST SETTING UP SETTINGS AND PARAMETERS### #
+	write_format = 'TAB'	
+	numSeqs = useful.file_line_count(annotatedFile) - 1
 	dna_alphabet = "ACTGUKMRYSWBVHDXN"
-	bad_dna_char_pattern = re.compile('[^' + dna_alphabet + ']',re.IGNORECASE)
+	bad_dna_char_pattern = re.compile('[^' + dna_alphabet + ']', re.IGNORECASE)
 	
 	print('Parsing and summarizing alignment file')	
+	
 	if not(outfile):
-		outfile = useful.removeFileExtension(annotatedFile)+'.igfft.annotation'
-		
+		outfile = useful.removeFileExtension(annotatedFile) + '.igfft.annotation'
 	outfile_unknown_rec = outfile + ".unk_recombination"
-	outfile_errors = outfile + ".igfft.error_log" #this file will be used to note any errors that occur while parsing the file
+
+	# This file will be used to note any errors that occur while parsing the file
+	outfile_errors = outfile + ".igfft.error_log"
 	
 	if annotatedFile == outfile:
-		os.system('''mv '{0}' '{0}.temp' '''.format(annotatedFile))
-		annotatedFile+='.temp'
+		os.rename(annotatedFile, annotatedFile + '.temp')		
+		annotatedFile += '.temp'
 	
-	input_file_type = input_format[0]
-	header_name = input_format[1]
-	seq_name = input_format[2]	
-	quality_name = input_format[3] if len(input_format)>3 else ''
-	
-	#decides what min cutoff to use to consider a successful sequence match
+	# Decides what min cutoff (percent identity to germline) to use to consider a successful sequence match
 	if 'min_cutoff' in annotation_settings:
 		min_per_algn_cutoff = annotation_settings['min_cutoff']
 	else:
-		min_per_algn_cutoff = 0.4
+		min_per_algn_cutoff = 0.2
 	
-	#minimum number of sequences that must align to germlines to be considered
-	#antibody
+	# minimum number of sequences that must align to germlines to be considered antibody
 	if 'min_len_cutoff' in annotation_settings:
 		min_algn_len_cutoff = annotation_settings['min_len_cutoff']
 	else:
-		min_algn_len_cutoff = 100
+		min_algn_len_cutoff = 50
 	
-	#remove insertions in sequence
+	# remove base insertions detected in sequence alignment
 	if 'remove_insertions' in annotation_settings:
 		remove_insertions = annotation_settings['remove_insertions']
 	else:
-		remove_insertions = 0 #0 -> dont remove insertions, 1 -> remove insertions always, 2-> remove
-						#insertions only if there is a stop codon
+		# 0 -> dont remove insertions, 
+		# 1 -> remove insertions always, 
+		# 2-> remove insertions only if there is a stop codon
+		remove_insertions = 0 						
 	
-	
-	#determine whether we will perform isotyping
+	# Determine whether we will perform isotyping
 	isotype_aligner = None
-	if 'isotype' in annotation_settings:	
-		if annotation_settings['isotype']['method'] == 'gg_inhouse':
-			identifyIsotype = True
-			if 'param' in annotation_settings['isotype']:
-				iso_settings = annotation_settings['isotype']['param']
-			else:
-				iso_settings = {}
-			if 'barcode-list' in iso_settings:			
-				isotype_barcodes= iso_settings['barcode-list']
-			else:				
-				isotype_barcodes=copy.deepcopy(defaultBarcodes())												
-			
-			p_t = iso_settings['penalize_truncations'] if 'penalize_truncations' in iso_settings else True
-			num_mismatch = iso_settings['maxmismatch'] if 'maxmismatch' in iso_settings else 2
-			minimum_iso_alignment_length = iso_settings['min-len'] if 'min-len' in iso_settings else 15
-			search_rc_isotype = iso_settings['iso_search_direction'] if 'iso_search_direction' in iso_settings else 0 #only consider forward direction of barcodes
-			
-			isotype_aligner = fftaligner.BarcodeAligner(isotype_barcodes,p_t,search_rc_isotype,num_mismatch,minimum_iso_alignment_length)
+	if 'isotype' in annotation_settings:
+		iso_settings = annotation_settings['isotype']
+		identifyIsotype = True
+		isotype_barcodes = iso_settings['barcode-list'] if 'barcode-list' in iso_settings and iso_settings['barcode-list'] else copy.deepcopy(defaultBarcodes())	
+		p_t = iso_settings['penalize_truncations'] if 'penalize_truncations' in iso_settings else True
+		num_mismatch = iso_settings['maxmismatch'] if 'maxmismatch' in iso_settings else 2
+		minimum_iso_alignment_length = iso_settings['min-len'] if 'min-len' in iso_settings else 15
+		# only consider forward direction of barcodes
+		search_rc_isotype = iso_settings['iso_search_direction'] if 'iso_search_direction' in iso_settings else 0 
+		isotype_aligner = fftaligner.BarcodeAligner(isotype_barcodes, p_t, search_rc_isotype, num_mismatch, minimum_iso_alignment_length)
 	else:
 		identifyIsotype = False
-		
 	
-
-		
-	
-	#determine which CDR3 function we will use to identify cdr3
 	if 'cdr3_search' in annotation_settings:
+		# Set up settings for finding cdr3 from results
 		identifyCDR3 = True
-		if annotation_settings['cdr3_search']['method'] == 'gg_inhouse':
-			#format of querying for cdr3: 
-				#list of tuples: 
-					#element 1) => species 
-					#element 2) => list of loci
-				#(species, list of loci)
-			
-			#query database for proper motif:
-			#generate a query for motis using the combination of species and loci using the 									
-			
-			germline_query = []
-			for possible_combos in annotation_settings['cdr3_search']['param']:
-				if not isinstance(possible_combos[1],list):					
-					germline_query.append({'Species':possible_combos[0],'Locus':possible_combos[1]}) #using list(set to ensure only unique values in list 
-				else:
-					germline_query.append({'Species':possible_combos[0],'Locus':{'$in':list(set(possible_combos[1]))}})
-			germline_query = {'$or':germline_query}
-			
-			#now run the query 
-			cdr3_motif_class = query_germlines.CDR3MotifDB()
-			annotation_settings['cdr3_search']['param'] = cdr3_motif_class.GetMotifForProgram(query=germline_query)
-												
-			CDR3_SEARCH_FUNCTION = IdentifyCDR3UsingGGJunctionalMotif	 #point the fucntion cdr3_seearch_function to the method defined for motifs
-			
-			
-			unique_locus_sets = set([a[0].upper() for a in annotation_settings['cdr3_search']['param']])
-			max_l_motif_len = 4*max(sorted([int(k) for a in annotation_settings['cdr3_search']['param'] for k in a[1]])) #find the maximum length of the poossible motifs
-			max_r_motif_len = 4*max(sorted([int(k) for a in annotation_settings['cdr3_search']['param'] for k in a[2]])) #find the maximum lenght of the possible right motifs
-			cdr3_search_name = list(unique_locus_sets)
-			cdr3_search_parameters = CDR3tools.findCDR3(annotation_settings['cdr3_search']['param'])
-		elif annotation_settings['cdr3_search']['method'] == 'regexp':
-			max_l_motif_len = None
-			max_r_motif_len = None			
-			unique_locus_sets = set(['VDJ','VJ'])
-			CDR3_SEARCH_FUNCTION = IdentifyCDR3UsingRegExp #point the fucntion cdr3_search_function to the method defined for regular
-												  #expression
-			cdr3_search_parameters = annotation_settings['cdr3_search']['param']			
-			cdr3_search_name = cdr3_search_parameters
-		else:
-			raise Exception('Only allowed values for cdr3_search method are: gg_inhouse or regexp')
-	else:		
-		annotation_settings['cdr3_search'] = {
-				'method':'CDR3 analysis not selected',
-				'param':None
-			}
-
+		cdr3_search_parameters = CDR3tools.findCDR3(annotation_settings['cdr3_search'])
+		motifs = cdr3_search_parameters.get_motifs()
+		unique_locus_sets = set([a[0].upper() for a in motifs])
+		# Find the maximum length of the poossible motifs
+		max_l_motif_len = 4 * max(sorted([int(k) for a in motifs for k in a[1]]))
+		# Find the maximum lenght of the possible right motifs
+		max_r_motif_len = 4 * max(sorted([int(k) for a in motifs for k in a[2]]))
+		cdr3_search_name = annotation_settings['cdr3_search']
+	else:
 		identifyCDR3 = False
 		cdr3_search_name = "None selected"
-		print ('No parameters were provided for identifying the CDR3. CDR3 analysis will not be included')
+		print('No parameters were provided for identifying the CDR3. CDR3 analysis will not be included')
 				
-  
-
-	#CHECK IF IGBLAST FILE WAS ACTUALLY CREATED
-	
+	# CHECK IF IGFFT FILE WAS ACTUALLY CREATED	
 	if not(os.path.isfile(annotatedFile)):			   
 		raise Exception('ERROR: IGFFT FILE WAS NOT CREATED.PLEASE MODIFY SETTINGS AND/OR RE-RUN')		
 	
-	if numSeqs == 0:
-		numSeqs = useful.file_line_count(annotatedFile)-1						   
+	foutfile = open(outfile, 'w')
+	foutfile_unknown_recombination = open(outfile_unknown_rec, 'w')
+	ferrorlog = open(outfile_errors, 'w')
+	output_files = {'annotated': foutfile, 'UNK': foutfile_unknown_recombination, 'ERROR': ferrorlog}
 
-	folderOutputLocation = os.path.dirname(annotatedFile)
-			
-	foutfile = open(outfile,'w')
-	foutfile_unknown_recombination = open(outfile_unknown_rec,'w')
-	ferrorlog = open(outfile_errors,'w')
-	output_files = {'annotated':foutfile,					
-					'UNK':foutfile_unknown_recombination,
-					'ERROR':ferrorlog}
-	
-	
-	
-	
-	
-	
-	translator = DatabaseTranslator()
-	translator[filetype_var] = write_format 
-	translator_comment = descriptor_symbol#textFileCommentTranslator
-	translator_string = json.dumps(translator)
-	foutfile.write(translator_comment+translator_string+'\n')#in the first line of the file output a comment line definining how to convert this file into a database file 
-		
-	#read fasta file
-	filename = annotatedFile
-	
-	commandVal['Cdr3-Fr4Identification'] = json.dumps({'method':annotation_settings['cdr3_search']['method'],'param':cdr3_search_name})	
-	commandVal['Min_Alignment_Idendity_Cutoff'] = str(min_per_algn_cutoff)
-	commandVal['Min_Alignment_Length_Cutoff'] = str(min_algn_len_cutoff)
+	if return_igrep_doc_line:
+		# Save the DB translator
+		# in the first line of the file output a comment line definining how to convert this file into a database file 
+		translator = DatabaseTranslator()
+		translator[filetype_var] = write_format 
+		translator_comment = descriptor_symbol
+		translator_string = json.dumps(translator)
+		foutfile.write(translator_comment + translator_string + '\n')
+
+	# Save the settings used for parsing, again this is just for convenience to store the settings you used in file	
+	command_val['Cdr3-Fr4Identification'] = json.dumps({'method': 'gglab', 'param': cdr3_search_name}) if identifyCDR3 else 'not selected'
+	command_val['Min_Alignment_Idendity_Cutoff'] = str(min_per_algn_cutoff)
+	command_val['Min_Alignment_Length_Cutoff'] = str(min_algn_len_cutoff)
 	if identifyIsotype:
-		commandVal['Isotyping'] = {'Barcodes':isotype_barcodes,'mismatch_cutoff':num_mismatch,'penalize_truncations':p_t,'minimum_length_cutoff':minimum_iso_alignment_length}
-				
-	
+		command_val['Isotyping'] = {'Barcodes': isotype_barcodes, 'mismatch_cutoff': num_mismatch, 'penalize_truncations': p_t, 'minimum_length_cutoff': minimum_iso_alignment_length}					
 	if remove_insertions == 0:
-		commandVal['Fix Mutations'] = 'Never' 
+		command_val['Fix Mutations'] = 'Never' 
 	elif remove_insertions == 1:
-		commandVal['Fix Mutations'] = 'Always'
+		command_val['Fix Mutations'] = 'Always'
 	elif remove_insertions == 2:
-		commandVal['Fix Mutations'] = 'WhenStopCodon'
-		
+		command_val['Fix Mutations'] = 'WhenStopCodon'
+	commandString = json.dumps(command_val)
 	
-	commandString = json.dumps(commandVal)
-	
-	if 'isotype' in annotation_settings:
-		isostring = '\t\tPerforming isotyping on sequences using provided barcodes: '+'\n'#+json.dumps(isotype_barcodes)+'\n'
-	else:
-		isostring= ''
-	
+	isostring = '\t\tPerforming isotyping on sequences using provided barcodes: ' + '\n' if 'isotype' in annotation_settings else ''	
 	parse_igfft_notification = '''
 	The resulting annotation output will be parsed using the following settings:
 	\tMinimum alignment length cutoff: {0},
 	\tMinimum percent identity: {1},
 	\tFix detected insertions: {2},
-	\tMethod to identify CDR3 and start of fr4: {3}\n{4}
+	\tIdentify CDR3: {3}\n{4}
 	\n\n
-	'''.format(str(min_algn_len_cutoff), str(min_per_algn_cutoff), commandVal['Fix Mutations'], json.dumps(annotation_settings['cdr3_search']['method']),isostring)
+	'''.format(str(min_algn_len_cutoff), str(min_per_algn_cutoff), command_val['Fix Mutations'], str(identifyCDR3), isostring)
 	print(parse_igfft_notification)
 		
-	
-	useDebug = False		
-	#open the igblast alignment file that was just made
-	#f1 = open(annotatedFile)
-	
-	###PARAMETERS SET####
+	useDebug = False			
+	# ## ALL PARAMETERS HAVE BEEN SET####
+
 	vdj_hits = 0
 	vj_hits = 0
-	unknown_hits = 0
-	
-	f1 = readwrite.immunogrepFile(filelocation=annotatedFile,filetype='TAB')
-	
-	count = 0
-	
-	startPer = 0
-	
+	unknown_hits = 0	
+	f1 = readwrite.immunogrepFile(filelocation=annotatedFile, filetype='TAB')	
+	count = 0	
+	startPer = 0	
 	chainDic = {
-		'IGH':["heavy","VDJ","IGH"],
-		'IGK':["light","VJ","IGK"],
-		'IGL':["light","VJ","IGL"],
-		'TRA':["alpha","VJ","TRA"],
-		'TRB':["beta","VDJ","TRB"],
-		'VH':["heavy","VDJ","IGH"],
-		'VK':["light","VJ","IGK"],
-		'VL':["light","VJ","IGL"],
-		'TA':["alpha","VJ","TRA"],
-		'TB':["beta","VDJ","TRB"]
+		'IGH': ["heavy", "VDJ", "IGH"],
+		'IGK': ["light", "VJ", "IGK"],
+		'IGL': ["light", "VJ", "IGL"],
+		'TRA': ["alpha", "VJ", "TRA"],
+		'TRB': ["beta", "VDJ", "TRB"],
+		'VH': ["heavy", "VDJ", "IGH"],
+		'VK': ["light", "VJ", "IGK"],
+		'VL': ["light", "VJ", "IGL"],
+		'TA': ["alpha", "VJ", "TRA"],
+		'TB': ["beta", "VDJ", "TRB"]
 	}
 	
 	chainTypes = {
@@ -834,66 +604,34 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 		'beta': 'VDJ'
 	}
 	
-	#readfastafile =
-	#readwrite.immunogrepFile(filelocation=filename,filetype=input_file_type)
-	
 	debugMe = False
 	useDebug = False
-		
 	igblast_read_line = True
-	
 	total_parsing_errors = 0
-
-	loop_status_gen = useful.LoopStatusGen(numSeqs,10) 
-	
+	loop_status_gen = useful.LoopStatusGen(numSeqs, 10) 
 	tab_header_var = TABFileHeader()
-	
 	overlap_len = 10 
+	# create header row
+	if write_format is 'TAB':		
+		output_files['annotated'].write('\t'.join([field for field in tab_header_var]) + '\n')
 	
-	#create header row
-	if write_format=='TAB':		
-		output_files['annotated'].write('\t'.join([field for field in tab_header_var])+'\n')
-	
-	t0 = 0;
-	t1 = 0;
-	t2 = 0;
-	t3 = 0; 
-	t4 = 0; 
-	
-	#while count<numSeqs: #read through every sequence in the file
-	for query_results in f1.read():
-		if count==numSeqs:						
-			continue
-		
+	# while count<numSeqs: #read through every sequence in the file
+	for query_results in f1.read():		
 		count += 1
-		
-		#allow the user to monitor what percent of the sequences have been processed
+		# allow the user to monitor what percent of the sequences have been processed
 		loop_status_gen.next()
-				
 		if not(query_results):
 			continue	
-		
-		[seqHeader,additionalInfo] = readwrite.GetAdditionalInfo(query_results['Header'])				
+		[seqHeader, additionalInfo] = readwrite.GetAdditionalInfo(query_results['Header'])				
 		query_results['Document_Header'] = query_results['Header']
-		query_results['Header'] = seqHeader
-												
-		#additionalInfo = GrabAdditionalHeaderInfo(seqHeader)
-		#query_results['Header'] = additionalInfo['Header']
-	   	
-		additionalInfo.pop('Header',None)
-		additionalInfo.pop('document_header',None)		
-		query_results = defaultdict(str,dict(query_results.items() + additionalInfo.items()))
-		
+		query_results['Header'] = seqHeader										
+		additionalInfo.pop('Header', None)
+		additionalInfo.pop('document_header', None)		
+		query_results = defaultdict(str, dict(query_results.items() + additionalInfo.items()))		
 		query_results['Quality_Score'] = query_results['Sequence quality']
-		
-		error_dic =defaultdict(str, {'Sequence':query_results['Sequence'],
-					 'Header':query_results['Header'],
-					 'Document_Header':query_results['Document_Header']					 
-					})
-					
+		error_dic = defaultdict(str, {'Sequence': query_results['Sequence'], 'Header': query_results['Header'], 'Document_Header': query_results['Document_Header']})
 		if idIdentifier in query_results:
-			error_dic[idIdentifier] = query_results[idIdentifier]
-					
+			error_dic[idIdentifier] = query_results[idIdentifier]			
 		if query_results['Sequence'] != "":
 			seq = query_results['Sequence']			
 		else:			 
@@ -901,34 +639,19 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 			error_dic["Errors"] = "Sequence not found"
 			error_dic["Percent_Identity"] = None
 			error_dic["Alignment_Length"] = None					
-			
-			#Write_Seq_JSON(error_dic,tab_header_var,output_files['ERROR'])			
-			
-			if write_format == "TAB":								
-				Write_Seq_TAB(error_dic,tab_header_var,output_files['annotated'])
-			else:																									   				
-				Write_Seq_JSON(error_dic,tab_header_var,output_files['annotated'])									
-			continue						
-
-		try:				
-			tt = time.time()
-			if bad_dna_char_pattern.search(seq): #CHECK TO SEE IF SEQUENCE HAS WEIRD CHARACTERS IN IT
+			Write_Seq_TAB(error_dic, tab_header_var, output_files['annotated'])
+			continue			
+		try:							
+			# CHECK TO SEE IF SEQUENCE HAS WEIRD CHARACTERS IN IT
+			if bad_dna_char_pattern.search(seq):
 				notes = "Sequence contains unknown characters"
-				print "Seq # " + str(count) + " contains unusual characters and therefore we are ignoring this sequence: " + seqHeader				
+				print("Seq # " + str(count) + " contains unusual characters and therefore we are ignoring this sequence: " + seqHeader)				
 				error_dic["Percent_Identity"] = None
 				error_dic["Alignment_Length"] = None
 				error_dic['Notes'] = notes
-				error_dic['Errors'] = notes				
-				
-				#Write_Seq_JSON(error_dic,chain_ind_fields,chain_dep_fields,'',output_files['ERROR'])
-				#Write_Seq_JSON(error_dic,tab_header_var,output_files['ERROR'])
-				if write_format == "TAB":								
-					Write_Seq_TAB(error_dic,tab_header_var,output_files['annotated'])
-				else:																									   				
-					Write_Seq_JSON(error_dic,tab_header_var,output_files['annotated'])			
-				continue				
-			t0+=time.time()-tt
-			
+				error_dic['Errors'] = notes								
+				Write_Seq_TAB(error_dic, tab_header_var, output_files['annotated'])				
+				continue										
 			notes = query_results['Notes']			
 						
 			algn_seq = query_results['Strand_Corrected_Sequence']
@@ -1044,7 +767,7 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 			query_results['Locus'] = ','.join(locus_list)
 			
 			if  var_type == 'UNK':			
-				print 'This chain type was not recognized in the parsing script. Analysis information for this sequence will be placed in the file "{0}". Consider updating the variable chainTypes in the funcion "Parse_Alignment_File"'.format(outfile_unknown_rec)				
+				print('This chain type was not recognized in the parsing script. Analysis information for this sequence will be placed in the file "{0}". Consider updating the variable chainTypes in the funcion "Parse_Alignment_File"'.format(outfile_unknown_rec))
 				error_dic = query_results
 				error_dic['Notes'] = "Chain type not recognized"
 				error_dic['Errors'] = "Chain type not recognized. analysis info placed in the file '{0}'".format(outfile_unknown_rec)				
@@ -1070,9 +793,9 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 			
 			if identifyCDR3:		
 				locus = locus_list if locus<=unique_locus_sets else []				
-				tt = time.time()
-				[cdr3_nt,cdr3_aa,fr4_nt,fr4_aa,cdr3Frame,fr4Frame,cdr3start,fr4start,cdr3notes] = CDR3_SEARCH_FUNCTION(algn_seq,cdr3start,end_of_ab,j_start,fr3present,jpresent,cdr3_search_parameters,locus,var_type,jGermlineInfo,max_l_motif_len,max_r_motif_len)																	
-				t1+=time.time()-tt
+				
+				[cdr3_nt, cdr3_aa, fr4_nt, fr4_aa, cdr3Frame, fr4Frame, cdr3start, fr4start, cdr3notes] = CDR3_search(cdr3_search_parameters, algn_seq, cdr3start, end_of_ab, locus, max_l_motif_len, max_r_motif_len)																	
+
 				query_results['CDR3_Sequence.NT'] = cdr3_nt
 				query_results['CDR3_Sequence.AA'] = cdr3_aa
 				query_results['FR4_Sequence.NT'] = fr4_nt
@@ -1136,7 +859,7 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 			algn_info = []
 			adjustedFrame =  query_translating_codon - start_of_ab
 			
-			tt =time.time()
+			
 			if vpresent:#perfrom framework annotation translation and remove mutations 
 				annotations = ['FR1','CDR1','FR2','CDR2','FR3']
 				annotations_present = [(i,region) for i,region in enumerate(annotations) if (query_results['VGENE: Query_{0}_Start::End'.format(region)]!='' and  query_results['VGENE: Query_{0}_Start::End'.format(region)]!='::')]
@@ -1238,9 +961,7 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 					adjustedFrame = 0
 				query_results['Full_Length_Sequence.AA'] = TranslateSeq(query_results['Full_Length_Sequence.NT'],adjustedFrame)# Seq(query_results['Strand_Corrected_Sequence'][cdr3start:end_of_ab],generic_dna).translate().tostring()	   
 	
-			t2+=time.time()-tt
-	
-	
+			
 			if jpresent:
 				jmutations = int(query_results['JGENE: Total_Mismatches']) +  int(query_results['JGENE: Total_Mismatches'])
 				query_results['JRegion.SHM.NT'] = str(jmutations) #adjust the number of gaps to reflect the removed insertions (numDel)
@@ -1261,8 +982,7 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 					query_results['Isotype percent similarity'] = ','.join([str(s) for s in isotypes_results['Percent similarity']])								
 					query_results['Isotype barcode direction'] = ','.join([str(s) for s in isotypes_results['Direction']])								
 								
-			
-			tt= time.time() 
+						
 			query_results['Command'] = commandString				
 			query_results['Stop_Codon'] = '*' in query_results['Full_Length_Sequence.AA']
 			query_results['Full_Length'] = query_results['5_Prime_Annotation']=='FR1' and query_results['3_Prime_Annotation'] == 'FR4'
@@ -1286,8 +1006,6 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 					  notes+='The CDR3 is out-of-frame with respect to the translated sequence;'
 					  query_results['Productive'] = 'NO'
 			
-			t3+=time.time()-tt
-			
 			query_results["Notes"] = notes + query_results['Notes']
 							
 			if write_format == "TAB":								
@@ -1300,7 +1018,7 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 			exc_type, exc_obj, exc_tb = sys.exc_info()		
 			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 		
-			print "An error occurred when analyzing the output for sequence # "+str(count)+". This error has been reported in the error log file. Continuing with analysis"
+			print("An error occurred when analyzing the output for sequence # "+str(count)+". This error has been reported in the error log file. Continuing with analysis")
 			error_to_file = "Error Number: "+str(total_parsing_errors)
 			error_to_file += "\nSequence count: "+str(count)
 			error_to_file += "\nSequence header: "+seqHeader
@@ -1327,10 +1045,7 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 	foutfile.close()
 	ferrorlog.close()
 	f1.IFclass.close()
-	
-	
 	resulting_files = [outfile,annotatedFile]
-	
 	if total_parsing_errors>0:
 		print("The analysis has completed. However, {0} of the {1} total sequences analyzed contained errors when parsing the file. Please refer to the error log file to debug possible errors".format(str(total_parsing_errors), str(numSeqs)))
 		resulting_files.append(outfile_errors)
@@ -1342,18 +1057,157 @@ def Parse_Alignment_File(annotatedFile,outfile=None,commandVal={},numSeqs=0,inpu
 		os.system("rm '{0}'".format(outfile_unknown_rec))
 		resulting_files.append('')
 	else:
-		resulting_files.append(outfile_unknown_rec)
-	
-	
-	
+		resulting_files.append(outfile_unknown_rec)	
 	return resulting_files
+
+
+def MakeQueryList(query, fields_list):
+	"""
+		Just simply convert lists in query to mongodb format 
+	"""
+	mongo_query = {}
+	for field in fields_list:
+		if field in query:
+			if isinstance(query[field], list):
+				mongo_query[field] = {'$in': query[field]}				
+			elif isinstance(query[field], basestring):
+				mongo_query[field] = query[field]
+			else:
+				raise Exception('Improper format for {0} query. We only allow a list of strings or a single string. Fields provided by user: {1}'.format(field, json.dumps(query)))
+	return mongo_query	
 	
+
+def download_germlines_from_db(query_settings):
+	"""
+		Function for downloading germline locus sequence files from our MongoDB database		
+
+		Parameters
+		----------
+		query_settings : dict
+			dict has the following allowable keys: 
+				_id: LIST OF IDS REFERRING TO SPECIFIC GERMLINE SETS YOU WANT TO DOWNLOAD (if this is passed in all other fields are ignored)
+				SPECIES: LIST OF SPEICES OR SINGLE STRING 
+				PRODUCTIVITY: STRINGS DEFINING PRODUCTIVITY OF GERMLINES TO QUERY
+				LOCUS: LIST OF LOCUS OR SINGLE STRING	
+				MOLECULAR_COMPONENT: LIST OR SINGLE STRING
+				SOURCE: STRING DEFINING SOURCE
+				VERSION: STRING DEFINING THE VERSION
+		
+		.. important::
+			IF _id is not provided , then SPECIES IS REQUIRED 									
+	"""
+
+	query = {}
+
+	# Create a special folder for germlines downloaded from database only
+	output_directory = os.path.join(databaseFolder, 'databasedownloads/')
 	
-def TranslateSeq(ntstring,frame):
+	if not os.path.isdir(output_directory):
+		os.makedirs(output_directory)
+		
+	# Capitalize everything 
+	ids = query_settings.pop('_id', None)
+	query_settings = {k.upper(): v for k, v in query_settings.iteritems()}
+	if ids:
+		query_settings['_id'] = ids
+		
+	if '_id' in query_settings and query_settings['_id']:
+		id_list = query_settings['_id']		
+		query_settings.pop('_id')
+		
+	elif 'SPECIES' in query_settings:
+		query_settings.pop('_id', None)
+		id_list = []
+		# we will always choose the following database source and person as default if not defined
+		source = 'IMGT'
+		uploadedby = 'immunogrep'	
+		query = MakeQueryList(query_settings, ['SPECIES', 'LOCUS', 'MOLECULAR_COMPONENT', 'SOURCE', 'VERSION', 'UPLOADED-BY', 'GENETYPE'])		
+		if 'SOURCE' not in query:
+			query['SOURCE'] = source
+		if 'UPLOADED-BY' not in query:
+			query['UPLOADED-BY'] = uploadedby										
+	else:
+		raise Exception('Either a list of germline ids or a SPECIES must be provided as query input. Fields provided by user: {0}'.format(json.dumps(query_settings)))
+	
+	# Add extra filters/functionality for query only genes within a germline set with provided productivity 
+	# i.e. add filter to the query if one was specifieid ('F','[F]','ORF')
+	if 'PRODUCTIVITY' in query_settings:
+		if not isinstance(query_settings['PRODUCTIVITY'], list):
+			query_settings['PRODUCTIVITY'] = [query_settings['PRODUCTIVITY']]
+		if query_settings['PRODUCTIVITY']:
+			productive_gene_filters = {'$in': query_settings['PRODUCTIVITY']}
+		else:
+			productive_gene_filters = {'$nin': []}
+	else:
+		productive_gene_filters = {'$nin': []}
+
+	# create a query for getting germlines from database 
+	db_class_var = query_germlines.GermlineDB()						
+	
+	# this is just for documenting purproses/keeping track of what the query request was. storing settings of query basically 
+	unique_settings = db_class_var.QueryDistinctValsByID(id_list, extra_filters=copy.deepcopy(query), distinct_fields=['SPECIES', 'GENETYPE', 'MOLECULAR_COMPONENT', 'SOURCE', 'VERSION', 'LOCUS'])					
+	unique_settings['DB-FILE-SOURCE'] = unique_settings.pop('SOURCE')	
+	selected_genes = unique_settings['GENETYPE']	
+	if 'PRODUCTIVITY' in query_settings:
+		unique_settings['PRODUCTIVITY'] = query_settings['PRODUCTIVITY']	
+	
+	# figure out a name for the database file that makes it easy to recognize when referred to later on 
+	name_data = defaultdict(list)
+	for s in unique_settings['SPECIES']:
+		for l in unique_settings['LOCUS']:
+			name_data[s].append(l)	
+	# should create a file name of datbasedownload_species_all loci_speices_all loci.txt
+	file_prefix = 'DatabaseDownload_' + '_'.join({s + '_'.join(v) for s, v in name_data.iteritems()})
+	file_prefix = file_prefix.replace(' ', '')			
+		
+	# actually run the query and download germlines as a TAB file for igfft format 
+	db_class_var.QueryGenesByID(id_list, extra_filters=copy.deepcopy(query), gene_functionality_filter=productive_gene_filters).PrintFFTDBFormat(parent_folder=output_directory, filename=file_prefix) 
+		
+	# ensure sequences downloaded correctly 	
+	# Annoying, but make subtypes lowercase
+	selected_genes = [u.lower() for u in unique_settings['GENETYPE']]	
+	germlines = {}	
+	for subtype in ['v', 'd', 'j']:
+		if subtype in selected_genes:				
+			# the function QueryGenesById will create germline database files with these filesnames	
+			filepath = output_directory + (file_prefix + '_' + subtype + '.txt').replace(' ', '').lower()			
+			# Make sure the file downloaded correctly										
+			germlines[subtype] = filepath if os.path.isfile(filepath) else None 	
+	return [germlines, unique_settings]
+
+
+def CDR3_search(cdr3_search_class, algn_seq, cdr3start, end_of_ab, locus=None, max_lmotif_len=0, max_rmotif_len=0):
+	
+	guess_starting = max(0, cdr3start - max_lmotif_len)
+	guess_ending = min(end_of_ab + 21, len(algn_seq))
+	algn_seq = algn_seq[:guess_ending]
+	
+	[bestmotifset, MaxP, cdr3start, cdr3end, cdr3_nt, cdr3_aa, bestchain, bestscoreset, allscores] = cdr3_search_class.FindCDR3(algn_seq, suggest_chain=locus, start_pos=guess_starting, strand='+')
+	
+	if cdr3_nt:		
+		fr4start = cdr3end + 1
+		cdr3Frame = cdr3start % 3 + 1
+		fr4Frame = fr4start % 3 + 1
+		result_notes = ''
+		fr4_nt = algn_seq[fr4start:end_of_ab + 1]
+		fr4_aa = TranslateSeq(fr4_nt, 0)
+	else:		
+		result_notes = 'CDR3 not found because motif probability score was below threshold'
+		cdr3start = -1
+		fr4start = -1
+		cdr3Frame = 0
+		fr4Frame = 0
+		fr4_nt = ''
+		fr4_aa = ''
+	
+	return [cdr3_nt, cdr3_aa, fr4_nt, fr4_aa, cdr3Frame, fr4Frame, cdr3start, fr4start, result_notes]
+
+		
+def TranslateSeq(ntstring, frame):
 	ntstring = ntstring[frame:]
-	truncatedLength = 3*(len(ntstring)/3)
+	truncatedLength = 3 * (len(ntstring) / 3)
 	ntstring = ntstring[:truncatedLength]
-	return str(Seq(ntstring,generic_dna).translate())
+	return str(Seq(ntstring, generic_dna).translate())
 
 
 	
@@ -1461,263 +1315,188 @@ def TABFileHeader():
 				"Isotype mismatches",
 				"Isotype percent similarity",
 				"Isotype barcode direction"
-				]
+	]
 	
 	igDict = OrderedDict()
-	for i,field in enumerate(chain_independent_results_order):
+	for i, field in enumerate(chain_independent_results_order):
 		igDict[field] = i	
 		
-	
-	return igDict#,chain_independent_results_order,chain_dependent_results_order]
+	return igDict
 
 
+def DatabaseTranslator(input_dictionary={}):
 
-#We will need to update the database with the results from IgFFT.  In order
-#to update teh database, we need a translator, so that we know what fields go where in the database
-def DatabaseTranslator(input_dictionary = {}):
+	"""
+		We will need to update the database with the results from IgFFT.  In order
+		to update teh database, we need a translator, so that we know what fields go where in the database
+	"""
+
 	key = translation_var
 	
 	translator = {					
-			"ANALYSIS_NAME": "GEORGIOU_INHOUSE", # NAME OF THE ANALYSIS 
-			"RECOMBINATION_FIELD":{ #THIS TELLS THE PROGRAM HOW TO DETERMINE WHETHER AN ANALYSIS/QUERY RESULT (from file) IS VDJ OR VJ
-					"FIELD_NAME": "Recombination_Type", #name of the field in the file that will give information regarding the recombination type (VDJ OR VJ)
-					"EXPLICIT":True, #IF EXPLICIT, then the RECOMBINATION_TYPE is equal to the EXACT value in this field (i.e. it will either list VDJ or VJ), IF false, then VDJ and VJ are defined by values in list below
-					"INEXPLICIT_DEFINITIONS":{
-						"VDJ":[],#if expliity is FALSE, then this list MUST NOT be empty. It must list all values from this field that will correspond to a VDJ type (i.e. if Locus is used to determine recombination type then it woudl be VDJ:['IGH']
-						"VJ":[],#if expliity is FALSE, then this list MUST NOT be empty. It must list all values from this field that will correspond to a VJ type (i.e. if Locus is used to determine recombination type then it woudl be VJ:['IGK','IGL']
-	 				}
-			},
-			"FIELDS_UPDATE":{ 
-				#key = field name  in database 
-				#value = field name in file
-				#this will map all of the fields in the file to the proper location in the database. I.E. If I list VGENES as the column name/field name, then i want to map VREGION.VGENES:VGENES (because VREGION.VGENES is the name in the database)			
-				
-				idIdentifier:idIdentifier,
-				"SEQUENCE":"Sequence",
-				"COMMAND":"Command",
-				"SEQUENCE_HEADER":"Header",	
-				"QUALITY_SCORE":"Quality_Score",
-				"NOTES":"Notes",
-				"PREDICTED_AB_SEQ.NT":"Full_Length_Sequence.NT",
-				"PREDICTED_AB_SEQ.AA":"Full_Length_Sequence.AA",
-				"STRAND":"Direction",
-				"PREDICTED_CHAIN_TYPE":"Chain",
-				"PRODUCTIVE":"Productive",
-				"LOCUS_NAME":"Locus",
-				"FULL_LENGTH":"Full_Length",
-				"STOP_CODONS":"Stop_Codon",
-				"VREGION.SHM.NT":"VRegion.SHM.NT",
-				'VREGION.VGENE_QUERY_START':'VGENE: Query_Start',
-				'VREGION.VGENE_QUERY_END':'VGENE: Query_End',
-				"VREGION.FR1.NT":"FR1_Sequence.NT",
-				"VREGION.FR1.AA":"FR1_Sequence.AA",
-				"VREGION.CDR1.NT":"CDR1_Sequence.NT",
-				"VREGION.CDR1.AA":"CDR1_Sequence.AA",			
-				"VREGION.FR2.NT":"FR2_Sequence.NT",
-				"VREGION.FR2.AA":"FR2_Sequence.AA",
-				"VREGION.CDR2.NT":"CDR2_Sequence.NT",
-				"VREGION.CDR2.AA":"CDR2_Sequence.AA",
-				"VREGION.FR3.NT":"FR3_Sequence.NT",
-				"VREGION.FR3.AA":"FR3_Sequence.AA",
-				"VREGION.VGENES":"Top_V-Gene_Hits",
-				"VREGION.VGENE_SCORES":"V-Gene_Alignment_Scores",
-				"CDR3.NT":"CDR3_Sequence.NT",
-				"CDR3.AA":"CDR3_Sequence.AA",
-				"DREGION.DGENES":"Top_D-Gene_Hits",
-				"DREGION.DGENE_SCORES":"D-Gene_Alignment_Scores",
-				"JREGION.FR4.NT":"FR4_Sequence.NT",		
-				"JREGION.FR4.AA":"FR4_Sequence.AA",
-				"JREGION.JGENES":"Top_J-Gene_Hits",
-				"JREGION.JGENE_SCORES":"J-Gene_Alignment_Scores",
-				'JREGION.JGENE_QUERY_START':'JGENE: Query_Start',
-				'JREGION.JGENE_QUERY_END':'JGENE: Query_End',																
-				"ISOTYPE.GENE":"Isotype",
-				"ISOTYPE.MISMATCHES":"Isotype mismatches",
-				"ISOTYPE.PER_ID":"Isotype percent similarity"		
+		"ANNOTATION": "GEORGIOU_INHOUSE",  # NAME OF THE ANALYSIS 
+		"RECOMBINATION_FIELD": {  # THIS TELLS THE PROGRAM HOW TO DETERMINE WHETHER AN ANALYSIS/QUERY RESULT (from file) IS VDJ OR VJ
+			"FIELD_NAME": "Recombination_Type",  # name of the field in the file that will give information regarding the recombination type (VDJ OR VJ)
+			"EXPLICIT": True,   # IF EXPLICIT, then the RECOMBINATION_TYPE is equal to the EXACT value in this field (i.e. it will either list VDJ or VJ), IF false, then VDJ and VJ are defined by values in list below
+			"INEXPLICIT_DEFINITIONS": {
+				"VDJ": [],  # if expliity is FALSE, then this list MUST NOT be empty. It must list all values from this field that will correspond to a VDJ type (i.e. if Locus is used to determine recombination type then it woudl be VDJ:['IGH']
+				"VJ": [],  # if expliity is FALSE, then this list MUST NOT be empty. It must list all values from this field that will correspond to a VJ type (i.e. if Locus is used to determine recombination type then it woudl be VJ:['IGK','IGL']
 			}
+		},
+		"FIELDS_UPDATE": {  
+			# key = field name  in database 
+			# value = field name in file
+			# this will map all of the fields in the file to the proper location in the database. I.E. If I list VGENES as the column name/field name, then i want to map VREGION.VGENES:VGENES (because VREGION.VGENES is the name in the database)						
+			idIdentifier: idIdentifier,
+			"SEQUENCE": "Sequence",
+			"COMMAND": "Command",
+			"SEQUENCE_HEADER": "Header",	
+			"QUALITY_SCORE": "Quality_Score",
+			"NOTES": "Notes",
+			"PREDICTED_AB_SEQ.NT": "Full_Length_Sequence.NT",
+			"PREDICTED_AB_SEQ.AA": "Full_Length_Sequence.AA",
+			"STRAND": "Direction",
+			"PREDICTED_CHAIN_TYPE": "Chain",
+			"PRODUCTIVE": "Productive",
+			"LOCUS_NAME": "Locus",
+			"FULL_LENGTH": "Full_Length",
+			"STOP_CODONS": "Stop_Codon",
+			"VREGION.SHM.NT": "VRegion.SHM.NT",
+			'VREGION.VGENE_QUERY_START': 'VGENE: Query_Start',
+			'VREGION.VGENE_QUERY_END': 'VGENE: Query_End',
+			"VREGION.FR1.NT": "FR1_Sequence.NT",
+			"VREGION.FR1.AA": "FR1_Sequence.AA",
+			"VREGION.CDR1.NT": "CDR1_Sequence.NT",
+			"VREGION.CDR1.AA": "CDR1_Sequence.AA",			
+			"VREGION.FR2.NT": "FR2_Sequence.NT",
+			"VREGION.FR2.AA": "FR2_Sequence.AA",
+			"VREGION.CDR2.NT": "CDR2_Sequence.NT",
+			"VREGION.CDR2.AA": "CDR2_Sequence.AA",
+			"VREGION.FR3.NT": "FR3_Sequence.NT",
+			"VREGION.FR3.AA": "FR3_Sequence.AA",
+			"VREGION.VGENES": "Top_V-Gene_Hits",
+			"VREGION.VGENE_SCORES": "V-Gene_Alignment_Scores",
+			"CDR3.NT": "CDR3_Sequence.NT",
+			"CDR3.AA": "CDR3_Sequence.AA",
+			"DREGION.DGENES": "Top_D-Gene_Hits",
+			"DREGION.DGENE_SCORES": "D-Gene_Alignment_Scores",
+			"JREGION.FR4.NT": "FR4_Sequence.NT",		
+			"JREGION.FR4.AA": "FR4_Sequence.AA",
+			"JREGION.JGENES": "Top_J-Gene_Hits",
+			"JREGION.JGENE_SCORES": "J-Gene_Alignment_Scores",
+			'JREGION.JGENE_QUERY_START': 'JGENE: Query_Start',
+			'JREGION.JGENE_QUERY_END': 'JGENE: Query_End',																
+			"ISOTYPE.GENE": "Isotype",
+			"ISOTYPE.MISMATCHES": "Isotype mismatches",
+			"ISOTYPE.PER_ID": "Isotype percent similarity"		
+		}
 	}
 	
-	input_dictionary[key] = translator		
-	
+	input_dictionary[key] = translator			
 	return input_dictionary
 
-def Write_Seq_TAB(seqDic,output_fields,foutfile):
-	foutfile.write('\t'.join([str(seqDic[field]) for field in output_fields])+'\n')	
+
+def PrintErrorsToScreen(filename):
+	'''
+		This function will be used to print to screen the error file generated when parsing program
+	'''
+	eof = False
+	line_string = ""
+	with open(filename) as f1:
+		while not(eof):
+			line = f1.readline()
+			if line == "":
+				eof = True
+			else:				
+				line_string += line
+				if line.strip() == "**End of Error message**":
+					yield line_string
+					line_string = ""	
+	yield line_string
+
+
+def EnsureDatabaseDirectoryExists():
+	if not os.path.isdir(databaseFolder):
+		os.makedirs(databaseFolder)
+		os.makedirs(os.path.join(databaseFolder, 'database'))
+		
+	for subtype in ['V', 'D', 'J']:
+		folder = os.path.join(databaseFolder, subtype)
+		if not os.path.isdir(folder):		
+			os.makedirs(folder)			
+
+
+def GetDefaultParameters():
+	"""
+		Get default settings for the igfft program
+	"""		
+	try:
+		# This parameter creates a file containing default parameters
+		subprocess.call(igfft_location + ' --defaults', shell=True)
+		dataparameters = open('defaultsettings_fftprogram.txt').read().split('\n')	
+		default_settings = {}				
+		for p in dataparameters:
+			if not p.strip():
+				continue
+			p = p.strip().split('\t')
+			default_settings[p[0][1:]] = {}									
+			if p[1] != "none":
+				v = p[1].split('.')
+				v[0] = v[0].lstrip('0')
+				if len(v) > 1:
+					v[-1] = v[-1].rstrip('0')
+				v = '.'.join(v)
+				v = v[:-1] if v[-1] == '.' else v
+				default_settings[p[0][1:]] = v
+			else:
+				default_settings[p[0][1:]]['default'] = None					
+	except:		
+		default_settings = {
+			'num_hits': None,
+			'gap_open_fft': None,
+			'gap_extend_fft': None,
+			'pep_len': None,
+			'gap_extend_sw': None,
+			'gap_open_sw': None,
+			's_pep': None,
+			'cluster_per_id': None,
+			'group_clusters': None,
+			'gap': None,
+			'similar_clusters': None,
+			'match_sw': None,
+			'mismatch_sw': None,
+			'min_per_id': None,
+			'ratio_cutoff': None,
+			'times_above_ratio': None,
+			's_fft': None						
+		}
+	os.remove('defaultsettings_fftprogram.txt')
+
+	return default_settings
+
+
+def Write_Seq_TAB(seqDic, output_fields, foutfile):
+	foutfile.write('\t'.join([str(seqDic[field]) for field in output_fields]) + '\n')	
 	
-#def Write_Seq_JSON(seqDic,chain_independent_fields,chain_dep_fields,recomb_type,foutfile):
-def Write_Seq_JSON(seqDic,output_fields,foutfile):
-	
-	#convert dictionary to json-string
-	#dict_to_write = {recomb_type+'.'+field:seqDic[field] for field in chain_dep_fields if field in seqDic}
-	#ind_field = {field:seqDic[field] for field in chain_independent_fields if field in seqDic}
-	dict_to_write = {field:seqDic[field] for field in output_fields if field in seqDic}
-	#dict_to_write = dict(dict_to_write.items()+ind_field.items())	
-	
-	st = json.dumps(dict_to_write)		
-	foutfile.write(st + '\n')
-###############################################################################
 
 def GrabAdditionalHeaderInfo(header):
 	tmp = header.split(fasta_file_delimiter)
 	
-	if len(tmp)>1:
+	if len(tmp) > 1:
 		additional_info = json.loads(tmp[1])
 	else:
 		additional_info = {}
-	additional_info.pop('document_header',None) #pop out this from dictionary if it was carried along somehow
+	additional_info.pop('document_header', None)  # pop out this from dictionary if it was carried along somehow
 	additional_info['Document_Header'] = header
 	additional_info['Header'] = tmp[0]
 	return additional_info
 
 
-
-###############################################################################
-
-
-#THIS FUNCTION HAS BEEN DEPRECATED#
-
-#HEADERLINE VARIABLE#
-#headerLine is a dictionary that defines the headerrow for the text file
-#the key of the dictionary refers to the column name used for the text file
-#and the value of each key is the "column number" for that column name
-#if you do not have a headerLine defined, then pass in the variable as {}
-
-#INCLUDE DECORATORS VARIABLE#
-#we put comments into our analysis files using special text identifies that
-#refer to "comments"
-#if INCLUDE DECORATORS is set to true, then when converting the text file, it
-#will also copy these "comment" lines in the datafile.  If not, then it will
-#skip them
-def JSON_to_TXT(input_filename,output_filename,includeDecorators,headerLine): #converts a JSON file into a text tab delimited file
-	
-	try:
-		sorted_fields = collections.OrderedDict(sorted(headerLine.items() ,key=lambda t: t[1])).keys()	
-		temp_file_path = str(datetime.now()).replace(' ','_').replace(':','').replace('.','').replace('-','_')+'.temp'	
-	
-		if input_filename == output_filename:
-			overwriteFile = True	
-			newfilename = "scratch/temp_file_name_" +temp_file_path
-			f = open(newfilename,'w')							
-		else:
-			overwriteFile = False
-			f = open(output_filename,'w')
-					
-		i = open(input_filename,'r')	
-		
-		decoratorFound = True
-		
-		dictHeader = {}
-		dictList = []
-		currentRow = 1
-		headerRow = []
-		
-		error = False
-		commentLine = descriptor_symbol
-
-		lenComment = len(commentLine)
-		
-		#print dictHeader
-		i = i.close()
-		i = open(input_filename)
-	
-		decoratorFound = True
-		
-		while(decoratorFound):
-			line_one = i.readline().strip()
-			if line_one[:lenComment] != commentLine:
-				decoratorFound = False		
-			else:
-				if includeDecorators:
-					f.write(line_one + '\n')
-		
-		
-		header_row = ''
-		for header in sorted_fields:
-			header_row+=header+'\t'
-		header_row = header_row[:-1]+'\n'
-		f.write(header_row)
-										
-		line = line_one.strip()
-		if line and line != "" and line[:lenComment] != commentLine: #check to see if this line in the text file is a "comment line", if not, then																	   #write tofile
-			myDict = json.loads(line)			
-			row = ''
-			for keys in sorted_fields:							
-				if keys in myDict and myDict[keys] is not None:					
-					if type(myDict[keys]) is list:
-						row+=','.join([str(d) for d in myDict[keys]])+'\t'
-					elif type(myDict[keys]) is dict:
-						row+=json.dumps(myDict[keys])+'\t'
-					else:											
-						row+=str(myDict[keys])+'\t'
-				else:
-					row+='\t'
-			row = row[:-1]+'\n'										
-			f.write(row)
-		else:
-			if includeDecorators:
-				f.write(line_one + '\n')			
-		for line in i:				
-			line = line.strip()
-			if line[:lenComment] != commentLine:
-				myDict = json.loads(line)
-				row = ''
-				for keys in sorted_fields:			
-					if keys in myDict and myDict[keys] is not None:						
-						if type(myDict[keys]) is list:
-							row+=','.join([str(d) for d in myDict[keys]])+'\t'
-						elif type(myDict[keys]) is dict:
-							row+=json.dumps(myDict[keys])+'\t'
-						else:											
-							row+=str(myDict[keys])+'\t'
-					else:
-						row+='\t'
-				row = row[:-1]+'\n'										
-				f.write(row)
-			else:
-				if includeDecorators:
-					f.write(line + '\n')
-		
-		f.close()
-		i.close()
-		
-		if overwriteFile:
-			os.system("mv '{0}' '{1}'".format(newfilename,input_filename))# + "scratch/temp_file_name_" + a + " " + input_filename)	
-			
-		return error
-		
-	except Exception as e:
-		error = True
-		
-		exc_type, exc_obj, exc_tb = sys.exc_info()
-		
-		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-		
-		
-		print("there was an error when writing to file: "+str(e)+".  Please Restart")
-		print "Line Number: " + str(exc_tb.tb_lineno) + " type: " + str(exc_type) + " fname: " + str(fname)
-		sys.exit("ERROR FOUND SEE ABOVE")
-		return error
-
-
-
-###########FUNCTIONS FOR TEXT FILES###########################################
-#DEPRECATED FUNCTION#
-def WriteTABFileHeader(headerDic, outfile, filetype):
-	filename = open(outfile,'w')
-	
-	#first write the "translator" json line so that we can update the database
-	#with igblast results
-	translator = DatabaseTranslator()
-	translator_string = json.dumps(translator)
-	translator_comment = textFileCommentTranslator
-	filename.write(translator_comment + translator_string + '\n')
-	
-	rowData = [None] * len(headerDic)
-	
-	for key in headerDic:
-		rowData[headerDic[key] - 1] = key
-	
-	for i in range(len(rowData) - 1):
-		filename.write(rowData[i] + '\t')
-	
-	filename.write(rowData[len(rowData) - 1] + '\n')
+def purge(filelist):
+	"""
+		Delete all files with same substring at start of file path
+	"""
+	for f in filelist:
+		f = f.replace('*', '\*')
+		for filename in glob.glob(f + "*"):
+			os.remove(filename)	

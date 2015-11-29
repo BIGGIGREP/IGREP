@@ -1,5 +1,5 @@
 import immunogrep_makeappfunctions as makeapp
-import appsoma_api
+
 import pymongo
 import pandas as pd
 import time

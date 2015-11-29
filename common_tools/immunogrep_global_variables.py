@@ -8,7 +8,12 @@
 
 # +++++++++++++++++++
 # +Global variables +
-# +++++++++++++++++++ 
+# +++++++++++++++++++
+
+import os
+
+program_folder = os.path.join(os.path.dirname(os.path.relpath(__file__)), "program_binaries")
+
 descriptor_symbol='#@'   #To signify the line has information needed to transact in immunogrep pipeline (PANDAS does not like comments > 1 char)
 fasta_file_delimiter=' <' #To signify additional info in sequence header
 idIdentifier='SEQ_ID'        #for use with MongoDB
@@ -24,11 +29,11 @@ tracktion_var='TRACKTION'
 type_var='TYPE' # This is the analysis type key (i.e. 'TYPE':'IMGT' or 'TYPE':'INHOUSE', etc.) 
 
 # File extensions in immunogrep pipeline
-annotationExt='annotation'
-analysisExt='analysis'
-queryExt='query'
-IFExt='IFFile'
-listofextension = ['fasta','fna','txt','csv','fas','fa','json','query','annotation','analysis','IFFile']		
+annotationExt = 'annotation'
+analysisExt = 'analysis'
+queryExt = 'query'
+IFExt = 'IFFile'
+listofextension = ['fasta', 'fastq', 'fq', 'fna', 'txt', 'csv', 'fas', 'fa', 'json', 'query', 'annotation', 'analysis', 'IFFile']		
 
 
 imgt_files_info = [ #this summarizes each of the column names associated with each imgt file from IMGT V-QUEST

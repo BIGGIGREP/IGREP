@@ -318,23 +318,31 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 	subtypes = ['v', 'j']
 	germline_files = {}
 	if germline_source == 'custom':		
-		germline_settings = {'GERMLINE-SOURCE': 'CUSTOM-FILES', 'PARAMS': {}}							
+		germline_settings = {'GERMLINE-SOURCE': 'CUSTOM-FILES', 'PARAMS': germlines}							
 		# the user is providing proper germline files for each 
-		for key_subtypes, paths in germlines.iteritems():
+		for key_subtypes, pathlist in germlines.iteritems():
 			keys = key_subtypes.lower()
-			if keys in subtypes and os.path.isfile(paths):				
-				germline_files[keys] = paths
-			if not os.path.isfile(paths):
-				print("Warning: the provided germline path does not exist and will not be included in germlines: " + paths)							
-	elif germline_source == 'default':
-		germline_filepath_dict = {}
+			if keys not in subtypes:
+				print('Warning: the provided subtype will not be included: ' + keys)
+				continue
+			if not isinstance(pathlist, list):
+				pathlist = [pathlist]
+			updated_pathlist = []
+			for paths in pathlist:
+				if os.path.isfile(paths):
+					updated_pathlist.append(paths)
+				else:
+					print("Warning: the provided germline path does not exist and will not be included in germlines: " + paths)										
+			germline_files[keys] = updated_pathlist
+			
+	elif germline_source == 'default':		
 		germline_files = {}
 		germline_settings = {'GERMLINE-SOURCE': 'DEFAULT FOLDER', 'PARAMS': germlines}	
 		# the user wants to use the default germlines from the program 		
 		species = [germlines['SPECIES']] if not isinstance(germlines['SPECIES'], list) else germlines['SPECIES']
 		locus = [germlines['LOCUS']] if not isinstance(germlines['LOCUS'], list) else germlines['LOCUS']
 		for st in subtypes:
-			germline_filepath_dict[st] = []
+			germline_files[st] = []
 			for s in species:
 				s = s.replace(' ', '').lower()
 				for l in locus:				
@@ -344,23 +352,11 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 						print("Warning: the provided germline path does not exist and will not be included in germlines: " + germline_file)
 						continue
 						# raise Exception()
-					germline_filepath_dict[st].append(germline_file)
-			germline_files[st] = ('default_germline_set' + '_'.join(species) + '_'.join(locus)).replace(' ', '') + '_' + st + '.txt'
-			with open(germline_files[st], 'w') as g_write:
-				# Write all germlines to a single file
-				for fc, gf in enumerate(germline_filepath_dict[st]):
-					with open(gf) as igf:
-						if fc == 0:
-							g_write.write(igf.readline())
-						else:
-							igf.readline()
-						for all_gs in igf.read():
-							g_write.write(all_gs)
-			# Store location of file path for each subtype (V, D, J)		
+					germline_files[st].append(germline_file)						
 	elif germline_source == 'db':
 		# the user wants to download germlines from database		
 		germline_settings = {'GERMLINE-SOURCE': 'DATABASE-DOWNLOAD'}		
-		[germline_files, germline_settings['PARAMS']] = download_germlines_from_db(germlines)		
+		[germline_files, germline_settings['PARAMS']] = download_germlines_from_db(germlines)				
 	else:		
 		raise Exception('Germline source is only allowed to be equal to the following strings: custom, default, db')			
 	variable_parameters.update(germline_files)			
@@ -423,12 +419,17 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 	print(running_program_text)
 	command_string = '''"{1}" "{0}" '''.format(tempFile, igfft_location)	
 	for var in variable_parameters:
-		if var in ['o', 'v', 'd', 'j']:
+		if var == 'o':
 			# OUTPUT FILE ADD DOUBLE QUOTES
 			command_string += '-{0} "{1}" '.format(var, variable_parameters[var])			
+		elif var in ['v', 'd', 'j']:
+			newsets = [os.path.abspath(g).replace(' ', '\ ') for g in variable_parameters[var]]
+			command_string += '-{0} {1} '.format(var, ' '.join(newsets))
+			variable_parameters[var] = [os.path.basename(n) for n in newsets]
 		else:
-			command_string += '-{0} {1} '.format(var, variable_parameters[var])				
+			command_string += '-{0} {1} '.format(var, variable_parameters[var])					
 	subprocess.call(command_string, shell=True)		
+
 	# program complete 
 	print("Analysis Completed at {0}\nAnalysis saved to: {1}\n\n\n".format(strftime("%a, %d %b %Y %X +0000", gmtime()), outfile))	
 	if os.path.isfile(tempFile + '.convert_tab.txt'):
@@ -443,12 +444,6 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 	command.pop('o', None) 
 	# Dont store input path 
 	command.pop('i', None)
-	if 'v' in command:
-		command['v'] = os.path.basename(command['v'])
-	if 'j' in command:
-		command['j'] = os.path.basename(command['j'])
-	if 'd' in command:
-		command['d'] = os.path.basename(command['d'])
 	command['germline-details'] = germline_settings	
 	command['annotation'] = 'IGFFT'
 	return command
@@ -1095,7 +1090,6 @@ def MakeQueryList(query, fields_list):
 def download_germlines_from_db(query_settings):
 	"""
 		Function for downloading germline locus sequence files from our MongoDB database		
-
 		Parameters
 		----------
 		query_settings : dict
@@ -1112,7 +1106,7 @@ def download_germlines_from_db(query_settings):
 			IF _id is not provided , then SPECIES IS REQUIRED 									
 	"""
 
-	query = {}
+	query = copy.deepcopy(query_settings)
 
 	# Create a special folder for germlines downloaded from database only
 	output_directory = os.path.join(databaseFolder, 'databasedownloads/')
@@ -1121,73 +1115,70 @@ def download_germlines_from_db(query_settings):
 		os.makedirs(output_directory)
 		
 	# Capitalize everything 
-	ids = query_settings.pop('_id', None)
-	query_settings = {k.upper(): v for k, v in query_settings.iteritems()}
+	ids = query.pop('_id', None)
+	query = {k.upper(): v for k, v in query.iteritems()}
+	
 	if ids:
-		query_settings['_id'] = ids
-		
-	if '_id' in query_settings and query_settings['_id']:
-		id_list = query_settings['_id']		
-		query_settings.pop('_id')
-		
-	elif 'SPECIES' in query_settings:
-		query_settings.pop('_id', None)
+		query['_id'] = ids	
+	if '_id' in query and query['_id']:
+		id_list = query['_id']		
+		query.pop('_id')
+	elif 'SPECIES' in query:
+		query.pop('_id', None)
 		id_list = []
 		# we will always choose the following database source and person as default if not defined
 		source = 'IMGT'
 		uploadedby = 'immunogrep'	
-		query = MakeQueryList(query_settings, ['SPECIES', 'LOCUS', 'MOLECULAR_COMPONENT', 'SOURCE', 'VERSION', 'UPLOADED-BY', 'GENETYPE'])		
+		temp = MakeQueryList(query, ['SPECIES', 'LOCUS', 'MOLECULAR_COMPONENT', 'SOURCE', 'VERSION', 'UPLOADED-BY', 'GENETYPE'])		
+		query.update(temp)		
 		if 'SOURCE' not in query:
 			query['SOURCE'] = source
 		if 'UPLOADED-BY' not in query:
 			query['UPLOADED-BY'] = uploadedby										
 	else:
-		raise Exception('Either a list of germline ids or a SPECIES must be provided as query input. Fields provided by user: {0}'.format(json.dumps(query_settings)))
+		raise Exception('Either a list of germline ids or a SPECIES must be provided as query input. Fields provided by user: {0}'.format(json.dumps(query)))
 	
 	# Add extra filters/functionality for query only genes within a germline set with provided productivity 
 	# i.e. add filter to the query if one was specifieid ('F','[F]','ORF')
-	if 'PRODUCTIVITY' in query_settings:
-		if not isinstance(query_settings['PRODUCTIVITY'], list):
-			query_settings['PRODUCTIVITY'] = [query_settings['PRODUCTIVITY']]
-		if query_settings['PRODUCTIVITY']:
-			productive_gene_filters = {'$in': query_settings['PRODUCTIVITY']}
-		else:
-			productive_gene_filters = {'$nin': []}
-	else:
+	functionality = query.pop('FUNCTIONALITY', None)
+	if not functionality:
 		productive_gene_filters = {'$nin': []}
+	else:
+		if not isinstance(functionality, list):
+			productive_gene_filters = {'$in': [functionality]}
+		else:
+			productive_gene_filters = {'$in': functionality}
 
 	# create a query for getting germlines from database 
 	db_class_var = query_germlines.GermlineDB()						
 	
-	# this is just for documenting purproses/keeping track of what the query request was. storing settings of query basically 
+	# this is just for documenting purproses/keeping track of what the query request was. storing settings of query basically 	
+	query.pop('GENETYPE', None)
+
 	unique_settings = db_class_var.QueryDistinctValsByID(id_list, extra_filters=copy.deepcopy(query), distinct_fields=['SPECIES', 'GENETYPE', 'MOLECULAR_COMPONENT', 'SOURCE', 'VERSION', 'LOCUS'])					
 	unique_settings['DB-FILE-SOURCE'] = unique_settings.pop('SOURCE')	
-	selected_genes = unique_settings['GENETYPE']	
-	if 'PRODUCTIVITY' in query_settings:
-		unique_settings['PRODUCTIVITY'] = query_settings['PRODUCTIVITY']	
+	if functionality:
+		unique_settings['FUNCTIONALITY'] = functionality
+	# Annoying, but make subtypes lowercase
+	selected_genes = unique_settings['GENETYPE']
 	
 	# figure out a name for the database file that makes it easy to recognize when referred to later on 
-	name_data = defaultdict(list)
-	for s in unique_settings['SPECIES']:
-		for l in unique_settings['LOCUS']:
-			name_data[s].append(l)	
-	# should create a file name of datbasedownload_species_all loci_speices_all loci.txt
-	file_prefix = '_'.join({s + '_' + '_'.join(v) for s, v in name_data.iteritems()})
-	file_prefix = file_prefix.replace(' ', '')			
-		
-	# actually run the query and download germlines as a TAB file for igfft format 
-	db_class_var.QueryGenesByID(id_list, extra_filters=copy.deepcopy(query), gene_functionality_filter=productive_gene_filters).PrintFFTDBFormat(parent_folder=output_directory, filename=file_prefix) 
-		
-	# ensure sequences downloaded correctly 	
-	# Annoying, but make subtypes lowercase
-	selected_genes = [u.lower() for u in unique_settings['GENETYPE']]	
+
 	germlines = {}	
-	for subtype in ['v', 'd', 'j']:
-		if subtype in selected_genes:				
-			# the function QueryGenesById will create germline database files with these filesnames	
-			filepath = output_directory + (file_prefix + '_' + subtype + '.txt').replace(' ', '').lower()			
-			# Make sure the file downloaded correctly										
-			germlines[subtype] = filepath if os.path.isfile(filepath) else None 	
+	if not selected_genes:
+		print ('WARNING: the following settings returned no results from database {0}'.format(json.dumps(query_settings)))
+	for subtype in ['V', 'J']:		
+		if subtype in selected_genes:
+			basenamefile = ('_'.join(unique_settings['SPECIES']) + '_' + '_'.join(unique_settings['LOCUS']) + '_' + subtype + '_' + re.sub('[\:_\- ]', '', str(datetime.now())) + '.txt').lower().replace(' ', '')
+			query['GENETYPE'] = subtype			
+			# actually run the query and download germlines as a TAB file for igfft format
+			db_class_var.QueryGenesByID(id_list, extra_filters=copy.deepcopy(query), gene_functionality_filter=productive_gene_filters).PrintFFTDBFormat(parent_folder=output_directory, filename=basenamefile) 		
+			# ensure sequences downloaded correctly 	
+			if os.path.isfile(os.path.join(output_directory, basenamefile)):				
+				germlines[subtype.lower()] = [os.path.join(output_directory, basenamefile)]
+			else:								
+				print ('WARNING: the following settings returned no results from database {0}'.format(json.dumps(query_settings)))
+	
 	return [germlines, unique_settings]
 
 

@@ -655,7 +655,7 @@ def removeFileExtension(stringFileName):
 	foundExtension = False
 
 	for i in listofextension:
-		if i==lastExtension:
+		if i == lastExtension:
 			foundExtension = True
 
 	if foundExtension:

@@ -5,7 +5,7 @@ from pprint import pprint
 import json
 from operator import itemgetter
 import math
-
+import os
 from immunogrep_database_schema import convert_to_objectid
 from collections import defaultdict
 
@@ -21,10 +21,11 @@ def connectToIgDatabase():
 		'connection': None,	
 		'germline': None,
 		'motifs': None
-	}	
-	connection = pymongo.MongoClient(host="biotseq.icmb.utexas.edu", port=27017)
-	db = connection.appsoma
-	db.authenticate('reader', 'cdrom')	
+	}
+	connection = pymongo.MongoClient(host="geordbas01.ccbb.utexas.edu", port=27017)
+	db = connection.germlines
+	db.authenticate('germlinereader', 'germlinereader')	
+
 	connection_data_template['connection'] = connection
 	connection_data_template['germline'] = db.Germlines
 	connection_data_template['motifs'] = db.Motifs	
@@ -36,8 +37,8 @@ def connectToIgDatabase():
 def ReturnCDR3Motif(settings):
 	germline_query = []
 	for possible_combos in settings:
-		if not isinstance(possible_combos[1],list):					
-			germline_query.append({'Species':possible_combos[0],'Locus':possible_combos[1]}) #using list(set to ensure only unique values in list 
+		if not isinstance(possible_combos[1], list):					
+			germline_query.append({'Species': possible_combos[0],'Locus':possible_combos[1]}) #using list(set to ensure only unique values in list 
 		else:
 			germline_query.append({'Species':possible_combos[0],'Locus':{'$in':list(set(possible_combos[1]))}})
 	germline_query = {'$or':germline_query}
@@ -128,7 +129,7 @@ class GermlineDB:
 		#	self.results[i].pop('GERMLINE_GENES')			
 		return self
 	
-	def QueryDistinctValsByID(self,id_list=[],extra_filters = {},distinct_fields=[]):
+	def QueryDistinctValsByID(self, id_list=[], extra_filters={}, distinct_fields=[]):
 		if id_list:
 			id_list = [convert_to_objectid(id) for id in id_list]
 			extra_filters['_id'] = {'$in':id_list}		
@@ -233,17 +234,16 @@ class GermlineDB:
 		for germlines in self.results:
 			genes_to_write = self.results[germlines]
 			#genes_to_write = sorted(self.results[germlines], key=itemgetter('ALLELE_NAME')) #sort list of dictionary
-			self.PrintToFasta(parent_folder+filename+suffix+germlines+'.txt',genes_to_write,['ALLELE_NAME','SEQUENCE'])
+			self.PrintToFasta(parent_folder + filename + suffix + germlines + '.txt', genes_to_write, ['ALLELE_NAME', 'SEQUENCE'])
 	
-	def PrintFFTDBFormat(self, parent_folder="scratch/", filename='Germline'):
-		filename = filename.split('.')
-		filename = '.'.join(filename[:-1]) if len(filename)>1 else filename[0]
-		parent_folder = parent_folder + '/' if parent_folder[-1] != '/' else parent_folder
-		suffix = '_' if filename != '' else ''	
-	
-		fields_to_remove = ['GENENAME','SEQUENCE_WITH_IMGT_GAPS','GENENAME_INDEX']				
-		for germlines in self.results:			
-			unique_fields = ['GENE','SEQUENCE','LOCUS','FR1','CDR1','FR2','CDR2','FR3','CDR3','CHAIN','FUNCTIONALITY','SPECIES'] if germlines == 'V' else ['GENE','SEQUENCE','LOCUS','FUNCTIONALITY','CHAIN','SPECIES']
+	def PrintFFTDBFormat(self, parent_folder=None, filename='Germline'):
+		if parent_folder is None:
+			os.path.dirname('.')
+		
+		output_path = os.path.join(parent_folder, filename)
+		fields_to_remove = ['GENENAME', 'SEQUENCE_WITH_IMGT_GAPS', 'GENENAME_INDEX']				
+		for germlines in self.results:	
+			unique_fields = ['GENE', 'SEQUENCE', 'LOCUS', 'FR1', 'CDR1', 'FR2', 'CDR2', 'FR3', 'CDR3', 'CHAIN', 'FUNCTIONALITY', 'SPECIES'] if germlines == 'V' else ['GENE','SEQUENCE','LOCUS','FUNCTIONALITY','CHAIN','SPECIES']
 			genes_to_write = []
 			for gene in self.results[germlines]:
 				for f in fields_to_remove:
@@ -251,8 +251,8 @@ class GermlineDB:
 						gene.pop(f)
 				gene['GENE'] = gene.pop('ALLELE_NAME')								
 				genes_to_write.append(gene)			
-			# genes_to_write = sorted(genes_to_write, key=itemgetter('GENE')) #sort list of dictionary
-			self.PrintToTAB(parent_folder+(filename+suffix+germlines).replace(' ','').lower() + '.txt', genes_to_write, unique_fields)
+			# genes_to_write = sorted(genes_to_write, key=itemgetter('GENE')) #sort list of dictionary			
+			self.PrintToTAB(output_path, genes_to_write, unique_fields)
 			
 	def UniqueSpecies(self):
 		results = self.db.distinct('SPECIES')

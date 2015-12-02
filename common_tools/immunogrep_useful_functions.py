@@ -7,6 +7,7 @@ import immunogrep_read_file as readwrite
 import traceback
 import subprocess
 from collections import MutableMapping
+import glob
 
 dna_codes = {
 	'A': 'T',
@@ -38,6 +39,15 @@ dna_codes = {
 	'y': 'r'
 }
 
+
+def purge(filelist):
+	"""
+		Delete all files with same substring at start of file path
+	"""
+	for f in filelist:
+		f = f.replace('*', '\*')
+		for filename in glob.glob(f + "*"):
+			os.remove(filename)	
 
 def get_stdout(bash_command):
 	"""

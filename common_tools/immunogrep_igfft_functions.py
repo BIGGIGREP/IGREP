@@ -12,7 +12,7 @@ import time
 from time import gmtime, strftime
 import json
 import os
-import glob
+
 import subprocess
 import traceback
 from pprint import pprint
@@ -26,6 +26,7 @@ from multiprocessing import Queue
 
 # Useful functions
 import immunogrep_useful_functions as useful
+from immunogrep_useful_functions import purge
 # For global variables
 from immunogrep_global_variables import idIdentifier
 from immunogrep_global_variables import fasta_file_delimiter
@@ -1498,11 +1499,3 @@ def GrabAdditionalHeaderInfo(header):
 	return additional_info
 
 
-def purge(filelist):
-	"""
-		Delete all files with same substring at start of file path
-	"""
-	for f in filelist:
-		f = f.replace('*', '\*')
-		for filename in glob.glob(f + "*"):
-			os.remove(filename)	

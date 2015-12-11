@@ -41,8 +41,12 @@ import immunogrep_query_germline_functions as query_germlines
 # For CDR3
 import immunogrep_cdr3_tools as CDR3tools
 # For isotyping
-import immunogrep_fft_align_tools as fftaligner
-from immunogrep_isotype_fft import defaultBarcodes
+try:	
+	import immunogrep_fft_align_tools as fftaligner
+	from immunogrep_isotype_fft import defaultBarcodes
+	isotypeworking = True
+except:	
+	isotypeworking = False
 
 # Keep an interal folder of database files. Within this folder are subfolders by species and loci.
 # A text file for each locus set is stored as a tab delimited file
@@ -514,7 +518,8 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 	
 	# Determine whether we will perform isotyping
 	isotype_aligner = None
-	if 'isotype' in annotation_settings:
+
+	if 'isotype' in annotation_settings and isotypeworking:
 		iso_settings = annotation_settings['isotype']
 		identifyIsotype = True
 		isotype_barcodes = iso_settings['barcode-list'] if 'barcode-list' in iso_settings and iso_settings['barcode-list'] else copy.deepcopy(defaultBarcodes())	
@@ -525,6 +530,9 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 		search_rc_isotype = iso_settings['iso_search_direction'] if 'iso_search_direction' in iso_settings else 0 
 		isotype_aligner = fftaligner.BarcodeAligner(isotype_barcodes, p_t, search_rc_isotype, num_mismatch, minimum_iso_alignment_length)
 	else:
+		if isotypeworking is False:
+			print("Warning: PYFFTW is not installed. Therefore isotyping will not be possible")
+			
 		identifyIsotype = False
 	
 	if 'cdr3_search' in annotation_settings:
@@ -1189,15 +1197,14 @@ def CDR3_search(cdr3_search_class, algn_seq, cdr3start, end_of_ab, locus=None, m
 	guess_ending = min(end_of_ab + 21, len(algn_seq))
 	algn_seq = algn_seq[:guess_ending]
 	
-	[bestmotifset, MaxP, cdr3start, cdr3end, cdr3_nt, cdr3_aa, bestchain, bestscoreset, allscores] = cdr3_search_class.FindCDR3(algn_seq, suggest_chain=locus, start_pos=guess_starting, strand='+')
-	
+	[bestmotifset, MaxP, cdr3start, cdr3end, cdr3_nt, cdr3_aa, bestchain, bestscoreset, allscores] = cdr3_search_class.FindCDR3(algn_seq, suggest_chain=locus, start_pos=guess_starting, strand='+')	
 	if cdr3_nt:		
 		fr4start = cdr3end + 1
 		cdr3Frame = cdr3start % 3 + 1
 		fr4Frame = fr4start % 3 + 1
-		result_notes = ''
-		fr4_nt = algn_seq[fr4start:end_of_ab + 1]
-		fr4_aa = TranslateSeq(fr4_nt, 0)
+		result_notes = ''				
+		fr4_nt = algn_seq[fr4start:end_of_ab + 1]				
+		fr4_aa = TranslateSeq(fr4_nt, 0)		
 	else:		
 		result_notes = 'CDR3 not found because motif probability score was below threshold'
 		cdr3start = -1

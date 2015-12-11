@@ -371,11 +371,9 @@ class findCDR3():
 		'''
 		[found, results] = self.regexpsearch(seq, start_pos, end_pos, suggest_chain, strand )
 
-		# found = False
 		if found is False:
 				# print('Running PWM')
 				results = self.FindCDR3PWM(seq, start_pos, end_pos, suggest_chain, strand )
-
 		return results
 
 	def FindCDR3PWM(self, seq, start_pos=0, end_pos=None, suggest_chain=None, strand=None,):
@@ -460,9 +458,10 @@ class findCDR3():
 				# Perform trimming here to report the CDR3
 				cdr3ntseq = seq[scoreset[1]:scoreset[2]]
 				cdr3start = scoreset[1]+(Ltrim)*3
-				cdr3nt = cdr3ntseq[(Ltrim)*3:-1*(RMotifLength-Rtrim+1)*3]
+				cdr3nt = cdr3ntseq[(Ltrim)*3: -1*(RMotifLength - Rtrim)*3]
 				cdr3end = cdr3start+len(cdr3nt)-1
 				cdr3aa = translate_seq(str(Seq(cdr3nt, generic_dna)))
+
 
 		# stop = timeit.default_timer()
 		# print(stop - start)
@@ -555,6 +554,7 @@ class findCDR3():
 					end_pos = len(seq)
 				else:
 					end_pos = int(end_pos)
+				
 				seq = seq[start_pos:end_pos+1]
 
 				# Since we're comparing against the NT sequence now, I've made
@@ -640,8 +640,8 @@ class findCDR3():
 			bestscoreset = scoreset
 			#  bestchain = chain
 			cdr3ntseq = seq[(scoreset[1]):(scoreset[2])]
-			cdr3start = (scoreset[1] + bestLtrim*3)
-			cdr3nt = cdr3ntseq[(bestLtrim)*3:-1*(RMotifLength - bestRtrim+1)*3]
+			cdr3start = start_pos + (scoreset[1] + bestLtrim*3)
+			cdr3nt = cdr3ntseq[(bestLtrim)*3: -1*(RMotifLength - bestRtrim)*3]
 			cdr3end = cdr3start + len(cdr3nt) - 1
 			cdr3aa = translate_seq(str(Seq(cdr3nt, generic_dna)))
 

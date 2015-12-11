@@ -40,12 +40,13 @@ import immunogrep_read_file as readwrite
 import immunogrep_query_germline_functions as query_germlines
 # For CDR3
 import immunogrep_cdr3_tools as CDR3tools
+
 # For isotyping
-try:	
-	import immunogrep_fft_align_tools as fftaligner
-	from immunogrep_isotype_fft import defaultBarcodes
-	isotypeworking = True
-except:	
+try:
+	import immunogrep_fft_align_tools as fftaligner	
+	from immunogrep_isotype_fft import defaultBarcodes		
+	isotypeworking = True		
+except:			
 	isotypeworking = False
 
 # Keep an interal folder of database files. Within this folder are subfolders by species and loci.
@@ -69,7 +70,7 @@ def modify_germline_DB_path(newpath):
 	databaseFolder = newpath
 
 
-def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=None, germline_source="default", num_processes=1, igfft_settings={}, parsing_settings={}, custom_germline_file_loc={}, germline_db_query={}, return_igrep_doc_line=False):
+def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=None, germline_source="default", num_processes=1, igfft_settings={}, parsing_settings={}, custom_germline_file_loc={}, germline_db_query={}, return_igrep_doc_line=False, delete_alignment_file=True):
 	"""
 		Wrapper function for running igfft on multiple processes. This will take input file, split into multiple files, and then run 
 		igfft and igfft parsing function on each file. igfft parsing function will always check for CDR3 and Isotyping using default settings.
@@ -109,6 +110,8 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 			Dict defines fields you want to use in a query that are in addition to the "SPECIES" and "LOCUS" settings
 		return_igrep_doc_line : boolean, default False
 			When True, then a comment line is added to the top of the annotated file after parsing. This line defines how to add select fields from the file into the database.
+		delete_alignment_file : boolean, default True
+			When True, will delete the .alignment file produced by igfft. Therefore only the .annotation file will be stored 
 	
 		Returns
 		-------
@@ -150,6 +153,11 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 	outfile_queue = Queue()
 	# this should be the final name provided to the alignment file 	
 	of1_prefix = os.path.join(output_dir, basename_file)
+
+	if not isinstance(species, list):
+		species = species.split(',')
+	if not isinstance(locus, list):
+		locus = locus.split(',')
 
 	if 'isotype' not in parsing_settings:
 		# Always run isotyping
@@ -226,7 +234,12 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 		# Delete all of the split files 		
 		# delete split files and delete any files created from split files
 		purge(split_files)		
-		final_files = [of1_prefix + '.igfft.annotation', of1_prefix + '.igfft.alignment']
+		if delete_alignment_file:
+			os.remove(of1_prefix + '.igfft.alignment')
+			alignment_file = ''
+		else:
+			alignment_file = of1_prefix + '.igfft.alignment'
+		final_files = [of1_prefix + '.igfft.annotation', alignment_file]
 
 	return final_files
 
@@ -415,6 +428,12 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 	
 	variable_parameters['i'] = filetype
 	
+	# Add in default minimum scores for V and J genes
+	if 'vscore_cutoff' not in variable_parameters:
+		variable_parameters['vscore_cutoff'] = 50
+	if 'jscore_cutoff' not in variable_parameters:
+		variable_parameters['jscore_cutoff'] = 10
+
 	print('\n\nRunning IgFFT using the following settings:\n')
 	pprint(variable_parameters)		
 	running_program_text = "Input file location: {0}\n".format(tempFile)
@@ -433,7 +452,9 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 			variable_parameters[var] = [os.path.basename(n) for n in newsets]
 		else:
 			command_string += '-{0} {1} '.format(var, variable_parameters[var])					
-	subprocess.call(command_string, shell=True)		
+	success = subprocess.call(command_string, shell=True)		
+	if success > 0:
+		raise Exception('Error encountered during igfft annotation')
 
 	# program complete 
 	print("Analysis Completed at {0}\nAnalysis saved to: {1}\n\n\n".format(strftime("%a, %d %b %Y %X +0000", gmtime()), outfile))	
@@ -518,7 +539,6 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 	
 	# Determine whether we will perform isotyping
 	isotype_aligner = None
-
 	if 'isotype' in annotation_settings and isotypeworking:
 		iso_settings = annotation_settings['isotype']
 		identifyIsotype = True
@@ -530,9 +550,8 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 		search_rc_isotype = iso_settings['iso_search_direction'] if 'iso_search_direction' in iso_settings else 0 
 		isotype_aligner = fftaligner.BarcodeAligner(isotype_barcodes, p_t, search_rc_isotype, num_mismatch, minimum_iso_alignment_length)
 	else:
-		if isotypeworking is False:
+		if isotypeworking is False:		
 			print("Warning: PYFFTW is not installed. Therefore isotyping will not be possible")
-			
 		identifyIsotype = False
 	
 	if 'cdr3_search' in annotation_settings:
@@ -693,7 +712,7 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 			query_translating_codon = int(query_results['Codon_Start'])
 			query_translating_frame = int(query_results['Codon_Frame'])		
 			
-			if not(query_results['VGENE: Query_Start'] == '') and not(query_results['VGENE: Query_End'] == ''):
+			if query_results['VGENE: Query_Start'] != '' and query_results['VGENE: Query_End'] != '':
 				v_start = int(query_results['VGENE: Query_Start'])
 				v_end = int(query_results['VGENE: Query_End'])
 				algnLenV = v_end - v_start + 1
@@ -706,21 +725,21 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 				matchValsV = 0
 				vpresent = False
 								
-			if not(query_results['JGENE: Query_Start'] == '') and not(query_results['JGENE: Query_End'] == ''):
+			if query_results['JGENE: Query_Start'] != '' and query_results['JGENE: Query_End'] != '':
 				j_start = int(query_results['JGENE: Query_Start'])
 				j_end = int(query_results['JGENE: Query_End'])
 				algnLenJ = j_end - j_start + 1
 				matchValsJ = int(query_results['JGENE: Total_Matches'])
 				jpresent = True  
-				queries = [query_results['JGENE: Alignment_Sequence_Query'].split(';')[0]]; #fornow, just take the top germline
-				germlines = [query_results['JGENE: Alignment_Sequence_Germline'].split(';')[0]];#fornow, just take the top germline
+				queries = [query_results['JGENE: Alignment_Sequence_Query'].split(';')[0]]  # fornow, just take the top germline
+				germlines = [query_results['JGENE: Alignment_Sequence_Germline'].split(';')[0]]  # fornow, just take the top germline
 				jGermlineInfo = []
-				for q,g in enumerate(germlines):
+				for q, g in enumerate(germlines):
 					jGermlineInfo.append(			
 						{
-							'query_seq':queries[q],
-							'germline_seq':g,
-							'start':j_start				
+							'query_seq': queries[q],
+							'germline_seq': g,
+							'start': j_start				
 						}
 					)
 			else:
@@ -742,32 +761,28 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 			query_results['Alignment_Length'] = algnLen
 			
 			if perIden < min_per_algn_cutoff or algnLen < min_algn_len_cutoff:							
-				keep_fields = ['Sequence',idIdentifier,'Header','Document_Header','Strand_Corrected_Sequence','Locus','Quality_Score','5_Prime_Annotation','3_Prime_Annotation','Direction','Full_Length_Sequence.NT','Full_Length_Sequence.AA','Codon_Start','Query_Start','Query_End','Codon_Frame']
-				error_dic = defaultdict(str,{a:query_results[a] for a in keep_fields})
+				keep_fields = ['Sequence', idIdentifier, 'Header', 'Document_Header', 'Strand_Corrected_Sequence', 'Locus', 'Quality_Score', '5_Prime_Annotation', '3_Prime_Annotation', 'Direction', 'Full_Length_Sequence.NT', 'Full_Length_Sequence.AA', 'Codon_Start', 'Query_Start', 'Query_End', 'Codon_Frame']
+				error_dic = defaultdict(str, {a: query_results[a] for a in keep_fields})
 				notes = 'Sequence results did not pass alignment filter settings after parsing output;' + notes								
 				error_dic['Notes'] = notes
 				error_dic['Errors'] = notes							
 				error_dic['Percent_Identity'] = perIden
-				error_dic['Alignment_Length'] = algnLen
-				#Write_Seq_JSON(error_dic,chain_ind_fields,chain_dep_fields,'',output_files['ERROR'])
-				#Write_Seq_JSON(error_dic,tab_header_var,output_files['ERROR'])
+				error_dic['Alignment_Length'] = algnLen				
 				if write_format == "TAB":								
-					Write_Seq_TAB(error_dic,tab_header_var,output_files['annotated'])
+					Write_Seq_TAB(error_dic, tab_header_var, output_files['annotated'])
 				else:																									   				
-					Write_Seq_JSON(error_dic,tab_header_var,output_files['annotated'])		
+					Write_Seq_JSON(error_dic, tab_header_var, output_files['annotated'])		
 				continue		
 			
-			
 			newFrame = query_results['VGENE_Reading_Frames: FR1,CDR1,FR2,CDR2,FR3,CDR3'].split(',')
-			if len(newFrame)<7:
-				for ifr in range(len(newFrame),7):
-					newFrame.append('')
+			if len(newFrame) < 7:
+				for ifr in range(len(newFrame), 7):
+					newFrame.append('')			
 			
-			#newFrame.append('')
 			if not(query_results['Locus'] == ''):
 				locus = query_results['Locus'].split(',')
 			else:
-				locus = [k for k in chainDic.keys() for genes in ['Top_V-Gene_Hits','Top_J-Gene_Hits'] for hits in query_results[genes].split(',')[0].split(' ') if hits.upper().startswith(k) ]		
+				locus = [k for k in chainDic.keys() for genes in ['Top_V-Gene_Hits', 'Top_J-Gene_Hits'] for hits in query_results[genes].split(',')[0].split(' ') if hits.upper().startswith(k) ]		
 					
 			locus = set(locus)
 			locus_list = list(locus)
@@ -785,19 +800,18 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 			query_results['Recombination_Type'] = var_type
 			query_results['Locus'] = ','.join(locus_list)
 			
-			if  var_type == 'UNK':			
+			if var_type == 'UNK':			
 				print('This chain type was not recognized in the parsing script. Analysis information for this sequence will be placed in the file "{0}". Consider updating the variable chainTypes in the funcion "parse_alignment_file"'.format(outfile_unknown_rec))
 				error_dic = query_results
 				error_dic['Notes'] = "Chain type not recognized"
 				error_dic['Errors'] = "Chain type not recognized. analysis info placed in the file '{0}'".format(outfile_unknown_rec)				
-				unknown_hits+=1
+				unknown_hits += 1
 				#Write_Seq_JSON(error_dic,chain_ind_fields,chain_dep_fields,'',output_files['ERROR'])
-				Write_Seq_JSON(error_dic,tab_header_var,output_files['unk_recombination'])
+				Write_Seq_JSON(error_dic, tab_header_var, output_files['unk_recombination'])
 				if write_format == "TAB":								
-					Write_Seq_TAB(error_dic,tab_header_var,output_files['annotated'])
+					Write_Seq_TAB(error_dic, tab_header_var, output_files['annotated'])
 				else:																									   				
-					Write_Seq_JSON(error_dic,tab_header_var,output_files['annotated'])		
-						 
+					Write_Seq_JSON(error_dic, tab_header_var, output_files['annotated'])		
 			
 			if not(query_results['VGENE: Query_FR3_Start::End'] == '') and not(query_results['VGENE: Query_FR3_Start::End'] == '::'):
 				fr3present = True				
@@ -809,9 +823,8 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 				cdr3start = -1
 				fr3_pos = []
 			
-			
 			if identifyCDR3:		
-				locus = locus_list if locus<=unique_locus_sets else []				
+				locus = locus_list if locus <= unique_locus_sets else []				
 				
 				[cdr3_nt, cdr3_aa, fr4_nt, fr4_aa, cdr3Frame, fr4Frame, cdr3start, fr4start, cdr3notes] = CDR3_search(cdr3_search_parameters, algn_seq, cdr3start, end_of_ab, locus, max_l_motif_len, max_r_motif_len)																	
 
@@ -824,8 +837,7 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 				if cdr3_nt!='':														
 					query_results['Query_CDR3_Start::End'] = str(cdr3start)+'::'+str(fr4start-1)				
 					newFrame[5] = str(cdr3Frame)	
-					
-															
+																			
 					if fr3present and cdr3start>0 and (cdr3start-1)!=fr3_pos[1]: #this means that after the cdr3 analysis search. our end position for the fr3 has changed. we need to update values
 					
 						#adjusting.....fr3...................					
@@ -873,17 +885,15 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 				fr3_nt = ''
 				cdr3Frame=0
 				fr4Frame=0
-			
 	
 			algn_info = []
 			adjustedFrame =  query_translating_codon - start_of_ab
 			
-			
-			if vpresent:#perfrom framework annotation translation and remove mutations 
-				annotations = ['FR1','CDR1','FR2','CDR2','FR3']
-				annotations_present = [(i,region) for i,region in enumerate(annotations) if (query_results['VGENE: Query_{0}_Start::End'.format(region)]!='' and  query_results['VGENE: Query_{0}_Start::End'.format(region)]!='::')]
-				last_base = int(query_results['VGENE: Query_{0}_Start::End'.format(annotations_present[-1][1])].split('::')[1])+1
-				
+			if vpresent:  # perfrom framework annotation translation and remove mutations 
+				annotations = ['FR1', 'CDR1', 'FR2', 'CDR2', 'FR3']
+				annotations_present = [(i, region) for i, region in enumerate(annotations) if (query_results['VGENE: Query_{0}_Start::End'.format(region)] != '' and query_results['VGENE: Query_{0}_Start::End'.format(region)] != '::')]
+				last_base = int(query_results['VGENE: Query_{0}_Start::End'.format(annotations_present[-1][1])].split('::')[1]) + 1
+								
 				query_results['Full_Length_Sequence.AA'] = TranslateSeq(query_results['Full_Length_Sequence.NT'],adjustedFrame)# Seq(query_results['Full_Length_Sequence.NT'][adjustedFrame:],generic_dna).translate().tostring()				   
 				contains_stop_codons = '*' in query_results['Full_Length_Sequence.AA']					 
 				query_results['VREGION.NUM_GAPS'] = int(query_results['VGENE: Total_Indel'])
@@ -1055,9 +1065,9 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 			error_dic["Errors"] = "This query generated an error (see error log file): "+str(e)			
 			
 			if write_format == "TAB":								
-				Write_Seq_TAB(error_dic,tab_header_var,output_files['annotated'])
+				Write_Seq_TAB(error_dic, tab_header_var,output_files['annotated'])
 			else:																									   				
-				Write_Seq_JSON(error_dic,tab_header_var,output_files['annotated'])			
+				Write_Seq_JSON(error_dic, tab_header_var,output_files['annotated'])			
 																		
 			continue
 							
@@ -1065,15 +1075,15 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 	ferrorlog.close()
 	f1.IFclass.close()
 	resulting_files = [outfile,annotatedFile]
-	if total_parsing_errors>0:
+	if total_parsing_errors > 0:
 		print("The analysis has completed. However, {0} of the {1} total sequences analyzed contained errors when parsing the file. Please refer to the error log file to debug possible errors".format(str(total_parsing_errors), str(numSeqs)))
 		resulting_files.append(outfile_errors)
 	else:
-		os.system("rm '{0}'".format(outfile_errors))		
+		os.remove(outfile_errors)		
 		resulting_files.append('')		
 	
-	if unknown_hits == 0: 
-		os.system("rm '{0}'".format(outfile_unknown_rec))
+	if unknown_hits == 0:
+		os.remove(outfile_unknown_rec)		
 		resulting_files.append('')
 	else:
 		resulting_files.append(outfile_unknown_rec)	
@@ -1197,14 +1207,15 @@ def CDR3_search(cdr3_search_class, algn_seq, cdr3start, end_of_ab, locus=None, m
 	guess_ending = min(end_of_ab + 21, len(algn_seq))
 	algn_seq = algn_seq[:guess_ending]
 	
-	[bestmotifset, MaxP, cdr3start, cdr3end, cdr3_nt, cdr3_aa, bestchain, bestscoreset, allscores] = cdr3_search_class.FindCDR3(algn_seq, suggest_chain=locus, start_pos=guess_starting, strand='+')	
+	[bestmotifset, MaxP, cdr3start, cdr3end, cdr3_nt, cdr3_aa, bestchain, bestscoreset, allscores] = cdr3_search_class.FindCDR3(algn_seq, suggest_chain=locus, start_pos=guess_starting, strand='+')
+	
 	if cdr3_nt:		
 		fr4start = cdr3end + 1
 		cdr3Frame = cdr3start % 3 + 1
 		fr4Frame = fr4start % 3 + 1
-		result_notes = ''				
-		fr4_nt = algn_seq[fr4start:end_of_ab + 1]				
-		fr4_aa = TranslateSeq(fr4_nt, 0)		
+		result_notes = ''
+		fr4_nt = algn_seq[fr4start:end_of_ab + 1]
+		fr4_aa = TranslateSeq(fr4_nt, 0)
 	else:		
 		result_notes = 'CDR3 not found because motif probability score was below threshold'
 		cdr3start = -1
@@ -1479,7 +1490,8 @@ def GetDefaultParameters():
 			'similar_clusters': None,
 			'match_sw': None,
 			'mismatch_sw': None,
-			'min_per_id': None,
+			# 'min_per_id': None,
+			'score_cutoff': None,			
 			'ratio_cutoff': None,
 			'times_above_ratio': None,
 			's_fft': None						
@@ -1490,7 +1502,7 @@ def GetDefaultParameters():
 
 
 def Write_Seq_TAB(seqDic, output_fields, foutfile):
-	foutfile.write('\t'.join([str(seqDic[field]) for field in output_fields]) + '\n')	
+	foutfile.write('\t'.join([str(seqDic[field]) if seqDic[field] is not None else '' for field in output_fields]) + '\n')	
 	
 
 def GrabAdditionalHeaderInfo(header):

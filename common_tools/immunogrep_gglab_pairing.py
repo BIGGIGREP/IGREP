@@ -1830,7 +1830,7 @@ pairing_settings = {
 			'recomb': 'Recombination_Type'
 		},
 		'productivity_function': CDR3Productivity
-	},
+	},	
 	'MIXCR': {
 		'fields_for_analysis': {
 			'functionality': 'Productivity',

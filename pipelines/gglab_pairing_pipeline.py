@@ -86,7 +86,7 @@ def run_gglab_pipeline(input_files, species, loci, group_name=''):
 	print('Annotating processed fastq files')
 	annotated_files = []
 	for i, f in enumerate(processed_files):
-		annotated_f = igfft.igfft_multiprocess(f, species=species, locus=loci, parsing_settings={'isotype': isotyping_barcodes, 'remove_insertions': remove_insertions}, num_processes=number_threads, delete_alignment_file=True)			
+		annotated_f = igfft.igfft_multiprocess(f, file_type='FASTQ', species=species, locus=loci, parsing_settings={'isotype': isotyping_barcodes, 'remove_insertions': remove_insertions}, num_processes=number_threads, delete_alignment_file=True)			
 		annotated_files.append(annotated_f[0])
 	
 	print('Pairing sequences')	

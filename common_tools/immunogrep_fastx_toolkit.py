@@ -1,14 +1,20 @@
-import appsoma_api
 import os
 import subprocess
 import copy
-from immunogrep_useful_immunogrep_functions import Reverse_Complement
+from immunogrep_useful_functions import Reverse_Complement
 from collections import defaultdict
-import immunogrep_useful_immunogrep_functions as useful
+import immunogrep_useful_functions as useful
+import shutil
+
+from immunogrep_global_variables import program_folder
 
 
-#will a string of FASTA sequences into tab delimited file that can be used by fastx toolkit
-def Write_FASTA_String_Barcodes_To_File(barcode_string,filename):
+fastq_quality_filter_location = os.path.join(program_folder, "fastq_quality_filter")
+barcode_split_perl_script = os.path.join(program_folder, 'fastx_barcode_splitter.pl')
+
+
+# will a string of FASTA sequences into tab delimited file that can be used by fastx toolkit
+def Write_FASTA_String_Barcodes_To_File(barcode_string, filename):
 	list_of_seqs = []
 	barcode_array = barcode_string.split('>')[1:]
 	for seq in barcode_array:		
@@ -39,7 +45,7 @@ def Run_FASTX_Barcode_Splitter(files,output_dir,settings={'orientation':'bol'},s
 	for i,each_file in enumerate(files):
 		if each_file.endswith('.gz'):
 			print "Unzipping file: {0}...".format(each_file)
-			os.system("gunzip '{0}'".format(each_file))
+			files[i] = useful.gunzip_python(each_file)		
 			files[i] = each_file[:-3]			
 			print "Unzipping complete"		
 	
@@ -61,7 +67,7 @@ def Run_FASTX_Barcode_Splitter(files,output_dir,settings={'orientation':'bol'},s
 	additional_folders = os.path.dirname(prefix)
 		
 	if not os.path.isdir(additional_folders):
-		os.system("mkdir '{0}'".format(additional_folders))
+		os.mkdir(additional_folders)		
 		
 	orientation = parameters.pop('orientation',None)
 	
@@ -100,8 +106,8 @@ def Run_FASTX_Barcode_Splitter(files,output_dir,settings={'orientation':'bol'},s
 				new_bcfile.write(c[0].strip()+'rev'+'\t'+Reverse_Complement(c[1].strip())+'\n')
 			new_bcfile.close()
 		
-		os.system("cp '{0}' '{0}.temp'".format(prefix+'unmatched'+suffix))
-		files = [prefix+'unmatched'+suffix+'.temp']
+		shutil.copyfile(prefix + 'unmatched' + suffix, prefix + 'unmatched' + suffix + '.temp')		
+		files = [prefix + 'unmatched' + suffix + '.temp']
 		parameters['bcfile'] +='rc'
 		
 		if orientation == 'eol':
@@ -111,26 +117,25 @@ def Run_FASTX_Barcode_Splitter(files,output_dir,settings={'orientation':'bol'},s
 			
 		barcode_splitter_command = 'cat "'+' '.join(files)+'" | '
 
-		barcode_splitter_command += 'fastx_barcode_splitter.pl '
+		barcode_splitter_command += barcode_split_perl_script
 		for p in parameters:
 			barcode_splitter_command+='--{0} {1} '.format(p,parameters[p])
 		
 		barcode_splitter_command +='--prefix '+prefix+' --suffix '+suffix+' --'+orientation
 		
-		#os.system(barcode_splitter_command)
 		output = useful.get_stdout(barcode_splitter_command).rstrip(' \n').split('\n') #subprocess.check_output(barcode_splitter_command,shell=True).rstrip(' \n').split('\n')
 		
-		for i,line in enumerate(output[1:-2]):
+		for i, line in enumerate(output[1:-2]):
 			line = line.split('\t')
 			result['barcodes'][map_barcode_to_file[line[0].strip()]] += int(line[1])
 		
 		result['unmatched'] = int(output[-2].split('\t')[1])
 				
 		cleanup_command = ''
-		for i,each_bc_file in enumerate(initial_file):
-			cleanup_command+= "mv '{0}{1}{3}' '{0}{1}{3}.temp';cat '{0}{1}{3}.temp' '{0}{2}{3}' > '{0}{1}{3}'; rm '{0}{1}{3}.temp';rm '{0}{2}{3}';".format(prefix,each_bc_file,new_file[i],suffix)				
-		cleanup_command+="rm '{0}{1}'; ".format(prefix,'unmatched'+suffix+'.temp')
-		os.system(cleanup_command)
+		for i, each_bc_file in enumerate(initial_file):
+			cleanup_command += "mv '{0}{1}{3}' '{0}{1}{3}.temp';cat '{0}{1}{3}.temp' '{0}{2}{3}' > '{0}{1}{3}'; rm '{0}{1}{3}.temp';rm '{0}{2}{3}';".format(prefix, each_bc_file, new_file[i], suffix)				
+		cleanup_command += "rm '{0}{1}'; ".format(prefix, 'unmatched' + suffix + '.temp')
+		subprocess.cal(cleanup_command, shell=True)		
 		
 		
 	return result
@@ -141,13 +146,11 @@ def Run_Quality_Filter(files,output_dir,quality,percent,encoding='-Q33'):
 		
 	if not type(files) is list:
 		files = [files]
-		
-	
-	for i,each_file in enumerate(files):
+			
+	for i, each_file in enumerate(files):
 		if each_file.endswith('.gz'):
 			print "Unzipping file: {0}...".format(each_file)
-			os.system("gunzip '{0}'".format(each_file))
-			files[i] = each_file[:-3]			
+			files[i] = useful.gunzip_python(each_file)				
 			print "Unzipping complete"
 				
 	
@@ -159,7 +162,7 @@ def Run_Quality_Filter(files,output_dir,quality,percent,encoding='-Q33'):
 		outfile = output_dir+'/'+os.path.basename(files[0]).replace('.fastq','')+'.filtered.{0}.fastq'.format('q'+str(quality)+'p'+str(percent))
 
 	print "Running filtering..."
-	os.system('{3} fastq_quality_filter -v {4} -o "{0}" -q {1} -p {2}'.format(outfile,str(quality),str(percent),file_list,encoding))
+	subprocess.check_output('{3} {5} -v {4} -o "{0}" -q {1} -p {2}'.format(outfile,str(quality),str(percent),file_list,encoding, fastq_quality_filter_location), shell=True)
 	print "filtering complete"
 
 	

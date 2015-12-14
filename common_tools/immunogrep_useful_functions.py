@@ -477,15 +477,11 @@ def count_unique_values(filelocation=None,output_filelocation=None,field=None,co
 
 	if delete_intermediate_file:
 		os.remove(output_filename)
-		#os.system("rm '{0}'".format(output_filename))
 
-	#print datetime.now()
-
-	return [total_found,total_field]
+	return [total_found, total_field]
 
 
-
-#print an error message if system/program fails
+# print an error message if system/program fails
 def print_error_string(e=None):
 	"""
 		Prints an error message if system/program fails.

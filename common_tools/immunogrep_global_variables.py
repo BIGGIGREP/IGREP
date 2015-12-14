@@ -12,7 +12,8 @@
 
 import os
 
-program_folder = os.path.join(os.path.dirname(os.path.relpath(__file__)), "program_binaries")
+program_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "program_binaries")
+common_tools_folder = os.path.dirname(os.path.abspath(__file__))
 
 descriptor_symbol='#@'   #To signify the line has information needed to transact in immunogrep pipeline (PANDAS does not like comments > 1 char)
 fasta_file_delimiter=' <' #To signify additional info in sequence header

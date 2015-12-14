@@ -4,14 +4,13 @@
 """
 
 from Bio.Seq import Seq
-import sys
-import re
-
 from Bio.Alphabet import generic_dna
 import time
 from time import gmtime, strftime
 import json
 import os
+import sys
+import re
 
 import subprocess
 import traceback

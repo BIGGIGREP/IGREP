@@ -323,6 +323,11 @@ class immunogrepFile():
 		
 		field_names = copy.deepcopy(field_names)
 		self.filelocation=filelocation
+		if isinstance(self.filelocation, list):
+			for i, f in enumerate(self.filelocation):
+				self.filelocation[i] = os.path.expanduser(f)
+		else:
+			self.filelocation = os.path.expanduser(self.filelocation)
 		self.decoratorinfo=decoratorinfo
 		self.delimiter=delimiter
 		self.contains_header=contains_header
@@ -368,9 +373,9 @@ class immunogrepFile():
 			self.filetype=self.guessFiletype()
 	
 		# Checking file exisitence, if not, it will be createdf
-		#IMGT FILES MUST BE LIST OF FILES, ALL OTHER FILES MUST BE BASESTRING
+		#IMGT FILES MUST BE LIST OF FILES, ALL OTHER FILES MUST BE BASESTRING		
 		if mode == 'r':
-			if filetype=='IMGT':
+			if filetype == 'IMGT':
 				if not isinstance(self.filelocation,list):
 					self.filelocation = [self.filelocation]
 					for each_file in self.filelocation:
@@ -399,11 +404,11 @@ class immunogrepFile():
 	def getFilelocation(self):
 		return self.filelocation
 
-	def getFiletype(self):
+	def getFiletype(self):		
 		return self.filetype
 
 	def guessFiletype(self):
-		check = []		
+		check = []				
 		fileformat=['FASTA','FASTQ','JSON','TAB','CSV']
 		check.append(self.isFASTA())
 		check.append(self.isFASTQ())
@@ -1240,8 +1245,8 @@ class immunogrepDELIM():
 			self.maxfields = len(tmp)
 			if contains_header:
 				# Get field names from the header row					
-				self.decoratorinfo[description_var] = [f for f in tmp]#filed names detected in file 
-				self.header_names_map={f:col for col,f in enumerate(tmp) if f}#dictionary mapping header name to column number						
+				self.decoratorinfo[description_var] = [f.rstrip('\r\n') for f in tmp]#filed names detected in file 
+				self.header_names_map={f.rstrip('\r\n'):col for col,f in enumerate(tmp) if f}#dictionary mapping header name to column number						
 				skip_lines += 1
 			else:
 				for _ in range(num_line_search):					

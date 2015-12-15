@@ -43,7 +43,7 @@ chain_call = {
 }
 
 
-def RunPairing(annotated_file_paths, annotated_file_formats=None, analysis_method=None, pairing_fields={}, output_folder_path='', prefix_output_files='', cluster_cutoff=[0.9, 0.9, 0], annotation_cluster_setting=None, productivity_function=None, return_igrep_doc_line=False):
+def RunPairing(annotated_file_paths, annotated_file_formats=None, analysis_method=None, pairing_fields={}, output_folder_path='', prefix_output_files='', cluster_cutoff=[0.9, 0.9, 0], annotation_cluster_setting=None, productivity_function=None, return_igrep_doc_line=False, generate_annotation_files=False):
 	"""				
 		This is the main function for pairing VH-VL antibody data using the Georgiou lab pipeline. The pairing function is not dependent on a specific file type/format and will pair sequences using any files passed into the field annotated_file_paths.
 		Pairing of VH-VL antibodies is performed by grouping together sequences by their MISEQ header (Miseq id). This program should only be used to pair 'paired end NGS data'. That is, we assume sequences come from MISEQ paired-end sequences containing complementary R1/R2 header names.
@@ -187,10 +187,10 @@ def RunPairing(annotated_file_paths, annotated_file_formats=None, analysis_metho
 		annotated_file_formats = [annotated_file_formats] * len(annotated_file_paths)	
 
 	if output_folder_path:		
-		output_folder_path = os.path.abspath(output_folder_path)
+		output_folder_path = os.path.abspath(os.path.expanduser(output_folder_path))
 		# User provided ouput folder. 
 		if not os.path.isdir(output_folder_path):			
-			os.path.make_dir(output_folder_path)			
+			os.path.make_dirs(output_folder_path)			
 			print("WARNING, OUTPUT DIRECTORY NOT FOUND. CREATED A NEW DIRECTORY FOR OUTPUT CALLED: {0}".format(parent_dir))
 		else:
 			# This is the output folder 
@@ -208,17 +208,18 @@ def RunPairing(annotated_file_paths, annotated_file_formats=None, analysis_metho
 	if analysis_method is None:
 		# use default settings
 		fields = pairing_settings['DEFAULT']['fields_for_analysis']
-		analysis_method = 'DEFAULT'
+		analysis_method = 'CUSTOM'
 	elif analysis_method.upper() not in supported_analyses:
 		# user passed in wrong analysis method
-		print('WARNING: ANALYSIS METHOD NOT A RECOGNIZED NAME. USING DEFAULT SETTINGS')
+		# print('WARNING: ANALYSIS METHOD NOT A RECOGNIZED NAME. USING DEFAULT SETTINGS')
+		analysis_method = 'CUSTOM'
 		fields = pairing_settings['DEFAULT']['fields_for_analysis']
 	else:
 		fields = pairing_settings[analysis_method.upper()]['fields_for_analysis']
 
 	# Now go through optional fields defined by user. update fields to reflect fields provided by user
 	for f, v in pairing_fields.iteritems():
-		fields[v] = v
+		fields[f] = v
 
 	for rf in required_field_names:
 		if rf not in fields or not fields[rf]:
@@ -313,7 +314,7 @@ def RunPairing(annotated_file_paths, annotated_file_formats=None, analysis_metho
 	# Step 1: Parse the provided files and filter sequences which do not pass settings, 
 	# after parsing, creates a TAB delimited file of sequences SORTED BY THEIR R1-R2 read. It is used for pairing results/merging R1-R2 reads on Seq Header
 	annotated_file_lists = []
-	[sorted_filtered_file, annotated_file_lists, column_names] = add_to_dict(annotated_file_paths, annotated_file_formats, fields, productivity_function, parent_dir, analysis_method)		
+	[sorted_filtered_file, annotated_file_lists, column_names] = add_to_dict(annotated_file_paths, annotated_file_formats, fields, productivity_function, parent_dir, analysis_method, generate_annotation_files)
 	# Step 2: Using the sorted TAB file from step 1, Merge together all R1-R2 reads. Keep track of the CDRH3-CDRL3 pairs found
 	mapping_dict = parse_sorted_paired_file(sorted_filtered_file, column_names)	
 	# Step 3: Cluster the paired reads based on CDRH3
@@ -337,14 +338,14 @@ def RunPairing(annotated_file_paths, annotated_file_formats=None, analysis_metho
 	for c in cluster_cutoff:
 		analysis_files_to_report.extend([usearch_output_file + '.' + str(c) + '.uc', clustered_output_file + '.' + str(c) + '.txt', clustered_final_output_file + '.' + str(c) + '.txt'])
 	# Step 5: generate an annotation file for inserting results into the database
-	if annotated_file_lists:
+	if annotated_file_lists and generate_annotation_files:
 		print('Generating an annotation file of paired results for the database')
 		GenerateAnnotationFile(annotated_file_lists, annotation_cluster_setting, mapping_dict, usearch_output_file)	
 	print('All paired clustering complete')
 	return {'annotation_files': [annotated_file['filename'] for annotated_file in annotated_file_lists], 'analysis_files': analysis_files_to_report}
 
 
-def add_to_dict(list_of_files, list_of_filetypes, required_field_names, productivity_function_call, parent_dir, analysis_method):	
+def add_to_dict(list_of_files, list_of_filetypes, required_field_names, productivity_function_call, parent_dir, analysis_method, generate_annotation_files):	
 	"""
 		This is another version of the original add_to_dict. 
 		Its functionality should be identical except it does not store everything inside of memory 		
@@ -392,7 +393,7 @@ def add_to_dict(list_of_files, list_of_filetypes, required_field_names, producti
 	global full_aa_field
 	global full_nt_field
 	global stats
-	
+
 	# Convert this to default dict so that not all fields have to be explicitly defined
 	required_field_names = defaultdict(str, copy.deepcopy(required_field_names))
 	
@@ -442,7 +443,7 @@ def add_to_dict(list_of_files, list_of_filetypes, required_field_names, producti
 	print('Reading all files at once and collapsing identical CDRH3-CDRL3 pairs into collapsed dict')	
 	at_least_one_file_open = True	
 	# We will generate annotation files as we read through the files for pairing 
-	[list_of_file_reading, annotation_file_writing] = initialize_input_files(analysis_method, list_of_filetypes, list_of_files)
+	[list_of_file_reading, annotation_file_writing] = initialize_input_files(analysis_method, list_of_filetypes, list_of_files, generate_annotation_files)	
 	# we will read each of the files simultaneously (open all the files at once and read line by line)
 	while at_least_one_file_open:		
 	#while counter<200000:
@@ -452,7 +453,7 @@ def add_to_dict(list_of_files, list_of_filetypes, required_field_names, producti
 		# keep track of how many files have been completely read
 		num_eof = 0 		
 		# Read each file line by line
-		for fnum, reader in enumerate(list_of_file_reading): 
+		for fnum, reader in enumerate(list_of_file_reading):			
 			if reader.IFclass.eof:
 				num_eof += 1
 				continue										
@@ -462,8 +463,9 @@ def add_to_dict(list_of_files, list_of_filetypes, required_field_names, producti
 				continue			
 			my_line = defaultdict(str, my_line)
 			h = my_line[header_field]							
-			if not h:				
-				annotation_file_writing[fnum]['buffer'].write('\t'.join(['', my_line[seq_field], my_line[idIdentifier], '', '']) + '\n')
+			if not h:								
+				if generate_annotation_files:
+					annotation_file_writing[fnum]['buffer'].write('\t'.join(['', my_line[seq_field], my_line[idIdentifier], '', '']) + '\n')
 				print('Error type 0: no sequence header')
 				continue			
 			[header, id] = GetHeaderInfo(my_line, header_field)						
@@ -483,12 +485,13 @@ def add_to_dict(list_of_files, list_of_filetypes, required_field_names, producti
 						end = (len(my_line[full_nt_field]) / 3) * 3
 						my_line[full_aa_field] = str(Seq(my_line[full_nt_field][:end], generic_dna).translate())
 					except:
-						print('Error type 2: problem translating amino acid => ' + str(my_line[full_nt_field]))						
+						print('Error type 2: problem translating amino acid => ' + str(my_line[full_nt_field]))												
 						# no cdr3 found 
 						my_line[full_aa_field] = ''						
 			if not(my_line[cdr3_field]):											
-				# write to temperoary file 
-				annotation_file_writing[fnum]['buffer'].write('\t'.join([header, seq, id, '', '', '']) + '\n')													
+				# write to temperoary file 				
+				if generate_annotation_files:					
+					annotation_file_writing[fnum]['buffer'].write('\t'.join([header, seq, id, '', '', '']) + '\n')													
 				stats.no_cdr3_error += 1
 				continue				
 									
@@ -527,14 +530,16 @@ def add_to_dict(list_of_files, list_of_filetypes, required_field_names, producti
 				print('Error type 1')
 				print(my_line)
 				# write to temperoary file 				
-				annotation_file_writing[fnum]['buffer'].write('\t'.join([header, seq, id, '', '', '']) + '\n')													
+				if generate_annotation_files:
+					annotation_file_writing[fnum]['buffer'].write('\t'.join([header, seq, id, '', '', '']) + '\n')													
 				continue						
 			# this is the recombination type of the current sequence 
 			rtype = chain						
 			# unproductive
 			if productivity_function_call(my_line) is False:																									
-				# write to temperoary file 
-				annotation_file_writing[fnum]['buffer'].write('\t'.join([header, seq, id, rtype, '', '']) + '\n')										
+				# write to temperoary file:
+				if generate_annotation_files:
+					annotation_file_writing[fnum]['buffer'].write('\t'.join([header, seq, id, rtype, '', '']) + '\n')										
 				stats.not_productive += 1
 				continue
 								
@@ -587,7 +592,8 @@ def add_to_dict(list_of_files, list_of_filetypes, required_field_names, producti
 			# now store all of the importat fields we want to use for pairing to the temp file defined by temp_seq_data
 			temp_seq_data.write('\t'.join([str(t) for t in temp_array]) + '\n')
 			# store paired_id result for this sequence in the annotation file 
-			annotation_file_writing[fnum]['buffer'].write('\t'.join([header, seq, id, rtype, fullcode, '']) + '\n')																	
+			if generate_annotation_files:
+				annotation_file_writing[fnum]['buffer'].write('\t'.join([header, seq, id, rtype, fullcode, '']) + '\n')																	
 		if num_eof == len(list_of_files):
 			# all files have been read through
 			at_least_one_file_open = False 		
@@ -624,7 +630,7 @@ def parse_sorted_paired_file(pairing_temp_file, column_names):
 		A TAB delimited file whose fields are defined by the variable column_names. This tab file MUST contain be sorted by the field/column "fullcode".
 		..important::fullcode column
 			The variable fullcode can be extracted from the MISEQ sequence header using the following: fullcode = ''.join(re.sub(r'[^0-9:]','_', ':'.join(header.split(':')[3:7])).split('_')[:-1])
-		
+			
 		Ouputs
 		------
 		Three files:
@@ -666,6 +672,7 @@ def parse_sorted_paired_file(pairing_temp_file, column_names):
 	cdrh3_l3_barcode_dict = defaultdict(int)
 	# We will save the variable codeDict as a JSON var to file. JSON files start with { and end with }. ',' will be used to save each R1-R2 pair
 	codeDict_save.write('{') 
+	os.system('cp ' + pairing_temp_file + ' paringtempfile.txt')
 	
 	print('Will now parse sequences into their H-L pairs')
 	with open(pairing_temp_file) as sorted_file:
@@ -1505,7 +1512,7 @@ def GetHeaderInfo(file_data, header_var):
 	return [h, id]
 
 
-def initialize_input_files(analysis_method, list_of_filetypes, list_of_files):
+def initialize_input_files(analysis_method, list_of_filetypes, list_of_files, generate_annotation_files):
 	global annotation_headers
 	global add_igrep_header
 
@@ -1519,19 +1526,20 @@ def initialize_input_files(analysis_method, list_of_filetypes, list_of_files):
 	
 	# we will generate annotation files as we read through the files for pairing 	
 	annotation_file_writing = []	
-	for f in list_of_files:		
-		if isinstance(f, list):
-			bname = os.path.basename(f[0])
-			annotation_file_writing.append({'filename': annotation_path + '_' + bname + '.pairing.annotation', 'buffer': open(annotation_path + '_' + bname + '.pairing.annotation.temp', 'w')})			
-		else:
-			bname = os.path.basename(f)
-			annotation_file_writing.append({'filename': annotation_path + '_' + bname + '.pairing.annotation', 'buffer': open(annotation_path + '_' + bname + '.pairing.annotation.temp', 'w')})		
-		translator = DatabaseTranslator()
-		if analysis_method != 'CUSTOM':
-			translator[translation_var]["ANALYSIS_NAME"] = analysis_method		
-		if add_igrep_header:
-			annotation_file_writing[-1]['buffer'].write(descriptor_symbol + json.dumps(translator) + '\n')
-		annotation_file_writing[-1]['buffer'].write('\t'.join(annotation_headers) + '\n')
+	if generate_annotation_files:
+		for f in list_of_files:		
+			if isinstance(f, list):
+				bname = os.path.basename(f[0])
+				annotation_file_writing.append({'filename': annotation_path + '_' + bname + '.pairing.annotation', 'buffer': open(annotation_path + '_' + bname + '.pairing.annotation.temp', 'w')})			
+			else:
+				bname = os.path.basename(f)
+				annotation_file_writing.append({'filename': annotation_path + '_' + bname + '.pairing.annotation', 'buffer': open(annotation_path + '_' + bname + '.pairing.annotation.temp', 'w')})		
+			translator = DatabaseTranslator()
+			if analysis_method != 'CUSTOM':
+				translator[translation_var]["ANALYSIS_NAME"] = analysis_method		
+			if add_igrep_header is True:
+				annotation_file_writing[-1]['buffer'].write(descriptor_symbol + json.dumps(translator) + '\n')
+			annotation_file_writing[-1]['buffer'].write('\t'.join(annotation_headers) + '\n')
 	return [list_of_file_reading, annotation_file_writing]
 
 
@@ -1874,8 +1882,8 @@ pairing_settings = {
 	},
 	'DEFAULT': {
 		'fields_for_analysis': {
-			'functionality': 'PRODUCTIVE',
-			'raw_seq_nt': 'SEQUENCE',
+			'functionality': '',
+			'raw_seq_nt': '',
 			'vgene': 'VREGION.VGENES',
 			'jgene': 'JREGION.JGENES',
 			'dgene': 'DREGION.DGENES',			
@@ -1888,8 +1896,12 @@ pairing_settings = {
 			'vgene_scores': "VREGION.VGENE_SCORES",
 			'jgene_scores': "JREGION.JGENE_SCORES",
 			'dgene_scores': "DREGION.DGENE_SCORES",
-			'recomb': 'RECOMBINATION_TYPE'
+			'recomb': ''
 		},
+		'productivity_function': CDR3Productivity
+	},
+	'CUSTOM': {
+		'fields_for_analysis': {},
 		'productivity_function': CDR3Productivity
 	}
 }

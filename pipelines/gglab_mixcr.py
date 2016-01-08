@@ -94,7 +94,6 @@ def run_gglab_pipeline(input_files, species, loci, group_name=''):
 		filtered_file = fastx.Run_Quality_Filter(pear_results, output_dir=folder_path, quality=quality_cutoff, percent=percent_bases)		
 		os.remove(pear_results)
 		processed_files.append(filtered_file)
-		processed_files.append('/home/costas/Documents/testpairing/HD150K.fasta')
 	
 	print('Annotating processed fastq files')
 	annotated_files = []

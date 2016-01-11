@@ -121,9 +121,9 @@ def Run_FASTX_Barcode_Splitter(files,output_dir,settings={'orientation':'bol'},s
 		for p in parameters:
 			barcode_splitter_command+='--{0} {1} '.format(p,parameters[p])
 		
-		barcode_splitter_command +='--prefix '+prefix+' --suffix '+suffix+' --'+orientation
+		barcode_splitter_command += '--prefix ' + prefix + ' --suffix ' + suffix + ' --' + orientation
 		
-		output = useful.get_stdout(barcode_splitter_command).rstrip(' \n').split('\n') #subprocess.check_output(barcode_splitter_command,shell=True).rstrip(' \n').split('\n')
+		output = useful.get_stdout(barcode_splitter_command).rstrip(' \n').split('\n')  # subprocess.check_output(barcode_splitter_command,shell=True).rstrip(' \n').split('\n')
 		
 		for i, line in enumerate(output[1:-2]):
 			line = line.split('\t')
@@ -141,8 +141,7 @@ def Run_FASTX_Barcode_Splitter(files,output_dir,settings={'orientation':'bol'},s
 	return result
 	
 	
-
-def Run_Quality_Filter(files,output_dir,quality,percent,encoding='-Q33'):
+def Run_Quality_Filter(files, output_dir, quality, percent, encoding='-Q33'):
 		
 	if not type(files) is list:
 		files = [files]
@@ -156,10 +155,7 @@ def Run_Quality_Filter(files,output_dir,quality,percent,encoding='-Q33'):
 	
 	file_list = 'cat '+' '.join(['"'+f+'"' for f in files]) +' | '
 	
-	if output_dir[-1] == '/':
-		outfile = output_dir+os.path.basename(files[0]).replace('.fastq','')+'.filtered.{0}.fastq'.format('q'+str(quality)+'p'+str(percent))
-	else:
-		outfile = output_dir+'/'+os.path.basename(files[0]).replace('.fastq','')+'.filtered.{0}.fastq'.format('q'+str(quality)+'p'+str(percent))
+	outfile = os.path.join(output_dir, os.path.basename(files[0]).replace('.fastq', '')) + '.filtered.{0}.fastq'.format('q' + str(quality) + 'p' + str(percent))	
 
 	print "Running filtering..."
 	subprocess.check_output('{3} {5} -v {4} -o "{0}" -q {1} -p {2}'.format(outfile,str(quality),str(percent),file_list,encoding, fastq_quality_filter_location), shell=True)

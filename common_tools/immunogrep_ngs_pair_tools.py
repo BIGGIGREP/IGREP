@@ -8,7 +8,7 @@ flash_location = os.path.join(program_folder, "flash")
 pear_location = os.path.join(program_folder, "pear") 
 
 
-def run_trimmomatic(files, output_directory=None, method='SE', phred=None, optional_parameters = {}):
+def run_trimmomatic(files, output_directory=None, method='SE', phred=None, optional_parameters={}):
 	'''
 		Wrapper function for running trimmomatic program within python
 		Trimmomatic will remove low quality bases from the ends of NGS reads using an average quality score in a given window size
@@ -39,14 +39,12 @@ def run_trimmomatic(files, output_directory=None, method='SE', phred=None, optio
 	if len(files) > 2:
 		raise Exception(str(len(files)) + 'total files have been passed to function. We only except 1 or 2 filepaths representing the R1/R2 reads')
 	
-	for i,f in enumerate(files):
+	for i, f in enumerate(files):
 		if f.endswith('.gz'):
 			print('Unzipping: ', f)
 			files[i] = useful.gunzip_python(f)		
 	
 	output_directory = useful.get_parent_dir(files[0]) if not output_directory else os.path.abspath(output_directory)		
-		
-	
 	return_file_names = []	
 	command_loops = []
 	
@@ -55,22 +53,22 @@ def run_trimmomatic(files, output_directory=None, method='SE', phred=None, optio
 		for f in files:
 			input_file_names = []
 			output_file_names = []
-			input_file_names.append('"'+f+'"')			
+			input_file_names.append('"' + f + '"')			
 			out = f[:-6] if f.endswith('.fastq') else f
-			output_file_names.extend(['"'+out + '.trimmed.fastq"'])
-			return_file_names.append(out+'.trimmed.fastq')
+			output_file_names.extend(['"' + out + '.trimmed.fastq"'])
+			return_file_names.append(out + '.trimmed.fastq')
 			command_loops.append([input_file_names, output_file_names])
 	else:
 		input_file_names = []
 		output_file_names = []
 		# trim all files simultaneously		
 		for f in files:
-			input_file_names.append('"'+f+'"')			
+			input_file_names.append('"' + f + '"')			
 			out = f[:-6] if f.endswith('.fastq') else f
-			output_file_names.extend(['"'+out + '.trimmed.fastq"', '"'+out + '.trimmed.unpaired.fastq"'])
-			return_file_names.append(out+'.trimmed.fastq')
+			output_file_names.extend(['"' + out + '.trimmed.fastq"', '"' + out + '.trimmed.unpaired.fastq"'])
+			return_file_names.append(out + '.trimmed.fastq')
 		command_loops.append([input_file_names, output_file_names])
-	phred_var = '-phred'+str(phred) if phred else ''	
+	phred_var = '-phred' + str(phred) if phred else ''	
 	
 	# We should change the java folder to recognize /usr/local/bin...	
 	for loops in command_loops:
@@ -84,77 +82,65 @@ def run_trimmomatic(files, output_directory=None, method='SE', phred=None, optio
 	
 
 def run_flash(r1file, r2file, working_directory, outfile='', parameters={}, suffix=''):
-	r1_path = useful.get_parent_dir(r1file)  # '/'.join(r1file.split('/')[:-1])
-	
+	r1_path = useful.get_parent_dir(r1file)  # '/'.join(r1file.split('/')[:-1])	
 	r2_path = useful.get_parent_dir(r2file)  # '/'.join(r2file.split('/')[:-1])
 	
 	if not parameters:
 		print "PARAMETERS NOT PASSED INTO FLASH PROGRAM. USING DEFAULT IGSEQ PARAMETERS: R = 300, F = 400"
-		parameters = {'r':300,'f':400}
+		parameters = {'r': 300, 'f': 400}
 	
 	if r1file.endswith('.gz'):
-		print "Unzipping R1 File.."
-		
-		#os.system("gunzip '{0}'".format(r1file))
-		#r1file = r1file.replace('.gz','')
+		print "Unzipping R1 File.."				
 		r1file = useful.gunzip_python(r1file)
 	
 	if r2file.endswith('.gz'):		
 		print "Unzipping R2 File.."
-		#os.system("gunzip '{0}'".format(r2file))		
-		#r2file = r2file.replace('.gz','')
 		r2file = useful.gunzip_python(r2file)
 		
 	working_directory = os.path.abspath(working_directory)
 	if r1_path != working_directory:
-		os.rename(r1file,os.path.join(working_directory, os.path.basename(r1file)))
-		#os.system("mv '{0}' '{1}/'".format(r1file,working_directory) )
+		os.rename(r1file, os.path.join(working_directory, os.path.basename(r1file)))		
 	if r2_path != working_directory:	
-		os.rename(r2file,os.path.join(working_directory, os.path.basename(r2file)))
-		#os.system("mv '{0}' '{1}/'".format(r2file,working_directory) )
+		os.rename(r2file, os.path.join(working_directory, os.path.basename(r2file)))
 		
 	if outfile == '':		
-		outfile=os.path.basename(r1file)		
-		if '_R1' in outfile:
-			r_pos=outfile.index('_R1')
-			outfile=outfile[:r_pos]
-		elif '_R2' in outfile:
-			r_pos=outfile.index('_R2')
-			outfile=outfile[:r_pos]
-		else:				
-			outfile =  os.path.commonprefix([os.path.basename(r1file),os.path.basename(r2file)]) # useful.removeFileExtension(os.path.basename(r1file))
-		#if len(outfile)<5:
-		#try:
-		#	r1_pos = outfile.index('_R1')
-		#	outfile = outfile[:r1_pos]
-		#except:
-		#	outfile = outfile.replace('R1','')
+		outfile = os.path.basename(r1file).split('.')					
+		for p, subs in enumerate(outfile):
+			if '_R1' in subs:
+				r_pos = subs.index("_R1")
+				outfile[p] = subs[:r_pos]				
+				break
+			elif '_R2' in subs:
+				r_pos = subs.index("_R2")
+				outfile[p] = subs[:r_pos]				
+				break
+		outfile = '.'.join(outfile)
 	else:		
 		outfile = os.path.basename(outfile)
-	outfile = outfile.replace('.fastq','').replace('.fasta','')
-	outfile+='.flashed'+suffix
 		
+	outfile = outfile.replace('.fastq', '').replace('.fasta', '')
+	outfile += '.flashed' + suffix		
 			
-	if os.path.isfile(os.path.join(working_directory, outfile)):# in resulting_files:		
-		print('WARNING: FILE {0} ALREADY PRESENT IN FOLDER. FILE WILL BE OVERWRITTEN'.format(working_directory+'/'+outfile))
+	if os.path.isfile(os.path.join(working_directory, outfile)):  # in resulting_files:		
+		print('WARNING: FILE {0} ALREADY PRESENT IN FOLDER. FILE WILL BE OVERWRITTEN'.format(working_directory + '/' + outfile))
 							
-	r1file = os.path.join(working_directory,os.path.basename(r1file)) # working_directory+'/'+os.path.basename(r1file)
-	r2file = os.path.join(working_directory,os.path.basename(r2file)) # working_directory+'/'+os.path.basename(r2file)
+	r1file = os.path.join(working_directory, os.path.basename(r1file))  # working_directory+'/'+os.path.basename(r1file)
+	r2file = os.path.join(working_directory, os.path.basename(r2file))  # working_directory+'/'+os.path.basename(r2file)
 
 	flash_command = "{2} {0} {1}".format(r1file, r2file, flash_location)
 	
 	parameters['o'] = outfile
 	parameters['d'] = working_directory
 
-	for p,val in parameters.iteritems():
-		flash_command+=' -{0} {1}'.format(p,str(val))
+	for p, val in parameters.iteritems():
+		flash_command += ' -{0} {1}'.format(p, str(val))
 	
-	flash_command+=' -q'#run on quiet command
+	flash_command += ' -q'  # run on quiet command
 	# os.system(flash_command)
 	worked = subprocess.call(flash_command, shell=True)
 	if worked > 0:
 		raise Exception('Flash failed')
-	os.rename(os.path.join(working_directory, outfile+'.extendedFrags.fastq'), os.path.join(working_directory, outfile))
+	os.rename(os.path.join(working_directory, outfile + '.extendedFrags.fastq'), os.path.join(working_directory, outfile))
 	
 	try:
 		read_count_r1_file = useful.file_line_count(r1file)
@@ -166,12 +152,12 @@ def run_flash(r1file, r2file, working_directory, outfile='', parameters={}, suff
 		read_count_flashed_file = useful.file_line_count(os.path.join(working_directory, outfile))
 	except Exception as e:
 		read_count_flashed_file = 1
-		print("Could not get number of lines in outfile read file: "+ str(e))
-	resulting_counts=(
+		print("Could not get number of lines in outfile read file: " + str(e))
+	resulting_counts = (
 		os.path.join(working_directory, outfile),
-		read_count_flashed_file/4,
-		read_count_r1_file/4,
-		float(100)*(read_count_flashed_file/float(read_count_r1_file))
+		read_count_flashed_file / 4,
+		read_count_r1_file / 4,
+		float(100) * (read_count_flashed_file / float(read_count_r1_file))
 	)
 	
 	return resulting_counts
@@ -196,30 +182,31 @@ def run_pear(r1file, r2file, working_directory, outfile='', parameters={}, suffi
 		os.rename(r2file, os.path.join(working_directory, os.path.basename(r2file)))		
 		
 	if outfile == '':		
-		outfile = os.path.basename(r1file)		
-		if '_R1' in outfile:
-			r_pos = outfile.index('_R1')
-			outfile = outfile[:r_pos]
-		elif '_R2' in outfile:
-			r_pos = outfile.index('_R2')
-			outfile = outfile[:r_pos]
-		else:				
-			outfile = os.path.commonprefix([os.path.basename(r1file),os.path.basename(r2file)])
+		outfile = os.path.basename(r1file).split('.')					
+		for p, subs in enumerate(outfile):
+			if '_R1' in subs:
+				r_pos = subs.index("_R1")
+				outfile[p] = subs[:r_pos]				
+				break
+			elif '_R2' in subs:
+				r_pos = subs.index("_R2")
+				outfile[p] = subs[:r_pos]				
+				break
+		outfile = '.'.join(outfile)
 	else:		
 		outfile = os.path.basename(outfile)
 	
 	outfile = outfile.replace('.fastq', '').replace('.fasta', '')
 	
 	outfile = os.path.join(working_directory, outfile)
-	if os.path.isfile(os.path.join(working_directory, outfile)):# in resulting_files:
-		print('WARNING: FILE {0} ALREADY PRESENT IN FOLDER. FILE WILL BE OVERWRITTEN'.format(working_directory+'/'+outfile))
+	if os.path.isfile(os.path.join(working_directory, outfile)):  # in resulting_files:
+		print('WARNING: FILE {0} ALREADY PRESENT IN FOLDER. FILE WILL BE OVERWRITTEN'.format(working_directory + '/' + outfile))
 							
 	r1file = os.path.join(working_directory, os.path.basename(r1file))
 	r2file = os.path.join(working_directory, os.path.basename(r2file))
 
 	pear_command = "{2} -f {0} -r {1}".format(r1file, r2file, pear_location)
 	
-
 	parameters['o'] = outfile
 	parameters['y'] = memory
 	parameters['j'] = num_threads
@@ -239,7 +226,7 @@ def run_pear(r1file, r2file, working_directory, outfile='', parameters={}, suffi
 		print("Could not get number of lines in read file: " + str(e))
 	
 	try:
-		read_count_flashed_file =useful.file_line_count(outfile + '.assembled.fastq')
+		read_count_flashed_file = useful.file_line_count(outfile + '.assembled.fastq')
 	except Exception as e:
 		read_count_flashed_file = 1
 		print("Could not get number of lines in outfile read file: " + str(e))

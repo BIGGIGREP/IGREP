@@ -80,6 +80,8 @@ def run_gglab_pipeline(input_files, species, loci, group_name=''):
 			}
 			method = 'PE'		
 			input_files = processing.run_trimmomatic(pair_of_files, folder_path, method, phred_encode, trimming_parameters)
+		else:
+			input_files = pair_of_files
 
 		# Stitch R1-R2 files
 		pairing_parameters = {
@@ -89,7 +91,7 @@ def run_gglab_pipeline(input_files, species, loci, group_name=''):
 			'u': max_fraction_uncalled,					
 		}
 		print('Stitching R1-R2 reads')
-		pear_results = processing.run_pear(pair_of_files[0], pair_of_files[1], working_directory=folder_path, parameters=pairing_parameters, num_threads=number_threads, memory=pear_memory)[0]		
+		pear_results = processing.run_pear(input_files[0], input_files[1], working_directory=folder_path, parameters=pairing_parameters, num_threads=number_threads, memory=pear_memory)[0]		
 		# Run quality filtering
 		filtered_file = fastx.Run_Quality_Filter(pear_results, output_dir=folder_path, quality=quality_cutoff, percent=percent_bases)		
 		os.remove(pear_results)

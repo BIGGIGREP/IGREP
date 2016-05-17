@@ -386,8 +386,8 @@ def Write_Single_Field(filename=None,outfile_location=None,field=None,count_fiel
 
 
 def gunzip_python(path): 
-	subprocess.call('gunzip {0}'.format(path),shell=True)
 	new_path = path.replace('.gz','')
+	subprocess.call('gzip -c {0} > {1}'.format(path, new_path),shell=True)
 	return new_path
 
 #Simple python command for counting the occurrences of a sequence ina file.

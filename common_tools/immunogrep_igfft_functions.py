@@ -1495,7 +1495,8 @@ def GetDefaultParameters():
 			'times_above_ratio': None,
 			's_fft': None						
 		}
-	os.remove('defaultsettings_fftprogram.txt')
+	if os.path.isfile('defaultsettings_fftprogram.txt')
+		os.remove('defaultsettings_fftprogram.txt')
 
 	return default_settings
 
